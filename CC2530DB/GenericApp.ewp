@@ -2618,26 +2618,7 @@
                 </option>
                 <option>
                     <name>CCDefines</name>
-                    <state>SECURE=1</state>
-                    <state>TC_LINKKEY_JOIN</state>
-                    <state>NV_INIT</state>
-                    <state>NV_RESTORE</state>
-                    <state>xPOWER_SAVING</state>
-                    <state>NWK_AUTO_POLL</state>
-                    <state>xZTOOL_P1</state>
-                    <state>xMT_TASK</state>
-                    <state>xMT_APP_FUNC</state>
-                    <state>xMT_SYS_FUNC</state>
-                    <state>xMT_ZDO_FUNC</state>
-                    <state>xMT_ZDO_MGMT</state>
-                    <state>xMT_APP_CNF_FUNC</state>
-                    <state>MULTICAST_ENABLED=FALSE</state>
-                    <state>ZCL_READ</state>
-                    <state>ZCL_WRITE</state>
-                    <state>ZCL_BASIC</state>
-                    <state>ZCL_IDENTIFY</state>
-                    <state>ZCL_SCENES</state>
-                    <state>ZCL_GROUPS</state>
+                    <state></state>
                 </option>
                 <option>
                     <name>CCPreprocFile</name>
@@ -2773,7 +2754,7 @@
                 </option>
                 <option>
                     <name>PreInclude</name>
-                    <state></state>
+                    <state>Z:\code\Z-Stack 3.0.2\Projects\zstack\HomeAutomation\JagerRemote\Source\preinclude.h</state>
                 </option>
                 <option>
                     <name>CCLibConfigHeader</name>

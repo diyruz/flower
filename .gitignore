@@ -50,3 +50,7 @@ Backup*
 *.bak
 
 # CC2530DB
+
+EndDeviceEB
+RouterEB
+CoordinatorEB

@@ -87,7 +87,6 @@
 #include "onboard.h"
 
 /* HAL */
-#include "hal_lcd.h"
 #include "hal_led.h"
 #include "hal_key.h"
 
@@ -266,6 +265,9 @@ void zclGenericApp_Init(byte task_id)
     // Here the user could start the timer to save Diagnostics to NV
   }
 #endif
+
+  bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_FORMATION | BDB_COMMISSIONING_MODE_NWK_STEERING | BDB_COMMISSIONING_MODE_FINDING_BINDING);
+
 }
 
 /*********************************************************************
