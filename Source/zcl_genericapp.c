@@ -63,7 +63,6 @@
 
 #include "zcl.h"
 #include "zcl_general.h"
-#include "zcl_ha.h"
 #include "zcl_diagnostic.h"
 #include "zcl_genericapp.h"
 
@@ -222,24 +221,37 @@ void zclGenericApp_Init(byte task_id)
 {
   zclGenericApp_TaskID = task_id;
 
-  // This app is part of the Home Automation Profile
-  bdb_RegisterSimpleDescriptor(&zclGenericApp_SimpleDesc);
+  for (int i =0; i < zclGenericApp_SimpleDescsCount; i++) {
+    bdb_RegisterSimpleDescriptor(&zclGenericApp_SimpleDescs[i]);
+    // Register the ZCL General Cluster Library callback functions
+    zclGeneral_RegisterCmdCallbacks(zclGenericApp_SimpleDescs[i].EndPoint, &zclGenericApp_CmdCallbacks);
 
-  // Register the ZCL General Cluster Library callback functions
-  zclGeneral_RegisterCmdCallbacks(GENERICAPP_ENDPOINT, &zclGenericApp_CmdCallbacks);
+     // Register the application's attribute list
+  zcl_registerAttrList(zclGenericApp_SimpleDescs[i].EndPoint, zclGenericApp_NumAttributes, zclGenericApp_Attrs);
+
+  #ifdef ZCL_DISCOVER
+    // Register the application's command list
+    zcl_registerCmdList(zclGenericApp_SimpleDescs[i].EndPoint, zclCmdsArraySize, zclGenericApp_Cmds);
+  #endif
+
+  #ifdef ZCL_DIAGNOSTIC
+    // Register the application's callback function to read/write attribute data.
+    // This is only required when the attribute data format is unknown to ZCL.
+    zcl_registerReadWriteCB(zclGenericApp_SimpleDescs[i].EndPoint, zclDiagnostic_ReadWriteAttrCB, NULL);
+
+    if (zclDiagnostic_InitStats() == ZSuccess)
+    {
+      // Here the user could start the timer to save Diagnostics to NV
+    }
+  #endif
+  }
 
   // GENERICAPP_TODO: Register other cluster command callbacks here
 
-  // Register the application's attribute list
-  zcl_registerAttrList(GENERICAPP_ENDPOINT, zclGenericApp_NumAttributes, zclGenericApp_Attrs);
 
   // Register the Application to receive the unprocessed Foundation command/response messages
   zcl_registerForMsg(zclGenericApp_TaskID);
 
-#ifdef ZCL_DISCOVER
-  // Register the application's command list
-  zcl_registerCmdList(GENERICAPP_ENDPOINT, zclCmdsArraySize, zclGenericApp_Cmds);
-#endif
 
   // Register low voltage NV memory protection application callback
   RegisterVoltageWarningCB(zclSampleApp_BatteryWarningCB);
@@ -255,16 +267,7 @@ void zclGenericApp_Init(byte task_id)
   bdb_RegisterTouchlinkTargetEnableCB(zclGenericApp_ProcessTouchlinkTargetEnable);
 #endif
 
-#ifdef ZCL_DIAGNOSTIC
-  // Register the application's callback function to read/write attribute data.
-  // This is only required when the attribute data format is unknown to ZCL.
-  zcl_registerReadWriteCB(GENERICAPP_ENDPOINT, zclDiagnostic_ReadWriteAttrCB, NULL);
 
-  if (zclDiagnostic_InitStats() == ZSuccess)
-  {
-    // Here the user could start the timer to save Diagnostics to NV
-  }
-#endif
 
   bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_FORMATION | BDB_COMMISSIONING_MODE_NWK_STEERING | BDB_COMMISSIONING_MODE_FINDING_BINDING);
 

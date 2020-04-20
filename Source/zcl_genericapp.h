@@ -60,7 +60,7 @@ extern "C"
 /*********************************************************************
  * CONSTANTS
  */
-#define GENERICAPP_ENDPOINT 8
+
 // Added to include ZLL Target functionality
 #define GENERICAPP_NUM_GRPS 2
 
@@ -94,7 +94,8 @@ extern "C"
   extern bdbTLDeviceInfo_t tlGenericApp_DeviceInfo;
 #endif
 
-  extern SimpleDescriptionFormat_t zclGenericApp_SimpleDesc;
+  extern SimpleDescriptionFormat_t zclGenericApp_SimpleDescs[];
+  extern uint8 zclGenericApp_SimpleDescsCount;
 
   extern CONST zclCommandRec_t zclGenericApp_Cmds[];
 

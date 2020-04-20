@@ -2,7 +2,7 @@
 #define TC_LINKKEY_JOIN
 #define NV_INIT
 #define NV_RESTORE
-#define POWER_SAVING
+// #define POWER_SAVING
 #define NWK_AUTO_POLL
 #define xZTOOL_P1
 #define xMT_TASK
@@ -15,11 +15,12 @@
 #define ZCL_READ
 #define ZCL_WRITE
 #define ZCL_BASIC
+
 #define ZCL_IDENTIFY
 #define ZCL_SCENES
 #define ZCL_GROUPS
+#define ZCL_ON_OFF
 #define DISABLE_GREENPOWER_BASIC_PROXY
-
 
 #ifdef DEFAULT_CHANLIST
     #undef DEFAULT_CHANLIST
