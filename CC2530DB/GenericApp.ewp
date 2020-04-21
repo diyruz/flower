@@ -3439,6 +3439,12 @@
     <group>
         <name>App</name>
         <file>
+            <name>$PROJ_DIR$\..\Source\Debug.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\Source\Debug.h</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\Source\OSAL_GenericApp.c</name>
         </file>
         <file>
@@ -4118,6 +4124,9 @@
         <file>
             <name>$PROJ_DIR$\..\..\..\Tools\CC2530DB\f8wZCL.cfg</name>
         </file>
+    </group>
+    <group>
+        <name>Utils</name>
     </group>
     <group>
         <name>ZDO</name>

@@ -2,6 +2,9 @@
 #define TC_LINKKEY_JOIN
 #define NV_INIT
 #define NV_RESTORE
+#define HAL_UART TRUE
+#define HAL_UART_ISR 1
+#define HAL_UART_DMA 2
 // #define POWER_SAVING
 #define NWK_AUTO_POLL
 #define xZTOOL_P1
@@ -21,6 +24,7 @@
 #define ZCL_GROUPS
 #define ZCL_ON_OFF
 #define DISABLE_GREENPOWER_BASIC_PROXY
+#define ZCL_REPORTING_DEVICE
 
 #ifdef DEFAULT_CHANLIST
     #undef DEFAULT_CHANLIST
@@ -28,3 +32,6 @@
 #else
     #define DEFAULT_CHANLIST 0x07FFF800
 #endif
+
+
+#include "hal_board_cfg_dev.h"

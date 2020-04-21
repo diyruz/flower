@@ -130,6 +130,9 @@ extern "C"
  */
   extern void zclGenericApp_ResetAttributesToDefaultValues(void);
 
+  extern void DIYRuZRT_HalKeyInit( void );
+  extern void DIYRuZRT_HalKeyPoll ( void );
+
   /*********************************************************************
 *********************************************************************/
 

@@ -70,6 +70,8 @@
 #include "bdb_interface.h"
 #include "gp_interface.h"
 
+#include "Debug.h"
+
 #if defined(INTER_PAN)
 #if defined(BDB_TL_INITIATOR)
 #include "bdb_touchlink_initiator.h"
@@ -88,6 +90,8 @@
 /* HAL */
 #include "hal_led.h"
 #include "hal_key.h"
+#include "hal_drivers.h"
+
 
 /*********************************************************************
  * MACROS
@@ -115,8 +119,21 @@ byte zclGenericApp_TaskID;
  */
 
 uint8 gPermitDuration = 0; // permit joining default to disabled
-
+uint8 SeqNum = 0;
 devStates_t zclGenericApp_NwkState = DEV_INIT;
+static uint8 halKeySavedKeys;
+
+
+// Endpoint to allow SYS_APP_MSGs
+static endPointDesc_t sampleSw_TestEp =
+{
+  1,                  // endpoint
+  0,
+  &zclGenericApp_TaskID,
+  (SimpleDescriptionFormat_t *)NULL,  // No Simple description for this test endpoint
+  (afNetworkLatencyReq_t)0            // No Network Latency req
+};
+
 
 /*********************************************************************
  * LOCAL FUNCTIONS
@@ -128,6 +145,10 @@ static void zclGenericApp_BindNotification(bdbBindNotificationData_t *data);
 #if (defined(BDB_TL_TARGET) && (BDB_TOUCHLINK_CAPABILITY_ENABLED == TRUE))
 static void zclGenericApp_ProcessTouchlinkTargetEnable(uint8 enable);
 #endif
+
+
+void DIYRuZRT_HalKeyInit( void );
+void zclDIYRuZRT_ReportOnOff( void );
 
 static void zclGenericApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
 
@@ -234,6 +255,10 @@ void zclGenericApp_Init(byte task_id)
     zcl_registerCmdList(zclGenericApp_SimpleDescs[i].EndPoint, zclCmdsArraySize, zclGenericApp_Cmds);
   #endif
 
+
+    // Register for a test endpoint
+  afRegister( &sampleSw_TestEp );
+
   #ifdef ZCL_DIAGNOSTIC
     // Register the application's callback function to read/write attribute data.
     // This is only required when the attribute data format is unknown to ZCL.
@@ -267,9 +292,13 @@ void zclGenericApp_Init(byte task_id)
   bdb_RegisterTouchlinkTargetEnableCB(zclGenericApp_ProcessTouchlinkTargetEnable);
 #endif
 
-
-
   bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_FORMATION | BDB_COMMISSIONING_MODE_NWK_STEERING | BDB_COMMISSIONING_MODE_FINDING_BINDING);
+
+  DebugInit();
+  LREPMaster("Initialized debug module \n");
+  LREPMaster("Hello world \n");
+
+    osal_start_reload_timer( zclGenericApp_TaskID, HAL_KEY_EVENT, 100);
 
 }
 
@@ -352,6 +381,15 @@ uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events)
   }
   */
 
+  // событие опроса кнопок
+  if (events & HAL_KEY_EVENT)
+  {
+    /* Считывание кнопок */
+    DIYRuZRT_HalKeyPoll();
+
+    return events ^ HAL_KEY_EVENT;
+  }
+
   // Discard unknown events
   return 0;
 }
@@ -372,8 +410,10 @@ uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events)
  */
 static void zclGenericApp_HandleKeys(byte shift, byte keys)
 {
+  LREP("zclGenericApp_HandleKeys %x", keys & 0xff);
   if (keys & HAL_KEY_SW_1)
   {
+    LREPMaster("Pressed button 1");
     static bool LED_OnOff = FALSE;
 
     /* GENERICAPP_TODO: add app functionality to hardware keys here */
@@ -398,6 +438,7 @@ static void zclGenericApp_HandleKeys(byte shift, byte keys)
   // Start the BDB commissioning method
   if (keys & HAL_KEY_SW_2)
   {
+    LREPMaster("Pressed button 2");
 
     bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_FORMATION | BDB_COMMISSIONING_MODE_NWK_STEERING | BDB_COMMISSIONING_MODE_FINDING_BINDING | BDB_COMMISSIONING_MODE_INITIATOR_TL);
   }
@@ -415,6 +456,54 @@ static void zclGenericApp_HandleKeys(byte shift, byte keys)
   {
     bdb_resetLocalAction();
   }
+}
+
+void DIYRuZRT_HalKeyInit( void )
+{
+  /* Сбрасываем сохраняемое состояние кнопок в 0 */
+  halKeySavedKeys = 0;
+
+  PUSH1_SEL &= ~(PUSH1_BV); /* Выставляем функцию пина - GPIO */
+  PUSH1_DIR &= ~(PUSH1_BV); /* Выставляем режим пина - Вход */
+  
+  PUSH1_ICTL &= ~(PUSH1_ICTLBIT); /* Не генерируем прерывания на пине */
+  PUSH1_IEN &= ~(PUSH1_IENBIT);   /* Очищаем признак включения прерываний */
+  
+  PUSH2_SEL &= ~(PUSH2_BV); /* Set pin function to GPIO */
+  PUSH2_DIR &= ~(PUSH2_BV); /* Set pin direction to Input */
+  
+  PUSH2_ICTL &= ~(PUSH2_ICTLBIT); /* don't generate interrupt */
+  PUSH2_IEN &= ~(PUSH2_IENBIT);   /* Clear interrupt enable bit */
+}
+
+
+// Считывание кнопок
+void DIYRuZRT_HalKeyPoll (void)
+{
+  uint8 keys = 0;
+
+  // нажата кнопка 1 ?
+  if (HAL_PUSH_BUTTON1())
+  {
+    keys |= HAL_KEY_SW_1;
+  }
+  
+  // нажата кнопка 2 ?
+  if (HAL_PUSH_BUTTON2())
+  {
+    keys |= HAL_KEY_SW_2;
+  }
+  
+  if (keys == halKeySavedKeys)
+  {
+    // Выход - нет изменений
+    return;
+  }
+  // Сохраним текущее состояние кнопок для сравнения в след раз
+  halKeySavedKeys = keys;
+
+  // Вызовем генерацию события изменений кнопок
+  OnBoard_SendKeys(keys, HAL_KEY_STATE_NORMAL);
 }
 
 /*********************************************************************
@@ -726,6 +815,35 @@ static uint8 zclGenericApp_ProcessInDefaultRspCmd(zclIncomingMsg_t *pInMsg)
   (void)pInMsg;
 
   return (TRUE);
+}
+afAddrType_t zclDIYRuZRT_DstAddr;
+
+// Информирование о состоянии реле
+void zclDIYRuZRT_ReportOnOff(void) {
+  const uint8 NUM_ATTRIBUTES = 1;
+
+  zclReportCmd_t *pReportCmd;
+  uint8 RELAY_STATE = 0;
+
+  pReportCmd = osal_mem_alloc(sizeof(zclReportCmd_t) +
+                              (NUM_ATTRIBUTES * sizeof(zclReport_t)));
+  if (pReportCmd != NULL) {
+    pReportCmd->numAttr = NUM_ATTRIBUTES;
+
+    pReportCmd->attrList[0].attrID = ATTRID_ON_OFF;
+    pReportCmd->attrList[0].dataType = ZCL_DATATYPE_BOOLEAN;
+    pReportCmd->attrList[0].attrData = (void *)(&RELAY_STATE);;
+
+    zclDIYRuZRT_DstAddr.addrMode = (afAddrMode_t)Addr16Bit;
+    zclDIYRuZRT_DstAddr.addr.shortAddr = 0;
+    zclDIYRuZRT_DstAddr.endPoint = 1;
+
+    zcl_SendReportCmd(zclGenericApp_SimpleDescs[0].EndPoint, &zclDIYRuZRT_DstAddr,
+                      ZCL_CLUSTER_ID_GEN_ON_OFF, pReportCmd,
+                      ZCL_FRAME_CLIENT_SERVER_DIR, false, SeqNum++);
+  }
+
+  osal_mem_free(pReportCmd);
 }
 
 #ifdef ZCL_DISCOVER
