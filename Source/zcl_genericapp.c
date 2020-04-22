@@ -25,7 +25,6 @@
 #include "hal_key.h"
 #include "hal_drivers.h"
 
-
 /*********************************************************************
  * MACROS
  */
@@ -56,17 +55,15 @@ uint8 SeqNum = 0;
 devStates_t zclGenericApp_NwkState = DEV_INIT;
 static uint8 halKeySavedKeys;
 
-
 // Endpoint to allow SYS_APP_MSGs
 static endPointDesc_t sampleSw_TestEp =
-{
-  1,                  // endpoint
-  0,
-  &zclGenericApp_TaskID,
-  (SimpleDescriptionFormat_t *)NULL,  // No Simple description for this test endpoint
-  (afNetworkLatencyReq_t)0            // No Network Latency req
+    {
+        1, // endpoint
+        0,
+        &zclGenericApp_TaskID,
+        (SimpleDescriptionFormat_t *)NULL, // No Simple description for this test endpoint
+        (afNetworkLatencyReq_t)0           // No Network Latency req
 };
-
 
 /*********************************************************************
  * LOCAL FUNCTIONS
@@ -75,10 +72,10 @@ static void zclGenericApp_HandleKeys(byte shift, byte keys);
 static void zclGenericApp_BasicResetCB(void);
 static void zclGenericApp_ProcessIdentifyTimeChange(uint8 endpoint);
 static void zclGenericApp_BindNotification(bdbBindNotificationData_t *data);
-void halProcessKeyInterrupt (void);
+void halProcessKeyInterrupt(void);
 
-void DIYRuZRT_HalKeyInit( void );
-void zclDIYRuZRT_ReportOnOff( void );
+void DIYRuZRT_HalKeyInit(void);
+void zclDIYRuZRT_ReportOnOff(void);
 
 static void zclGenericApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
 
@@ -143,24 +140,24 @@ void zclGenericApp_Init(byte task_id)
 {
   zclGenericApp_TaskID = task_id;
 
-  for (int i =0; i < zclGenericApp_SimpleDescsCount; i++) {
+  for (int i = 0; i < zclGenericApp_SimpleDescsCount; i++)
+  {
     bdb_RegisterSimpleDescriptor(&zclGenericApp_SimpleDescs[i]);
     // Register the ZCL General Cluster Library callback functions
     zclGeneral_RegisterCmdCallbacks(zclGenericApp_SimpleDescs[i].EndPoint, &zclGenericApp_CmdCallbacks);
 
-     // Register the application's attribute list
-  zcl_registerAttrList(zclGenericApp_SimpleDescs[i].EndPoint, zclGenericApp_NumAttributes, zclGenericApp_Attrs);
+    // Register the application's attribute list
+    zcl_registerAttrList(zclGenericApp_SimpleDescs[i].EndPoint, zclGenericApp_NumAttributes, zclGenericApp_Attrs);
 
-  #ifdef ZCL_DISCOVER
+#ifdef ZCL_DISCOVER
     // Register the application's command list
     zcl_registerCmdList(zclGenericApp_SimpleDescs[i].EndPoint, zclCmdsArraySize, zclGenericApp_Cmds);
-  #endif
-
+#endif
 
     // Register for a test endpoint
-  afRegister( &sampleSw_TestEp );
+    afRegister(&sampleSw_TestEp);
 
-  #ifdef ZCL_DIAGNOSTIC
+#ifdef ZCL_DIAGNOSTIC
     // Register the application's callback function to read/write attribute data.
     // This is only required when the attribute data format is unknown to ZCL.
     zcl_registerReadWriteCB(zclGenericApp_SimpleDescs[i].EndPoint, zclDiagnostic_ReadWriteAttrCB, NULL);
@@ -169,15 +166,13 @@ void zclGenericApp_Init(byte task_id)
     {
       // Here the user could start the timer to save Diagnostics to NV
     }
-  #endif
+#endif
   }
 
   // GENERICAPP_TODO: Register other cluster command callbacks here
 
-
   // Register the Application to receive the unprocessed Foundation command/response messages
   zcl_registerForMsg(zclGenericApp_TaskID);
-
 
   // Register low voltage NV memory protection application callback
   RegisterVoltageWarningCB(zclSampleApp_BatteryWarningCB);
@@ -195,8 +190,7 @@ void zclGenericApp_Init(byte task_id)
   LREPMaster("Initialized debug module \n");
   LREPMaster("Hello world \n");
 
-  osal_start_reload_timer( zclGenericApp_TaskID, HAL_KEY_EVENT, 100);
-
+  osal_start_reload_timer(zclGenericApp_TaskID, HAL_KEY_EVENT, 100);
 }
 
 /*********************************************************************
@@ -264,12 +258,11 @@ uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events)
     return (events ^ GENERICAPP_EVT_1);
   }
 
-
- if ( events & GENERICAPP_EVT_GO_TO_SLEEP )
+  if (events & GENERICAPP_EVT_GO_TO_SLEEP)
   {
     LREPMaster("Going to sleep....\n");
     halSleep(10000);
-    return ( events ^ GENERICAPP_EVT_GO_TO_SLEEP );
+    return (events ^ GENERICAPP_EVT_GO_TO_SLEEP);
   }
   /*
 
@@ -334,43 +327,40 @@ static void zclGenericApp_HandleKeys(byte shift, byte keys)
   }
 }
 
-#define HAL_KEY_SW_6_EDGEBIT  BV(0)
-#define HAL_KEY_SW_6_EDGE     HAL_KEY_FALLING_EDGE
+#define HAL_KEY_SW_6_EDGEBIT BV(0)
+#define HAL_KEY_SW_6_EDGE HAL_KEY_FALLING_EDGE
 
-void DIYRuZRT_HalKeyInit( void )
+void DIYRuZRT_HalKeyInit(void)
 {
   /* Сбрасываем сохраняемое состояние кнопок в 0 */
   halKeySavedKeys = 0;
 
   PUSH1_SEL &= ~(PUSH1_BV);
   PUSH1_DIR &= ~(PUSH1_BV);
-  
-  PUSH1_ICTL |= PUSH1_ICTLBIT; 
-  PUSH1_IEN |= PUSH1_IENBIT; 
+
+  PUSH1_ICTL |= PUSH1_ICTLBIT;
+  PUSH1_IEN |= PUSH1_IENBIT;
   PUSH1_PXIFG = ~(PUSH1_BIT);
 
-  PICTL &= ~(HAL_KEY_SW_6_EDGEBIT);    /* Clear the edge bit */
-    /* For falling edge, the bit must be set. */
-  #if (HAL_KEY_SW_6_EDGE == HAL_KEY_FALLING_EDGE)
-    PICTL |= HAL_KEY_SW_6_EDGEBIT;
-  #endif
-
+  PICTL &= ~(HAL_KEY_SW_6_EDGEBIT); /* Clear the edge bit */
+  /* For falling edge, the bit must be set. */
+#if (HAL_KEY_SW_6_EDGE == HAL_KEY_FALLING_EDGE)
+  PICTL |= HAL_KEY_SW_6_EDGEBIT;
+#endif
 
   PUSH2_SEL &= ~(PUSH2_BV); /* Set pin function to GPIO */
   PUSH2_DIR &= ~(PUSH2_BV); /* Set pin direction to Input */
 
   PUSH2_ICTL &= ~(PUSH2_ICTLBIT); /* don't generate interrupt */
   PUSH2_IEN &= ~(PUSH2_IENBIT);   /* Clear interrupt enable bit */
-
-  
 }
-#define HAL_KEY_DEBOUNCE_VALUE  25
+#define HAL_KEY_DEBOUNCE_VALUE 25
 
-void halProcessKeyInterrupt (void)
+void halProcessKeyInterrupt(void)
 {
-  bool valid=FALSE;
+  bool valid = FALSE;
 
-  if (PUSH1_PXIFG & PUSH1_BIT)  /* Interrupt Flag has been set */
+  if (PUSH1_PXIFG & PUSH1_BIT) /* Interrupt Flag has been set */
   {
     PUSH1_PXIFG = ~(PUSH1_BIT); /* Clear Interrupt Flag */
     valid = TRUE;
@@ -382,8 +372,7 @@ void halProcessKeyInterrupt (void)
   }
 }
 
-
-HAL_ISR_FUNCTION( halKeyPort0Isr, P0INT_VECTOR )
+HAL_ISR_FUNCTION(halKeyPort0Isr, P0INT_VECTOR)
 {
   HAL_ENTER_ISR();
 
@@ -399,14 +388,13 @@ HAL_ISR_FUNCTION( halKeyPort0Isr, P0INT_VECTOR )
   */
   PUSH1_PXIFG = 0;
   HAL_KEY_CPU_PORT_0_IF = 0;
-  
+
   CLEAR_SLEEP_MODE();
   HAL_EXIT_ISR();
 }
 
-
 // Считывание кнопок
-void DIYRuZRT_HalKeyPoll (void)
+void DIYRuZRT_HalKeyPoll(void)
 {
   uint8 keys = 0;
 
@@ -415,13 +403,13 @@ void DIYRuZRT_HalKeyPoll (void)
   {
     keys |= HAL_KEY_SW_1;
   }
-  
+
   // нажата кнопка 2 ?
   if (HAL_PUSH_BUTTON2())
   {
     keys |= HAL_KEY_SW_2;
   }
-  
+
   if (keys == halKeySavedKeys)
   {
     // Выход - нет изменений
@@ -660,7 +648,8 @@ static uint8 zclGenericApp_ProcessInDefaultRspCmd(zclIncomingMsg_t *pInMsg)
 afAddrType_t zclDIYRuZRT_DstAddr;
 
 // Информирование о состоянии реле
-void zclDIYRuZRT_ReportOnOff(void) {
+void zclDIYRuZRT_ReportOnOff(void)
+{
   const uint8 NUM_ATTRIBUTES = 1;
 
   zclReportCmd_t *pReportCmd;
@@ -668,12 +657,14 @@ void zclDIYRuZRT_ReportOnOff(void) {
 
   pReportCmd = osal_mem_alloc(sizeof(zclReportCmd_t) +
                               (NUM_ATTRIBUTES * sizeof(zclReport_t)));
-  if (pReportCmd != NULL) {
+  if (pReportCmd != NULL)
+  {
     pReportCmd->numAttr = NUM_ATTRIBUTES;
 
     pReportCmd->attrList[0].attrID = ATTRID_ON_OFF;
     pReportCmd->attrList[0].dataType = ZCL_DATATYPE_BOOLEAN;
-    pReportCmd->attrList[0].attrData = (void *)(&RELAY_STATE);;
+    pReportCmd->attrList[0].attrData = (void *)(&RELAY_STATE);
+    ;
 
     zclDIYRuZRT_DstAddr.addrMode = (afAddrMode_t)Addr16Bit;
     zclDIYRuZRT_DstAddr.addr.shortAddr = 0;

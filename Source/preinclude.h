@@ -27,11 +27,10 @@
 #define ZCL_REPORTING_DEVICE
 
 #ifdef DEFAULT_CHANLIST
-    #undef DEFAULT_CHANLIST
-    #define DEFAULT_CHANLIST 0x07FFF800
+#undef DEFAULT_CHANLIST
+#define DEFAULT_CHANLIST 0x07FFF800
 #else
-    #define DEFAULT_CHANLIST 0x07FFF800
+#define DEFAULT_CHANLIST 0x07FFF800
 #endif
-
 
 #include "hal_board_cfg_dev.h"
