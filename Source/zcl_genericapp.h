@@ -71,6 +71,7 @@ extern "C"
   /* GENERICAPP_TODO: define app events here */
 
 #define GENERICAPP_EVT_1 0x0008
+#define GENERICAPP_EVT_GO_TO_SLEEP 0x0009
   /*
 #define GENERICAPP_EVT_2                    0x0010
 #define GENERICAPP_EVT_3                    0x0020

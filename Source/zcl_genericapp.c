@@ -1,57 +1,3 @@
-/**************************************************************************************************
-  Filename:       zcl_genericapp.c
-  Revised:        $Date: 2014-10-24 16:04:46 -0700 (Fri, 24 Oct 2014) $
-  Revision:       $Revision: 40796 $
-
-
-  Description:    Zigbee Cluster Library - sample device application.
-
-
-  Copyright 2006-2014 Texas Instruments Incorporated. All rights reserved.
-
-  IMPORTANT: Your use of this Software is limited to those specific rights
-  granted under the terms of a software license agreement between the user
-  who downloaded the software, his/her employer (which must be your employer)
-  and Texas Instruments Incorporated (the "License").  You may not use this
-  Software unless you agree to abide by the terms of the License. The License
-  limits your use, and you acknowledge, that the Software may not be modified,
-  copied or distributed unless embedded on a Texas Instruments microcontroller
-  or used solely and exclusively in conjunction with a Texas Instruments radio
-  frequency transceiver, which is integrated into your product.  Other than for
-  the foregoing purpose, you may not use, reproduce, copy, prepare derivative
-  works of, modify, distribute, perform, display or sell this Software and/or
-  its documentation for any purpose.
-
-  YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-  INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
-  NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
-  TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
-  NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR OTHER
-  LEGAL EQUITABLE THEORY ANY DIRECT OR INDIRECT DAMAGES OR EXPENSES
-  INCLUDING BUT NOT LIMITED TO ANY INCIDENTAL, SPECIAL, INDIRECT, PUNITIVE
-  OR CONSEQUENTIAL DAMAGES, LOST PROFITS OR LOST DATA, COST OF PROCUREMENT
-  OF SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
-  (INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
-
-  Should you have any questions regarding your right to use this Software,
-  contact Texas Instruments Incorporated at www.TI.com.
-**************************************************************************************************/
-
-/*********************************************************************
-  This application is a template to get started writing an application
-  from scratch.
-
-  Look for the sections marked with "GENERICAPP_TODO" to add application
-  specific code.
-
-  Note: if you would like your application to support automatic attribute
-  reporting, include the BDB_REPORTING compile flag.
-*********************************************************************/
-
-/*********************************************************************
- * INCLUDES
- */
 #include "ZComDef.h"
 #include "OSAL.h"
 #include "AF.h"
@@ -71,19 +17,6 @@
 #include "gp_interface.h"
 
 #include "Debug.h"
-
-#if defined(INTER_PAN)
-#if defined(BDB_TL_INITIATOR)
-#include "bdb_touchlink_initiator.h"
-#endif // BDB_TL_INITIATOR
-#if defined(BDB_TL_TARGET)
-#include "bdb_touchlink_target.h"
-#endif // BDB_TL_TARGET
-#endif // INTER_PAN
-
-#if defined(BDB_TL_INITIATOR) || defined(BDB_TL_TARGET)
-#include "bdb_touchlink.h"
-#endif
 
 #include "onboard.h"
 
@@ -142,10 +75,7 @@ static void zclGenericApp_HandleKeys(byte shift, byte keys);
 static void zclGenericApp_BasicResetCB(void);
 static void zclGenericApp_ProcessIdentifyTimeChange(uint8 endpoint);
 static void zclGenericApp_BindNotification(bdbBindNotificationData_t *data);
-#if (defined(BDB_TL_TARGET) && (BDB_TOUCHLINK_CAPABILITY_ENABLED == TRUE))
-static void zclGenericApp_ProcessTouchlinkTargetEnable(uint8 enable);
-#endif
-
+void halProcessKeyInterrupt (void);
 
 void DIYRuZRT_HalKeyInit( void );
 void zclDIYRuZRT_ReportOnOff( void );
@@ -209,35 +139,6 @@ static zclGeneral_AppCallbacks_t zclGenericApp_CmdCallbacks =
         NULL  // RSSI Location Response command
 };
 
-/*********************************************************************
- * GENERICAPP_TODO: Add other callback structures for any additional application specific 
- *       Clusters being used, see available callback structures below.
- *
- *       bdbTL_AppCallbacks_t 
- *       zclApplianceControl_AppCallbacks_t 
- *       zclApplianceEventsAlerts_AppCallbacks_t 
- *       zclApplianceStatistics_AppCallbacks_t 
- *       zclElectricalMeasurement_AppCallbacks_t 
- *       zclGeneral_AppCallbacks_t 
- *       zclGp_AppCallbacks_t 
- *       zclHVAC_AppCallbacks_t 
- *       zclLighting_AppCallbacks_t 
- *       zclMS_AppCallbacks_t 
- *       zclPollControl_AppCallbacks_t 
- *       zclPowerProfile_AppCallbacks_t 
- *       zclSS_AppCallbacks_t  
- *
- */
-
-/*********************************************************************
- * @fn          zclGenericApp_Init
- *
- * @brief       Initialization function for the zclGeneral layer.
- *
- * @param       none
- *
- * @return      none
- */
 void zclGenericApp_Init(byte task_id)
 {
   zclGenericApp_TaskID = task_id;
@@ -288,17 +189,13 @@ void zclGenericApp_Init(byte task_id)
   bdb_RegisterIdentifyTimeChangeCB(zclGenericApp_ProcessIdentifyTimeChange);
   bdb_RegisterBindNotificationCB(zclGenericApp_BindNotification);
 
-#if (defined(BDB_TL_TARGET) && (BDB_TOUCHLINK_CAPABILITY_ENABLED == TRUE))
-  bdb_RegisterTouchlinkTargetEnableCB(zclGenericApp_ProcessTouchlinkTargetEnable);
-#endif
-
   bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_FORMATION | BDB_COMMISSIONING_MODE_NWK_STEERING | BDB_COMMISSIONING_MODE_FINDING_BINDING);
 
   DebugInit();
   LREPMaster("Initialized debug module \n");
   LREPMaster("Hello world \n");
 
-    osal_start_reload_timer( zclGenericApp_TaskID, HAL_KEY_EVENT, 100);
+  osal_start_reload_timer( zclGenericApp_TaskID, HAL_KEY_EVENT, 100);
 
 }
 
@@ -367,13 +264,15 @@ uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events)
     return (events ^ GENERICAPP_EVT_1);
   }
 
-  /*
-  if ( events & GENERICAPP_EVT_2 )
+
+ if ( events & GENERICAPP_EVT_GO_TO_SLEEP )
   {
-    
-    return ( events ^ GENERICAPP_EVT_2 );
+    LREPMaster("Going to sleep....\n");
+    halSleep(10000);
+    return ( events ^ GENERICAPP_EVT_GO_TO_SLEEP );
   }
-  
+  /*
+
   if ( events & GENERICAPP_EVT_3 )
   {
     
@@ -410,70 +309,99 @@ uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events)
  */
 static void zclGenericApp_HandleKeys(byte shift, byte keys)
 {
-  LREP("zclGenericApp_HandleKeys %x", keys & 0xff);
   if (keys & HAL_KEY_SW_1)
   {
-    LREPMaster("Pressed button 1");
+    LREPMaster("Pressed button 1\n");
     static bool LED_OnOff = FALSE;
 
-    /* GENERICAPP_TODO: add app functionality to hardware keys here */
-
-    // for example, start/stop LED 2 toggling with 500ms period
     if (LED_OnOff)
     {
-      // if the LED is blinking, stop the osal timer and turn the LED off
       osal_stop_timerEx(zclGenericApp_TaskID, GENERICAPP_EVT_1);
       HalLedSet(HAL_LED_2, HAL_LED_MODE_OFF);
       LED_OnOff = FALSE;
     }
     else
     {
-      // turn on LED 2 and start an osal timer to toggle it after 500ms, search
-      // for GENERICAPP_EVT_1 to see event handling after expired timer
-      osal_start_timerEx(zclGenericApp_TaskID, GENERICAPP_EVT_1, 500);
+      osal_start_timerEx(zclGenericApp_TaskID, GENERICAPP_EVT_1, 5000);
       HalLedSet(HAL_LED_2, HAL_LED_MODE_ON);
       LED_OnOff = TRUE;
     }
   }
-  // Start the BDB commissioning method
   if (keys & HAL_KEY_SW_2)
   {
-    LREPMaster("Pressed button 2");
-
-    bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_FORMATION | BDB_COMMISSIONING_MODE_NWK_STEERING | BDB_COMMISSIONING_MODE_FINDING_BINDING | BDB_COMMISSIONING_MODE_INITIATOR_TL);
-  }
-  if (keys & HAL_KEY_SW_3)
-  {
-
-    // touchlink target commissioning, if enabled
-#if (defined(BDB_TL_TARGET) && (BDB_TOUCHLINK_CAPABILITY_ENABLED == TRUE))
-    bdb_StartCommissioning(BDB_COMMISSIONING_MODE_FINDING_BINDING);
-    touchLinkTarget_EnableCommissioning(30000);
-#endif
-  }
-
-  if (keys & HAL_KEY_SW_5)
-  {
-    bdb_resetLocalAction();
+    LREPMaster("Pressed button2, dispatching event for sleep\n");
+    osal_start_timerEx(zclGenericApp_TaskID, GENERICAPP_EVT_GO_TO_SLEEP, 500);
   }
 }
+
+#define HAL_KEY_SW_6_EDGEBIT  BV(0)
+#define HAL_KEY_SW_6_EDGE     HAL_KEY_FALLING_EDGE
 
 void DIYRuZRT_HalKeyInit( void )
 {
   /* Сбрасываем сохраняемое состояние кнопок в 0 */
   halKeySavedKeys = 0;
 
-  PUSH1_SEL &= ~(PUSH1_BV); /* Выставляем функцию пина - GPIO */
-  PUSH1_DIR &= ~(PUSH1_BV); /* Выставляем режим пина - Вход */
+  PUSH1_SEL &= ~(PUSH1_BV);
+  PUSH1_DIR &= ~(PUSH1_BV);
   
-  PUSH1_ICTL &= ~(PUSH1_ICTLBIT); /* Не генерируем прерывания на пине */
-  PUSH1_IEN &= ~(PUSH1_IENBIT);   /* Очищаем признак включения прерываний */
-  
+  PUSH1_ICTL |= PUSH1_ICTLBIT; 
+  PUSH1_IEN |= PUSH1_IENBIT; 
+  PUSH1_PXIFG = ~(PUSH1_BIT);
+
+  PICTL &= ~(HAL_KEY_SW_6_EDGEBIT);    /* Clear the edge bit */
+    /* For falling edge, the bit must be set. */
+  #if (HAL_KEY_SW_6_EDGE == HAL_KEY_FALLING_EDGE)
+    PICTL |= HAL_KEY_SW_6_EDGEBIT;
+  #endif
+
+
   PUSH2_SEL &= ~(PUSH2_BV); /* Set pin function to GPIO */
   PUSH2_DIR &= ~(PUSH2_BV); /* Set pin direction to Input */
-  
+
   PUSH2_ICTL &= ~(PUSH2_ICTLBIT); /* don't generate interrupt */
   PUSH2_IEN &= ~(PUSH2_IENBIT);   /* Clear interrupt enable bit */
+
+  
+}
+#define HAL_KEY_DEBOUNCE_VALUE  25
+
+void halProcessKeyInterrupt (void)
+{
+  bool valid=FALSE;
+
+  if (PUSH1_PXIFG & PUSH1_BIT)  /* Interrupt Flag has been set */
+  {
+    PUSH1_PXIFG = ~(PUSH1_BIT); /* Clear Interrupt Flag */
+    valid = TRUE;
+  }
+
+  if (valid)
+  {
+    osal_start_timerEx(Hal_TaskID, HAL_KEY_EVENT, HAL_KEY_DEBOUNCE_VALUE);
+  }
+}
+
+
+HAL_ISR_FUNCTION( halKeyPort0Isr, P0INT_VECTOR )
+{
+  HAL_ENTER_ISR();
+
+  if (PUSH1_PXIFG & PUSH1_BIT)
+  {
+    // DIYRuZRT_HalKeyPoll();
+    halProcessKeyInterrupt();
+  }
+
+  /*
+    Clear the CPU interrupt flag for Port_0
+    PxIFG has to be cleared before PxIF
+  */
+  PUSH1_PXIFG = 0;
+  HAL_KEY_CPU_PORT_0_IF = 0;
+  
+  CLEAR_SLEEP_MODE();
+  HAL_EXIT_ISR();
 }
 
 
@@ -603,71 +531,16 @@ static void zclGenericApp_ProcessIdentifyTimeChange(uint8 endpoint)
   }
 }
 
-/*********************************************************************
- * @fn      zclGenericApp_BindNotification
- *
- * @brief   Called when a new bind is added.
- *
- * @param   data - pointer to new bind data
- *
- * @return  none
- */
 static void zclGenericApp_BindNotification(bdbBindNotificationData_t *data)
 {
   // GENERICAPP_TODO: process the new bind information
 }
 
-/*********************************************************************
- * @fn      zclGenericApp_ProcessTouchlinkTargetEnable
- *
- * @brief   Called to process when the touchlink target functionality
- *          is enabled or disabled
- *
- * @param   none
- *
- * @return  none
- */
-#if (defined(BDB_TL_TARGET) && (BDB_TOUCHLINK_CAPABILITY_ENABLED == TRUE))
-static void zclGenericApp_ProcessTouchlinkTargetEnable(uint8 enable)
-{
-  if (enable)
-  {
-    HalLedSet(HAL_LED_1, HAL_LED_MODE_ON);
-  }
-  else
-  {
-    HalLedSet(HAL_LED_1, HAL_LED_MODE_OFF);
-  }
-}
-#endif
-
-/*********************************************************************
- * @fn      zclGenericApp_BasicResetCB
- *
- * @brief   Callback from the ZCL General Cluster Library
- *          to set all the Basic Cluster attributes to default values.
- *
- * @param   none
- *
- * @return  none
- */
 static void zclGenericApp_BasicResetCB(void)
 {
-
-  /* GENERICAPP_TODO: remember to update this function with any
-     application-specific cluster attribute variables */
-
   zclGenericApp_ResetAttributesToDefaultValues();
 }
-/*********************************************************************
- * @fn      zclSampleApp_BatteryWarningCB
- *
- * @brief   Called to handle battery-low situation.
- *
- * @param   voltLevel - level of severity
- *
- * @return  none
- */
+
 void zclSampleApp_BatteryWarningCB(uint8 voltLevel)
 {
   if (voltLevel == VOLT_LEVEL_CAUTIOUS)
@@ -680,21 +553,6 @@ void zclSampleApp_BatteryWarningCB(uint8 voltLevel)
   }
 }
 
-/******************************************************************************
- *
- *  Functions for processing ZCL Foundation incoming Command/Response messages
- *
- *****************************************************************************/
-
-/*********************************************************************
- * @fn      zclGenericApp_ProcessIncomingMsg
- *
- * @brief   Process ZCL Foundation incoming message
- *
- * @param   pInMsg - pointer to the received message
- *
- * @return  none
- */
 static void zclGenericApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg)
 {
   switch (pInMsg->zclHdr.commandID)
@@ -746,15 +604,6 @@ static void zclGenericApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg)
 }
 
 #ifdef ZCL_READ
-/*********************************************************************
- * @fn      zclGenericApp_ProcessInReadRspCmd
- *
- * @brief   Process the "Profile" Read Response Command
- *
- * @param   pInMsg - incoming message to process
- *
- * @return  none
- */
 static uint8 zclGenericApp_ProcessInReadRspCmd(zclIncomingMsg_t *pInMsg)
 {
   zclReadRspCmd_t *readRspCmd;
@@ -773,15 +622,7 @@ static uint8 zclGenericApp_ProcessInReadRspCmd(zclIncomingMsg_t *pInMsg)
 #endif // ZCL_READ
 
 #ifdef ZCL_WRITE
-/*********************************************************************
- * @fn      zclGenericApp_ProcessInWriteRspCmd
- *
- * @brief   Process the "Profile" Write Response Command
- *
- * @param   pInMsg - incoming message to process
- *
- * @return  none
- */
+
 static uint8 zclGenericApp_ProcessInWriteRspCmd(zclIncomingMsg_t *pInMsg)
 {
   zclWriteRspCmd_t *writeRspCmd;
@@ -847,15 +688,6 @@ void zclDIYRuZRT_ReportOnOff(void) {
 }
 
 #ifdef ZCL_DISCOVER
-/*********************************************************************
- * @fn      zclGenericApp_ProcessInDiscCmdsRspCmd
- *
- * @brief   Process the Discover Commands Response Command
- *
- * @param   pInMsg - incoming message to process
- *
- * @return  none
- */
 static uint8 zclGenericApp_ProcessInDiscCmdsRspCmd(zclIncomingMsg_t *pInMsg)
 {
   zclDiscoverCmdsCmdRsp_t *discoverRspCmd;
@@ -870,15 +702,6 @@ static uint8 zclGenericApp_ProcessInDiscCmdsRspCmd(zclIncomingMsg_t *pInMsg)
   return (TRUE);
 }
 
-/*********************************************************************
- * @fn      zclGenericApp_ProcessInDiscAttrsRspCmd
- *
- * @brief   Process the "Profile" Discover Attributes Response Command
- *
- * @param   pInMsg - incoming message to process
- *
- * @return  none
- */
 static uint8 zclGenericApp_ProcessInDiscAttrsRspCmd(zclIncomingMsg_t *pInMsg)
 {
   zclDiscoverAttrsRspCmd_t *discoverRspCmd;
@@ -893,15 +716,6 @@ static uint8 zclGenericApp_ProcessInDiscAttrsRspCmd(zclIncomingMsg_t *pInMsg)
   return (TRUE);
 }
 
-/*********************************************************************
- * @fn      zclGenericApp_ProcessInDiscAttrsExtRspCmd
- *
- * @brief   Process the "Profile" Discover Attributes Extended Response Command
- *
- * @param   pInMsg - incoming message to process
- *
- * @return  none
- */
 static uint8 zclGenericApp_ProcessInDiscAttrsExtRspCmd(zclIncomingMsg_t *pInMsg)
 {
   zclDiscoverAttrsExtRsp_t *discoverRspCmd;

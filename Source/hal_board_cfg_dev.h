@@ -100,12 +100,14 @@
   #define PUSH1_ICTLBIT     BV(3) /* P0IEN - P0.1 enable/disable bit */
 #else
   /* S1 - P0_1 */
+  #define PUSH1_BIT         BV(1)
   #define PUSH1_BV          BV(1)
   #define PUSH1_SBIT        P0_1
   #define PUSH1_POLARITY    ACTIVE_LOW
   #define PUSH1_PORT        P0
   #define PUSH1_SEL         P0SEL
   #define PUSH1_DIR         P0DIR
+  #define PUSH1_PXIFG       P0IFG /* Interrupt flag at source */
   #define PUSH1_IEN         IEN1  /* CPU interrupt mask register */
   #define PUSH1_IENBIT      BV(5) /* Mask bit for all of Port_0 */
   #define PUSH1_ICTL        P0IEN /* Port Interrupt Control register */
@@ -115,7 +117,7 @@
 /* S2 - P2_0 */
 #define PUSH2_BV          BV(0)
 #define PUSH2_SBIT        P2_0
-#define PUSH2_POLARITY    ACTIVE_HIGH
+#define PUSH2_POLARITY    ACTIVE_LOW
 #define PUSH2_PORT        P2
 #define PUSH2_SEL         P2SEL
 #define PUSH2_DIR         P2DIR
@@ -486,3 +488,9 @@ st( \
 /* USB is not used for CC2530 configuration */
 #define HAL_UART_USB  0
 #endif
+
+
+
+/* CPU port interrupt */
+#define HAL_KEY_CPU_PORT_0_IF P0IF
+#define HAL_KEY_CPU_PORT_2_IF P2IF
