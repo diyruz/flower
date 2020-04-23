@@ -15,7 +15,7 @@
         <Placement>_ 1238 679 2122 1219</Placement>
     </BreakpointUsageDialog>
     <DebugChecksum>
-        <Checksum>3881321717</Checksum>
+        <Checksum>1303251915</Checksum>
     </DebugChecksum>
     <CallStack>
         <ShowArgs>0</ShowArgs>
@@ -73,7 +73,7 @@
         <Count>0</Count>
     </Breakpoints>
     <ChipconEmu>
-        <StopTimersOnHalt>0</StopTimersOnHalt>
+        <StopTimersOnHalt>1</StopTimersOnHalt>
         <LeaveTargetRunning>1</LeaveTargetRunning>
     </ChipconEmu>
     <Aliases>
@@ -81,7 +81,3 @@
         <SuppressDialog>0</SuppressDialog>
     </Aliases>
 </settings>
-[ORTI-PLUGIN]
-ORTIFileName=
-ORTIAskFile=0
-ORTILogWarning=1
