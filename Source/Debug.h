@@ -1,11 +1,11 @@
 #ifndef _DEBUG_H
 #define _DEBUG_H
 
+#include "hal_types.h"
 #include "hal_uart.h"
 #include <stdarg.h>
-#include <string.h>
 #include <stdio.h>
-#include "hal_types.h"
+#include <string.h>
 
 #define BUFFLEN 128
 #define BUFFER 100

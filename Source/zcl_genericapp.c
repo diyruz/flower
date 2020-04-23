@@ -1,15 +1,15 @@
-#include "ZComDef.h"
-#include "OSAL.h"
 #include "AF.h"
+#include "MT_SYS.h"
+#include "OSAL.h"
+#include "ZComDef.h"
 #include "ZDApp.h"
 #include "ZDObject.h"
-#include "MT_SYS.h"
 
 #include "nwk_util.h"
 
 #include "zcl.h"
-#include "zcl_general.h"
 #include "zcl_diagnostic.h"
+#include "zcl_general.h"
 #include "zcl_genericapp.h"
 
 #include "bdb.h"
@@ -21,9 +21,9 @@
 #include "onboard.h"
 
 /* HAL */
-#include "hal_led.h"
-#include "hal_key.h"
 #include "hal_drivers.h"
+#include "hal_key.h"
+#include "hal_led.h"
 
 /*********************************************************************
  * MACROS
@@ -56,13 +56,12 @@ devStates_t zclGenericApp_NwkState = DEV_INIT;
 static uint8 halKeySavedKeys;
 
 // Endpoint to allow SYS_APP_MSGs
-static endPointDesc_t sampleSw_TestEp =
-    {
-        1, // endpoint
-        0,
-        &zclGenericApp_TaskID,
-        (SimpleDescriptionFormat_t *)NULL, // No Simple description for this test endpoint
-        (afNetworkLatencyReq_t)0           // No Network Latency req
+static endPointDesc_t sampleSw_TestEp = {
+    1, // endpoint
+    0, &zclGenericApp_TaskID,
+    (SimpleDescriptionFormat_t *)
+        NULL,                // No Simple description for this test endpoint
+    (afNetworkLatencyReq_t)0 // No Network Latency req
 };
 
 /*********************************************************************
@@ -74,10 +73,12 @@ static void zclGenericApp_ProcessIdentifyTimeChange(uint8 endpoint);
 static void zclGenericApp_BindNotification(bdbBindNotificationData_t *data);
 void halProcessKeyInterrupt(void);
 
-void DIYRuZRT_HalKeyInit(void);
-void zclDIYRuZRT_ReportOnOff(void);
+void GenericApp_HalKeyInit(void);
+void zclGenericApp_ReportOnOff(void);
+void zclGenericApp_LeaveNetwork(void);
 
-static void zclGenericApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
+static void zclGenericApp_ProcessCommissioningStatus(
+    bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
 
 // Functions to process ZCL Foundation incoming Command/Response messages
 static void zclGenericApp_ProcessIncomingMsg(zclIncomingMsg_t *msg);
@@ -91,7 +92,8 @@ static uint8 zclGenericApp_ProcessInDefaultRspCmd(zclIncomingMsg_t *pInMsg);
 #ifdef ZCL_DISCOVER
 static uint8 zclGenericApp_ProcessInDiscCmdsRspCmd(zclIncomingMsg_t *pInMsg);
 static uint8 zclGenericApp_ProcessInDiscAttrsRspCmd(zclIncomingMsg_t *pInMsg);
-static uint8 zclGenericApp_ProcessInDiscAttrsExtRspCmd(zclIncomingMsg_t *pInMsg);
+static uint8
+zclGenericApp_ProcessInDiscAttrsExtRspCmd(zclIncomingMsg_t *pInMsg);
 #endif
 
 static void zclSampleApp_BatteryWarningCB(uint8 voltLevel);
@@ -103,67 +105,68 @@ static void zclSampleApp_BatteryWarningCB(uint8 voltLevel);
 /*********************************************************************
  * ZCL General Profile Callback table
  */
-static zclGeneral_AppCallbacks_t zclGenericApp_CmdCallbacks =
-    {
-        zclGenericApp_BasicResetCB, // Basic Cluster Reset command
-        NULL,                       // Identify Trigger Effect command
-        NULL,                       // On/Off cluster commands
-        NULL,                       // On/Off cluster enhanced command Off with Effect
-        NULL,                       // On/Off cluster enhanced command On with Recall Global Scene
-        NULL,                       // On/Off cluster enhanced command On with Timed Off
+static zclGeneral_AppCallbacks_t zclGenericApp_CmdCallbacks = {
+    zclGenericApp_BasicResetCB, // Basic Cluster Reset command
+    NULL,                       // Identify Trigger Effect command
+    NULL,                       // On/Off cluster commands
+    NULL, // On/Off cluster enhanced command Off with Effect
+    NULL, // On/Off cluster enhanced command On with Recall Global Scene
+    NULL, // On/Off cluster enhanced command On with Timed Off
 #ifdef ZCL_LEVEL_CTRL
-        NULL, // Level Control Move to Level command
-        NULL, // Level Control Move command
-        NULL, // Level Control Step command
-        NULL, // Level Control Stop command
+    NULL, // Level Control Move to Level command
+    NULL, // Level Control Move command
+    NULL, // Level Control Step command
+    NULL, // Level Control Stop command
 #endif
 #ifdef ZCL_GROUPS
-        NULL, // Group Response commands
+    NULL, // Group Response commands
 #endif
 #ifdef ZCL_SCENES
-        NULL, // Scene Store Request command
-        NULL, // Scene Recall Request command
-        NULL, // Scene Response command
+    NULL, // Scene Store Request command
+    NULL, // Scene Recall Request command
+    NULL, // Scene Response command
 #endif
 #ifdef ZCL_ALARMS
-        NULL, // Alarm (Response) commands
+    NULL, // Alarm (Response) commands
 #endif
 #ifdef SE_UK_EXT
-        NULL, // Get Event Log command
-        NULL, // Publish Event Log command
+    NULL, // Get Event Log command
+    NULL, // Publish Event Log command
 #endif
-        NULL, // RSSI Location command
-        NULL  // RSSI Location Response command
+    NULL, // RSSI Location command
+    NULL  // RSSI Location Response command
 };
 
-void zclGenericApp_Init(byte task_id)
-{
+void zclGenericApp_Init(byte task_id) {
   zclGenericApp_TaskID = task_id;
 
-  for (int i = 0; i < zclGenericApp_SimpleDescsCount; i++)
-  {
+  for (int i = 0; i < zclGenericApp_SimpleDescsCount; i++) {
     bdb_RegisterSimpleDescriptor(&zclGenericApp_SimpleDescs[i]);
     // Register the ZCL General Cluster Library callback functions
-    zclGeneral_RegisterCmdCallbacks(zclGenericApp_SimpleDescs[i].EndPoint, &zclGenericApp_CmdCallbacks);
+    zclGeneral_RegisterCmdCallbacks(zclGenericApp_SimpleDescs[i].EndPoint,
+                                    &zclGenericApp_CmdCallbacks);
 
     // Register the application's attribute list
-    zcl_registerAttrList(zclGenericApp_SimpleDescs[i].EndPoint, zclGenericApp_NumAttributes, zclGenericApp_Attrs);
+    zcl_registerAttrList(zclGenericApp_SimpleDescs[i].EndPoint,
+                         zclGenericApp_NumAttributes, zclGenericApp_Attrs);
 
 #ifdef ZCL_DISCOVER
     // Register the application's command list
-    zcl_registerCmdList(zclGenericApp_SimpleDescs[i].EndPoint, zclCmdsArraySize, zclGenericApp_Cmds);
+    zcl_registerCmdList(zclGenericApp_SimpleDescs[i].EndPoint, zclCmdsArraySize,
+                        zclGenericApp_Cmds);
 #endif
 
     // Register for a test endpoint
     afRegister(&sampleSw_TestEp);
 
 #ifdef ZCL_DIAGNOSTIC
-    // Register the application's callback function to read/write attribute data.
-    // This is only required when the attribute data format is unknown to ZCL.
-    zcl_registerReadWriteCB(zclGenericApp_SimpleDescs[i].EndPoint, zclDiagnostic_ReadWriteAttrCB, NULL);
+    // Register the application's callback function to read/write attribute
+    // data. This is only required when the attribute data format is unknown to
+    // ZCL.
+    zcl_registerReadWriteCB(zclGenericApp_SimpleDescs[i].EndPoint,
+                            zclDiagnostic_ReadWriteAttrCB, NULL);
 
-    if (zclDiagnostic_InitStats() == ZSuccess)
-    {
+    if (zclDiagnostic_InitStats() == ZSuccess) {
       // Here the user could start the timer to save Diagnostics to NV
     }
 #endif
@@ -171,7 +174,8 @@ void zclGenericApp_Init(byte task_id)
 
   // GENERICAPP_TODO: Register other cluster command callbacks here
 
-  // Register the Application to receive the unprocessed Foundation command/response messages
+  // Register the Application to receive the unprocessed Foundation
+  // command/response messages
   zcl_registerForMsg(zclGenericApp_TaskID);
 
   // Register low voltage NV memory protection application callback
@@ -184,7 +188,9 @@ void zclGenericApp_Init(byte task_id)
   bdb_RegisterIdentifyTimeChangeCB(zclGenericApp_ProcessIdentifyTimeChange);
   bdb_RegisterBindNotificationCB(zclGenericApp_BindNotification);
 
-  bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_FORMATION | BDB_COMMISSIONING_MODE_NWK_STEERING | BDB_COMMISSIONING_MODE_FINDING_BINDING);
+  bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_FORMATION |
+                         BDB_COMMISSIONING_MODE_NWK_STEERING |
+                         BDB_COMMISSIONING_MODE_FINDING_BINDING);
 
   DebugInit();
   LREPMaster("Initialized debug module \n");
@@ -202,25 +208,23 @@ void zclGenericApp_Init(byte task_id)
  *
  * @return      none
  */
-uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events)
-{
+uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events) {
   afIncomingMSGPacket_t *MSGpkt;
 
   (void)task_id; // Intentionally unreferenced parameter
 
-  if (events & SYS_EVENT_MSG)
-  {
-    while ((MSGpkt = (afIncomingMSGPacket_t *)osal_msg_receive(zclGenericApp_TaskID)))
-    {
-      switch (MSGpkt->hdr.event)
-      {
+  if (events & SYS_EVENT_MSG) {
+    while ((MSGpkt = (afIncomingMSGPacket_t *)osal_msg_receive(
+                zclGenericApp_TaskID))) {
+      switch (MSGpkt->hdr.event) {
       case ZCL_INCOMING_MSG:
         // Incoming ZCL Foundation command/response messages
         zclGenericApp_ProcessIncomingMsg((zclIncomingMsg_t *)MSGpkt);
         break;
 
       case KEY_CHANGE:
-        zclGenericApp_HandleKeys(((keyChange_t *)MSGpkt)->state, ((keyChange_t *)MSGpkt)->keys);
+        zclGenericApp_HandleKeys(((keyChange_t *)MSGpkt)->state,
+                                 ((keyChange_t *)MSGpkt)->keys);
         break;
 
       case ZDO_STATE_CHANGE:
@@ -240,8 +244,7 @@ uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events)
   }
 
 #if ZG_BUILD_ENDDEVICE_TYPE
-  if (events & GENERICAPP_END_DEVICE_REJOIN_EVT)
-  {
+  if (events & GENERICAPP_END_DEVICE_REJOIN_EVT) {
     bdb_ZedAttemptRecoverNwk();
     return (events ^ GENERICAPP_END_DEVICE_REJOIN_EVT);
   }
@@ -249,8 +252,7 @@ uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events)
 
   /* GENERICAPP_TODO: handle app events here */
 
-  if (events & GENERICAPP_EVT_1)
-  {
+  if (events & GENERICAPP_EVT_1) {
     // toggle LED 2 state, start another timer for 500ms
     HalLedSet(HAL_LED_2, HAL_LED_MODE_TOGGLE);
     osal_start_timerEx(zclGenericApp_TaskID, GENERICAPP_EVT_1, 500);
@@ -258,26 +260,34 @@ uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events)
     return (events ^ GENERICAPP_EVT_1);
   }
 
-  if (events & GENERICAPP_EVT_GO_TO_SLEEP)
-  {
+  if (events & GENERICAPP_EVT_GO_TO_SLEEP) {
     LREPMaster("Going to sleep....\n");
     halSleep(10000);
     return (events ^ GENERICAPP_EVT_GO_TO_SLEEP);
   }
-  /*
 
-  if ( events & GENERICAPP_EVT_3 )
-  {
-    
-    return ( events ^ GENERICAPP_EVT_3 );
+  if (events & GENERICAPP_SW1_LONG_PRESS) {
+    LREPMaster("GENERICAPP_SW1_LONG_PRESS detected \n");
+    if (bdbAttributes.bdbNodeIsOnANetwork) {
+      // покидаем сеть
+      zclGenericApp_LeaveNetwork();
+    } else {
+      // инициируем вход в сеть
+      bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_FORMATION |
+                             BDB_COMMISSIONING_MODE_NWK_STEERING |
+                             BDB_COMMISSIONING_MODE_FINDING_BINDING |
+                             BDB_COMMISSIONING_MODE_INITIATOR_TL);
+      // будем мигать пока не подключимся
+      osal_start_timerEx(zclGenericApp_TaskID, GENERICAPP_EVT_1, 500);
+    }
+
+    return (events ^ GENERICAPP_SW1_LONG_PRESS);
   }
-  */
 
   // событие опроса кнопок
-  if (events & HAL_KEY_EVENT)
-  {
+  if (events & HAL_KEY_EVENT) {
     /* Считывание кнопок */
-    DIYRuZRT_HalKeyPoll();
+    GenericApp_HalKeyPoll();
 
     return events ^ HAL_KEY_EVENT;
   }
@@ -286,42 +296,50 @@ uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events)
   return 0;
 }
 
-/*********************************************************************
- * @fn      zclGenericApp_HandleKeys
- *
- * @brief   Handles all key events for this device.
- *
- * @param   shift - true if in shift/alt.
- * @param   keys - bit field for key events. Valid entries:
- *                 HAL_KEY_SW_5
- *                 HAL_KEY_SW_4
- *                 HAL_KEY_SW_2
- *                 HAL_KEY_SW_1
- *
- * @return  none
- */
-static void zclGenericApp_HandleKeys(byte shift, byte keys)
-{
-  if (keys & HAL_KEY_SW_1)
-  {
+// Инициализация выхода из сети
+void zclGenericApp_LeaveNetwork(void) {
+  LREPMaster("Leaving network\n");
+  zclGenericApp_ResetAttributesToDefaultValues();
+
+  NLME_LeaveReq_t leaveReq;
+  // Set every field to 0
+  osal_memset(&leaveReq, 0, sizeof(NLME_LeaveReq_t));
+
+  // This will enable the device to rejoin the network after reset.
+  leaveReq.rejoin = FALSE;
+
+  // Set the NV startup option to force a "new" join.
+  zgWriteStartupOptions(ZG_STARTUP_SET, ZCD_STARTOPT_DEFAULT_NETWORK_STATE);
+
+  // Leave the network, and reset afterwards
+  if (NLME_LeaveReq(&leaveReq) != ZSuccess) {
+    // Couldn't send out leave; prepare to reset anyway
+    ZDApp_LeaveReset(FALSE);
+  }
+}
+
+static void zclGenericApp_HandleKeys(byte shift, byte keys) {
+  if (keys & HAL_KEY_SW_1) {
     LREPMaster("Pressed button 1\n");
+
+    osal_start_timerEx(zclGenericApp_TaskID, GENERICAPP_SW1_LONG_PRESS, 5000);
+
     static bool LED_OnOff = FALSE;
 
-    if (LED_OnOff)
-    {
+    if (LED_OnOff) {
       osal_stop_timerEx(zclGenericApp_TaskID, GENERICAPP_EVT_1);
       HalLedSet(HAL_LED_2, HAL_LED_MODE_OFF);
       LED_OnOff = FALSE;
-    }
-    else
-    {
-      osal_start_timerEx(zclGenericApp_TaskID, GENERICAPP_EVT_1, 5000);
+    } else {
+      osal_start_timerEx(zclGenericApp_TaskID, GENERICAPP_EVT_1, 500);
       HalLedSet(HAL_LED_2, HAL_LED_MODE_ON);
       LED_OnOff = TRUE;
     }
+  } else {
+    osal_stop_timerEx(zclGenericApp_TaskID, GENERICAPP_SW1_LONG_PRESS);
   }
-  if (keys & HAL_KEY_SW_2)
-  {
+
+  if (keys & HAL_KEY_SW_2) {
     LREPMaster("Pressed button2, dispatching event for sleep\n");
     osal_start_timerEx(zclGenericApp_TaskID, GENERICAPP_EVT_GO_TO_SLEEP, 500);
   }
@@ -330,8 +348,7 @@ static void zclGenericApp_HandleKeys(byte shift, byte keys)
 #define HAL_KEY_SW_6_EDGEBIT BV(0)
 #define HAL_KEY_SW_6_EDGE HAL_KEY_FALLING_EDGE
 
-void DIYRuZRT_HalKeyInit(void)
-{
+void GenericApp_HalKeyInit(void) {
   /* Сбрасываем сохраняемое состояние кнопок в 0 */
   halKeySavedKeys = 0;
 
@@ -356,8 +373,7 @@ void DIYRuZRT_HalKeyInit(void)
 }
 #define HAL_KEY_DEBOUNCE_VALUE 25
 
-void halProcessKeyInterrupt(void)
-{
+void halProcessKeyInterrupt(void) {
   bool valid = FALSE;
 
   if (PUSH1_PXIFG & PUSH1_BIT) /* Interrupt Flag has been set */
@@ -366,19 +382,16 @@ void halProcessKeyInterrupt(void)
     valid = TRUE;
   }
 
-  if (valid)
-  {
+  if (valid) {
     osal_start_timerEx(Hal_TaskID, HAL_KEY_EVENT, HAL_KEY_DEBOUNCE_VALUE);
   }
 }
 
-HAL_ISR_FUNCTION(halKeyPort0Isr, P0INT_VECTOR)
-{
+HAL_ISR_FUNCTION(halKeyPort0Isr, P0INT_VECTOR) {
   HAL_ENTER_ISR();
 
-  if (PUSH1_PXIFG & PUSH1_BIT)
-  {
-    // DIYRuZRT_HalKeyPoll();
+  if (PUSH1_PXIFG & PUSH1_BIT) {
+    // GenericApp_HalKeyPoll();
     halProcessKeyInterrupt();
   }
 
@@ -394,24 +407,20 @@ HAL_ISR_FUNCTION(halKeyPort0Isr, P0INT_VECTOR)
 }
 
 // Считывание кнопок
-void DIYRuZRT_HalKeyPoll(void)
-{
+void GenericApp_HalKeyPoll(void) {
   uint8 keys = 0;
 
   // нажата кнопка 1 ?
-  if (HAL_PUSH_BUTTON1())
-  {
+  if (HAL_PUSH_BUTTON1()) {
     keys |= HAL_KEY_SW_1;
   }
 
   // нажата кнопка 2 ?
-  if (HAL_PUSH_BUTTON2())
-  {
+  if (HAL_PUSH_BUTTON2()) {
     keys |= HAL_KEY_SW_2;
   }
 
-  if (keys == halKeySavedKeys)
-  {
+  if (keys == halKeySavedKeys) {
     // Выход - нет изменений
     return;
   }
@@ -425,71 +434,69 @@ void DIYRuZRT_HalKeyPoll(void)
 /*********************************************************************
  * @fn      zclGenericApp_ProcessCommissioningStatus
  *
- * @brief   Callback in which the status of the commissioning process are reported
+ * @brief   Callback in which the status of the commissioning process are
+ * reported
  *
- * @param   bdbCommissioningModeMsg - Context message of the status of a commissioning process
+ * @param   bdbCommissioningModeMsg - Context message of the status of a
+ * commissioning process
  *
  * @return  none
  */
-static void zclGenericApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg)
-{
-  switch (bdbCommissioningModeMsg->bdbCommissioningMode)
-  {
+static void zclGenericApp_ProcessCommissioningStatus(
+    bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
+  switch (bdbCommissioningModeMsg->bdbCommissioningMode) {
   case BDB_COMMISSIONING_FORMATION:
-    if (bdbCommissioningModeMsg->bdbCommissioningStatus == BDB_COMMISSIONING_SUCCESS)
-    {
-      //After formation, perform nwk steering again plus the remaining commissioning modes that has not been process yet
-      bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_STEERING | bdbCommissioningModeMsg->bdbRemainingCommissioningModes);
-    }
-    else
-    {
-      //Want to try other channels?
-      //try with bdb_setChannelAttribute
+    if (bdbCommissioningModeMsg->bdbCommissioningStatus ==
+        BDB_COMMISSIONING_SUCCESS) {
+      // After formation, perform nwk steering again plus the remaining
+      // commissioning modes that has not been process yet
+      bdb_StartCommissioning(
+          BDB_COMMISSIONING_MODE_NWK_STEERING |
+          bdbCommissioningModeMsg->bdbRemainingCommissioningModes);
+    } else {
+      // Want to try other channels?
+      // try with bdb_setChannelAttribute
     }
     break;
   case BDB_COMMISSIONING_NWK_STEERING:
-    if (bdbCommissioningModeMsg->bdbCommissioningStatus == BDB_COMMISSIONING_SUCCESS)
-    {
-      //YOUR JOB:
-      //We are on the nwk, what now?
-    }
-    else
-    {
-      //See the possible errors for nwk steering procedure
-      //No suitable networks found
-      //Want to try other channels?
-      //try with bdb_setChannelAttribute
+    if (bdbCommissioningModeMsg->bdbCommissioningStatus ==
+        BDB_COMMISSIONING_SUCCESS) {
+      // YOUR JOB:
+      // We are on the nwk, what now?
+    } else {
+      // See the possible errors for nwk steering procedure
+      // No suitable networks found
+      // Want to try other channels?
+      // try with bdb_setChannelAttribute
     }
     break;
   case BDB_COMMISSIONING_FINDING_BINDING:
-    if (bdbCommissioningModeMsg->bdbCommissioningStatus == BDB_COMMISSIONING_SUCCESS)
-    {
-      //YOUR JOB:
-    }
-    else
-    {
-      //YOUR JOB:
-      //retry?, wait for user interaction?
+    if (bdbCommissioningModeMsg->bdbCommissioningStatus ==
+        BDB_COMMISSIONING_SUCCESS) {
+      // YOUR JOB:
+    } else {
+      // YOUR JOB:
+      // retry?, wait for user interaction?
     }
     break;
   case BDB_COMMISSIONING_INITIALIZATION:
-    //Initialization notification can only be successful. Failure on initialization
-    //only happens for ZED and is notified as BDB_COMMISSIONING_PARENT_LOST notification
+    // Initialization notification can only be successful. Failure on
+    // initialization only happens for ZED and is notified as
+    // BDB_COMMISSIONING_PARENT_LOST notification
 
-    //YOUR JOB:
-    //We are on a network, what now?
+    // YOUR JOB:
+    // We are on a network, what now?
 
     break;
 #if ZG_BUILD_ENDDEVICE_TYPE
   case BDB_COMMISSIONING_PARENT_LOST:
-    if (bdbCommissioningModeMsg->bdbCommissioningStatus == BDB_COMMISSIONING_NETWORK_RESTORED)
-    {
-      //We did recover from losing parent
-    }
-    else
-    {
-      //Parent not found, attempt to rejoin again after a fixed delay
-      osal_start_timerEx(zclGenericApp_TaskID, GENERICAPP_END_DEVICE_REJOIN_EVT, GENERICAPP_END_DEVICE_REJOIN_DELAY);
+    if (bdbCommissioningModeMsg->bdbCommissioningStatus ==
+        BDB_COMMISSIONING_NETWORK_RESTORED) {
+      // We did recover from losing parent
+    } else {
+      // Parent not found, attempt to rejoin again after a fixed delay
+      osal_start_timerEx(zclGenericApp_TaskID, GENERICAPP_END_DEVICE_REJOIN_EVT,
+                         GENERICAPP_END_DEVICE_REJOIN_DELAY);
     }
     break;
 #endif
@@ -505,46 +512,35 @@ static void zclGenericApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
  *
  * @return  none
  */
-static void zclGenericApp_ProcessIdentifyTimeChange(uint8 endpoint)
-{
+static void zclGenericApp_ProcessIdentifyTimeChange(uint8 endpoint) {
   (void)endpoint;
 
-  if (zclGenericApp_IdentifyTime > 0)
-  {
-    HalLedBlink(HAL_LED_2, 0xFF, HAL_LED_DEFAULT_DUTY_CYCLE, HAL_LED_DEFAULT_FLASH_TIME);
-  }
-  else
-  {
+  if (zclGenericApp_IdentifyTime > 0) {
+    HalLedBlink(HAL_LED_2, 0xFF, HAL_LED_DEFAULT_DUTY_CYCLE,
+                HAL_LED_DEFAULT_FLASH_TIME);
+  } else {
     HalLedSet(HAL_LED_2, HAL_LED_MODE_OFF);
   }
 }
 
-static void zclGenericApp_BindNotification(bdbBindNotificationData_t *data)
-{
+static void zclGenericApp_BindNotification(bdbBindNotificationData_t *data) {
   // GENERICAPP_TODO: process the new bind information
 }
 
-static void zclGenericApp_BasicResetCB(void)
-{
+static void zclGenericApp_BasicResetCB(void) {
   zclGenericApp_ResetAttributesToDefaultValues();
 }
 
-void zclSampleApp_BatteryWarningCB(uint8 voltLevel)
-{
-  if (voltLevel == VOLT_LEVEL_CAUTIOUS)
-  {
+void zclSampleApp_BatteryWarningCB(uint8 voltLevel) {
+  if (voltLevel == VOLT_LEVEL_CAUTIOUS) {
     // Send warning message to the gateway and blink LED
-  }
-  else if (voltLevel == VOLT_LEVEL_BAD)
-  {
+  } else if (voltLevel == VOLT_LEVEL_BAD) {
     // Shut down the system
   }
 }
 
-static void zclGenericApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg)
-{
-  switch (pInMsg->zclHdr.commandID)
-  {
+static void zclGenericApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg) {
+  switch (pInMsg->zclHdr.commandID) {
 #ifdef ZCL_READ
   case ZCL_CMD_READ_RSP:
     zclGenericApp_ProcessInReadRspCmd(pInMsg);
@@ -560,7 +556,7 @@ static void zclGenericApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg)
   case ZCL_CMD_READ_REPORT_CFG:
   case ZCL_CMD_READ_REPORT_CFG_RSP:
   case ZCL_CMD_REPORT:
-    //bdb_ProcessIncomingReportingMsg( pInMsg );
+    // bdb_ProcessIncomingReportingMsg( pInMsg );
     break;
 
   case ZCL_CMD_DEFAULT_RSP:
@@ -592,14 +588,12 @@ static void zclGenericApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg)
 }
 
 #ifdef ZCL_READ
-static uint8 zclGenericApp_ProcessInReadRspCmd(zclIncomingMsg_t *pInMsg)
-{
+static uint8 zclGenericApp_ProcessInReadRspCmd(zclIncomingMsg_t *pInMsg) {
   zclReadRspCmd_t *readRspCmd;
   uint8 i;
 
   readRspCmd = (zclReadRspCmd_t *)pInMsg->attrCmd;
-  for (i = 0; i < readRspCmd->numAttr; i++)
-  {
+  for (i = 0; i < readRspCmd->numAttr; i++) {
     // Notify the originator of the results of the original read attributes
     // attempt and, for each successfull request, the value of the requested
     // attribute
@@ -611,14 +605,12 @@ static uint8 zclGenericApp_ProcessInReadRspCmd(zclIncomingMsg_t *pInMsg)
 
 #ifdef ZCL_WRITE
 
-static uint8 zclGenericApp_ProcessInWriteRspCmd(zclIncomingMsg_t *pInMsg)
-{
+static uint8 zclGenericApp_ProcessInWriteRspCmd(zclIncomingMsg_t *pInMsg) {
   zclWriteRspCmd_t *writeRspCmd;
   uint8 i;
 
   writeRspCmd = (zclWriteRspCmd_t *)pInMsg->attrCmd;
-  for (i = 0; i < writeRspCmd->numAttr; i++)
-  {
+  for (i = 0; i < writeRspCmd->numAttr; i++) {
     // Notify the device of the results of the its original write attributes
     // command.
   }
@@ -636,8 +628,7 @@ static uint8 zclGenericApp_ProcessInWriteRspCmd(zclIncomingMsg_t *pInMsg)
  *
  * @return  none
  */
-static uint8 zclGenericApp_ProcessInDefaultRspCmd(zclIncomingMsg_t *pInMsg)
-{
+static uint8 zclGenericApp_ProcessInDefaultRspCmd(zclIncomingMsg_t *pInMsg) {
   // zclDefaultRspCmd_t *defaultRspCmd = (zclDefaultRspCmd_t *)pInMsg->attrCmd;
 
   // Device is notified of the Default Response command.
@@ -645,11 +636,10 @@ static uint8 zclGenericApp_ProcessInDefaultRspCmd(zclIncomingMsg_t *pInMsg)
 
   return (TRUE);
 }
-afAddrType_t zclDIYRuZRT_DstAddr;
+afAddrType_t zclGenericApp_DstAddr;
 
 // Информирование о состоянии реле
-void zclDIYRuZRT_ReportOnOff(void)
-{
+void zclGenericApp_ReportOnOff(void) {
   const uint8 NUM_ATTRIBUTES = 1;
 
   zclReportCmd_t *pReportCmd;
@@ -657,8 +647,7 @@ void zclDIYRuZRT_ReportOnOff(void)
 
   pReportCmd = osal_mem_alloc(sizeof(zclReportCmd_t) +
                               (NUM_ATTRIBUTES * sizeof(zclReport_t)));
-  if (pReportCmd != NULL)
-  {
+  if (pReportCmd != NULL) {
     pReportCmd->numAttr = NUM_ATTRIBUTES;
 
     pReportCmd->attrList[0].attrID = ATTRID_ON_OFF;
@@ -666,55 +655,50 @@ void zclDIYRuZRT_ReportOnOff(void)
     pReportCmd->attrList[0].attrData = (void *)(&RELAY_STATE);
     ;
 
-    zclDIYRuZRT_DstAddr.addrMode = (afAddrMode_t)Addr16Bit;
-    zclDIYRuZRT_DstAddr.addr.shortAddr = 0;
-    zclDIYRuZRT_DstAddr.endPoint = 1;
+    zclGenericApp_DstAddr.addrMode = (afAddrMode_t)Addr16Bit;
+    zclGenericApp_DstAddr.addr.shortAddr = 0;
+    zclGenericApp_DstAddr.endPoint = 1;
 
-    zcl_SendReportCmd(zclGenericApp_SimpleDescs[0].EndPoint, &zclDIYRuZRT_DstAddr,
-                      ZCL_CLUSTER_ID_GEN_ON_OFF, pReportCmd,
-                      ZCL_FRAME_CLIENT_SERVER_DIR, false, SeqNum++);
+    zcl_SendReportCmd(zclGenericApp_SimpleDescs[0].EndPoint,
+                      &zclGenericApp_DstAddr, ZCL_CLUSTER_ID_GEN_ON_OFF,
+                      pReportCmd, ZCL_FRAME_CLIENT_SERVER_DIR, false, SeqNum++);
   }
 
   osal_mem_free(pReportCmd);
 }
 
 #ifdef ZCL_DISCOVER
-static uint8 zclGenericApp_ProcessInDiscCmdsRspCmd(zclIncomingMsg_t *pInMsg)
-{
+static uint8 zclGenericApp_ProcessInDiscCmdsRspCmd(zclIncomingMsg_t *pInMsg) {
   zclDiscoverCmdsCmdRsp_t *discoverRspCmd;
   uint8 i;
 
   discoverRspCmd = (zclDiscoverCmdsCmdRsp_t *)pInMsg->attrCmd;
-  for (i = 0; i < discoverRspCmd->numCmd; i++)
-  {
+  for (i = 0; i < discoverRspCmd->numCmd; i++) {
     // Device is notified of the result of its attribute discovery command.
   }
 
   return (TRUE);
 }
 
-static uint8 zclGenericApp_ProcessInDiscAttrsRspCmd(zclIncomingMsg_t *pInMsg)
-{
+static uint8 zclGenericApp_ProcessInDiscAttrsRspCmd(zclIncomingMsg_t *pInMsg) {
   zclDiscoverAttrsRspCmd_t *discoverRspCmd;
   uint8 i;
 
   discoverRspCmd = (zclDiscoverAttrsRspCmd_t *)pInMsg->attrCmd;
-  for (i = 0; i < discoverRspCmd->numAttr; i++)
-  {
+  for (i = 0; i < discoverRspCmd->numAttr; i++) {
     // Device is notified of the result of its attribute discovery command.
   }
 
   return (TRUE);
 }
 
-static uint8 zclGenericApp_ProcessInDiscAttrsExtRspCmd(zclIncomingMsg_t *pInMsg)
-{
+static uint8
+zclGenericApp_ProcessInDiscAttrsExtRspCmd(zclIncomingMsg_t *pInMsg) {
   zclDiscoverAttrsExtRsp_t *discoverRspCmd;
   uint8 i;
 
   discoverRspCmd = (zclDiscoverAttrsExtRsp_t *)pInMsg->attrCmd;
-  for (i = 0; i < discoverRspCmd->numAttr; i++)
-  {
+  for (i = 0; i < discoverRspCmd->numAttr; i++) {
     // Device is notified of the result of its attribute discovery command.
   }
 

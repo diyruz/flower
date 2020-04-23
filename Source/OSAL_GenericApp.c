@@ -42,19 +42,21 @@
  * INCLUDES
  */
 
-#include "ZComDef.h"
-#include "hal_drivers.h"
 #include "OSAL.h"
 #include "OSAL_Tasks.h"
+#include "ZComDef.h"
+#include "hal_drivers.h"
+
 
 #if defined(MT_TASK)
 #include "MT.h"
 #include "MT_TASK.h"
 #endif
 
-#include "nwk.h"
 #include "APS.h"
 #include "ZDApp.h"
+#include "nwk.h"
+
 
 #include "bdb_interface.h"
 #if !defined(DISABLE_GREENPOWER_BASIC_PROXY) && (ZG_BUILD_RTR_TYPE)
@@ -84,40 +86,40 @@
  * GLOBAL VARIABLES
  */
 
-// The order in this table must be identical to the task initialization calls below in osalInitTask.
-const pTaskEventHandlerFn tasksArr[] = {
-    macEventLoop,
-    nwk_event_loop,
+// The order in this table must be identical to the task initialization calls
+// below in osalInitTask.
+const pTaskEventHandlerFn tasksArr[] = {macEventLoop,
+                                        nwk_event_loop,
 #if !defined(DISABLE_GREENPOWER_BASIC_PROXY) && (ZG_BUILD_RTR_TYPE)
-    gp_event_loop,
+                                        gp_event_loop,
 #endif
-    Hal_ProcessEvent,
+                                        Hal_ProcessEvent,
 #if defined(MT_TASK)
-    MT_ProcessEvent,
+                                        MT_ProcessEvent,
 #endif
-    APS_event_loop,
+                                        APS_event_loop,
 #if defined(ZIGBEE_FRAGMENTATION)
-    APSF_ProcessEvent,
+                                        APSF_ProcessEvent,
 #endif
-    ZDApp_event_loop,
+                                        ZDApp_event_loop,
 #if defined(ZIGBEE_FREQ_AGILITY) || defined(ZIGBEE_PANID_CONFLICT)
-    ZDNwkMgr_event_loop,
+                                        ZDNwkMgr_event_loop,
 #endif
-//Added to include TouchLink functionality
+// Added to include TouchLink functionality
 #if defined(INTER_PAN)
-    StubAPS_ProcessEvent,
+                                        StubAPS_ProcessEvent,
 #endif
 // Added to include TouchLink initiator functionality
 #if defined(BDB_TL_INITIATOR)
-    touchLinkInitiator_event_loop,
+                                        touchLinkInitiator_event_loop,
 #endif
 // Added to include TouchLink target functionality
 #if defined(BDB_TL_TARGET)
-    touchLinkTarget_event_loop,
+                                        touchLinkTarget_event_loop,
 #endif
-    zcl_event_loop,
-    bdb_event_loop,
-    zclGenericApp_event_loop};
+                                        zcl_event_loop,
+                                        bdb_event_loop,
+                                        zclGenericApp_event_loop};
 
 const uint8 tasksCnt = sizeof(tasksArr) / sizeof(tasksArr[0]);
 uint16 *tasksEvents;
@@ -135,8 +137,7 @@ uint16 *tasksEvents;
  *
  * @return  none
  */
-void osalInitTasks(void)
-{
+void osalInitTasks(void) {
   uint8 taskID = 0;
 
   tasksEvents = (uint16 *)osal_mem_alloc(sizeof(uint16) * tasksCnt);
