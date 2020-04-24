@@ -18,7 +18,7 @@
 #define ZCL_READ
 #define ZCL_WRITE
 #define ZCL_BASIC
-
+#define ZCL_DISCOVER
 #define ZCL_IDENTIFY
 #define ZCL_SCENES
 #define ZCL_GROUPS

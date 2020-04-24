@@ -24,6 +24,7 @@
 #include "hal_drivers.h"
 #include "hal_key.h"
 #include "hal_led.h"
+#include "hal_adc.h"
 
 /*********************************************************************
  * MACROS
@@ -50,18 +51,9 @@ byte zclGenericApp_TaskID;
  * LOCAL VARIABLES
  */
 
-uint8 gPermitDuration = 0; // permit joining default to disabled
 uint8 SeqNum = 0;
 devStates_t zclGenericApp_NwkState = DEV_INIT;
 static uint8 halKeySavedKeys;
-
-// Endpoint to allow SYS_APP_MSGs
-static endPointDesc_t sampleSw_TestEp = {
-    1, // endpoint
-    0, &zclGenericApp_TaskID,
-    (SimpleDescriptionFormat_t *)NULL, // No Simple description for this test endpoint
-    (afNetworkLatencyReq_t)0           // No Network Latency req
-};
 
 /*********************************************************************
  * LOCAL FUNCTIONS
@@ -74,8 +66,7 @@ void halProcessKeyInterrupt(void);
 void GenericApp_HalKeyInit(void);
 void zclGenericApp_ReportOnOff(uint8 endPoint, bool state);
 void zclGenericApp_LeaveNetwork(void);
-
-static void zclGenericApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
+void zclGenericApp_ReportBattery(void);
 
 // Functions to process ZCL Foundation incoming Command/Response messages
 static void zclGenericApp_ProcessIncomingMsg(zclIncomingMsg_t *msg);
@@ -138,10 +129,8 @@ void zclGenericApp_Init(byte task_id) {
 
     for (int i = 0; i < zclGenericApp_SimpleDescsCount; i++) {
         bdb_RegisterSimpleDescriptor(&zclGenericApp_SimpleDescs[i]);
-        // Register the ZCL General Cluster Library callback functions
         zclGeneral_RegisterCmdCallbacks(zclGenericApp_SimpleDescs[i].EndPoint, &zclGenericApp_CmdCallbacks);
-
-        // Register the application's attribute list
+        zclGenericApp_ResetAttributesToDefaultValues();
         zcl_registerAttrList(zclGenericApp_SimpleDescs[i].EndPoint, zclGenericApp_NumAttributes, zclGenericApp_Attrs);
 
 #ifdef ZCL_DISCOVER
@@ -150,7 +139,6 @@ void zclGenericApp_Init(byte task_id) {
 #endif
 
         // Register for a test endpoint
-        afRegister(&sampleSw_TestEp);
 
 #ifdef ZCL_DIAGNOSTIC
         // Register the application's callback function to read/write attribute
@@ -163,25 +151,16 @@ void zclGenericApp_Init(byte task_id) {
         }
 #endif
     }
-
-    // GENERICAPP_TODO: Register other cluster command callbacks here
-
-    // Register the Application to receive the unprocessed Foundation
-    // command/response messages
     zcl_registerForMsg(zclGenericApp_TaskID);
-
     // Register low voltage NV memory protection application callback
     RegisterVoltageWarningCB(zclSampleApp_BatteryWarningCB);
 
     // Register for all key events - This app will handle all key events
     RegisterForKeys(zclGenericApp_TaskID);
 
-    bdb_RegisterCommissioningStatusCB(zclGenericApp_ProcessCommissioningStatus);
-
     bdb_RegisterBindNotificationCB(zclGenericApp_BindNotification);
 
-    bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_FORMATION | BDB_COMMISSIONING_MODE_NWK_STEERING |
-                           BDB_COMMISSIONING_MODE_FINDING_BINDING);
+    bdb_StartCommissioning(BDB_COMMISSIONING_REJOIN_EXISTING_NETWORK_ON_STARTUP | BDB_COMMISSIONING_MODE_NWK_STEERING);
 
     DebugInit();
     LREPMaster("Initialized debug module \n");
@@ -220,6 +199,14 @@ uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events) {
 
             case ZDO_STATE_CHANGE:
                 zclGenericApp_NwkState = (devStates_t)(MSGpkt->hdr.status);
+
+                // Теперь мы в сети
+                if ((zclGenericApp_NwkState == DEV_ZB_COORD) || (zclGenericApp_NwkState == DEV_ROUTER) ||
+                    (zclGenericApp_NwkState == DEV_END_DEVICE)) {
+                    osal_stop_timerEx(zclGenericApp_TaskID, HAL_LED_BLINK_EVENT);
+                    LREPMaster("Connected to network....\n");
+                    zclGenericApp_ReportBattery();
+                }
                 break;
 
             default:
@@ -246,8 +233,7 @@ uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events) {
     if (events & HAL_LED_BLINK_EVENT) {
         // toggle LED 2 state, start another timer for 500ms
         HalLedSet(HAL_LED_2, HAL_LED_MODE_TOGGLE);
-        osal_start_timerEx(zclGenericApp_TaskID, HAL_LED_BLINK_EVENT, 500);
-
+        // osal_start_timerEx(zclGenericApp_TaskID, HAL_LED_BLINK_EVENT, 500);
         return (events ^ HAL_LED_BLINK_EVENT);
     }
 
@@ -259,15 +245,19 @@ uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events) {
 
     if (events & GENERICAPP_SW1_LONG_PRESS) {
         LREPMaster("GENERICAPP_SW1_LONG_PRESS detected \n");
+        osal_clear_event(zclGenericApp_TaskID, GENERICAPP_SW1_LONG_PRESS);
         if (bdbAttributes.bdbNodeIsOnANetwork) {
             // покидаем сеть
             zclGenericApp_LeaveNetwork();
         } else {
-            // инициируем вход в сеть
-            bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_FORMATION | BDB_COMMISSIONING_MODE_NWK_STEERING |
-                                   BDB_COMMISSIONING_MODE_FINDING_BINDING | BDB_COMMISSIONING_MODE_INITIATOR_TL);
-            // будем мигать пока не подключимся
-            osal_start_timerEx(zclGenericApp_TaskID, HAL_LED_BLINK_EVENT, 500);
+            osal_clear_event(zclGenericApp_TaskID, HAL_KEY_EVENT);
+
+            // zclGenericApp_LeaveNetwork();
+            LREPMaster("bdb_StartCommissioning.(joining)...\n");
+            // // инициируем вход в сеть
+            bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_STEERING);
+            // // будем мигать пока не подключимся
+            osal_start_reload_timer(zclGenericApp_TaskID, HAL_LED_BLINK_EVENT, 100);
         }
 
         return events ^ GENERICAPP_SW1_LONG_PRESS;
@@ -327,18 +317,19 @@ static void zclGenericApp_HandleKeys(byte shift, byte keys) {
 
     if (keys & HAL_KEY_SW_1) {
         LREPMaster("Pressed button 1\n");
-        zclGenericApp_ReportOnOff(zclGenericApp_SimpleDescs[1].EndPoint, TRUE);
-        static bool LED_OnOff = FALSE;
+        // zclGenericApp_ReportOnOff(zclGenericApp_SimpleDescs[0].EndPoint, TRUE);
+        zclGenericApp_ReportBattery();
+        // static bool LED_OnOff = FALSE;
 
-        if (LED_OnOff) {
-            osal_stop_timerEx(zclGenericApp_TaskID, HAL_LED_BLINK_EVENT);
-            HalLedSet(HAL_LED_2, HAL_LED_MODE_OFF);
-            LED_OnOff = FALSE;
-        } else {
-            osal_start_timerEx(zclGenericApp_TaskID, HAL_LED_BLINK_EVENT, 500);
-            HalLedSet(HAL_LED_2, HAL_LED_MODE_ON);
-            LED_OnOff = TRUE;
-        }
+        // if (LED_OnOff) {
+        //     osal_stop_timerEx(zclGenericApp_TaskID, HAL_LED_BLINK_EVENT);
+        //     HalLedSet(HAL_LED_2, HAL_LED_MODE_OFF);
+        //     LED_OnOff = FALSE;
+        // } else {
+        //     osal_start_timerEx(zclGenericApp_TaskID, HAL_LED_BLINK_EVENT, 500);
+        //     HalLedSet(HAL_LED_2, HAL_LED_MODE_ON);
+        //     LED_OnOff = TRUE;
+        // }
     }
     if (keys & HAL_KEY_SW_2) {
         LREPMaster("Pressed button2\n");
@@ -356,14 +347,10 @@ void GenericApp_HalKeyInit(void) {
     PUSH1_PXIFG = ~(PUSH1_BIT);
 
     PICTL &= ~(PUSH1_EDGEBIT); /* Clear the edge bit */
-    /* For falling edge, the bit must be set. */
-    #if (PUSH1_EDGE == HAL_KEY_FALLING_EDGE)
-        PICTL |= PUSH1_EDGEBIT;
-    #endif
-
-
-
-
+/* For falling edge, the bit must be set. */
+#if (PUSH1_EDGE == HAL_KEY_FALLING_EDGE)
+    PICTL |= PUSH1_EDGEBIT;
+#endif
 
     PUSH2_SEL &= ~(PUSH2_BV);
     PUSH2_DIR &= ~(PUSH2_BV);
@@ -371,29 +358,27 @@ void GenericApp_HalKeyInit(void) {
     PUSH2_IEN |= PUSH2_IENBIT;
     PUSH2_PXIFG = ~(PUSH2_BIT);
 
-
     PICTL &= ~(PUSH2_EDGEBIT); /* Clear the edge bit */
-    /* For falling edge, the bit must be set. */
-    #if (PUSH2_EDGE == HAL_KEY_FALLING_EDGE)
-        PICTL |= PUSH2_EDGEBIT;
-    #endif
+/* For falling edge, the bit must be set. */
+#if (PUSH2_EDGE == HAL_KEY_FALLING_EDGE)
+    PICTL |= PUSH2_EDGEBIT;
+#endif
 }
 
-
 void halProcessKeyInterrupt(void) {
-    bool valid = true;
+    bool valid = false;
 
-    // if (PUSH1_PXIFG & PUSH1_BIT) /* Interrupt Flag has been set */
-    // {
-    //     PUSH1_PXIFG = ~(PUSH1_BIT); /* Clear Interrupt Flag */
-    //     valid = TRUE;
-    // }
+    if (PUSH1_PXIFG & PUSH1_BIT) /* Interrupt Flag has been set */
+    {
+        PUSH1_PXIFG = ~(PUSH1_BIT); /* Clear Interrupt Flag */
+        valid = TRUE;
+    }
 
-    // if (PUSH2_PXIFG & PUSH2_BIT) /* Interrupt Flag has been set */
-    // {
-    //     PUSH2_PXIFG = ~(PUSH2_BIT); /* Clear Interrupt Flag */
-    //     valid = TRUE;
-    // }
+    if (PUSH2_PXIFG & PUSH2_BIT) /* Interrupt Flag has been set */
+    {
+        PUSH2_PXIFG = ~(PUSH2_BIT); /* Clear Interrupt Flag */
+        valid = TRUE;
+    }
 
     if (valid) {
         osal_start_reload_timer(zclGenericApp_TaskID, HAL_KEY_EVENT, 100);
@@ -408,7 +393,6 @@ HAL_ISR_FUNCTION(halKeyPort2Isr, P2INT_VECTOR) {
     PUSH2_PXIFG = 0;
     CLEAR_SLEEP_MODE();
     HAL_EXIT_ISR();
-
 }
 
 HAL_ISR_FUNCTION(halKeyPort0Isr, P0INT_VECTOR) {
@@ -444,60 +428,6 @@ void GenericApp_HalKeyPoll(void) {
     // Вызовем генерацию события изменений кнопок
     OnBoard_SendKeys(keys, HAL_KEY_STATE_NORMAL);
 }
-static void zclGenericApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
-    switch (bdbCommissioningModeMsg->bdbCommissioningMode) {
-    case BDB_COMMISSIONING_FORMATION:
-        if (bdbCommissioningModeMsg->bdbCommissioningStatus == BDB_COMMISSIONING_SUCCESS) {
-            // After formation, perform nwk steering again plus the remaining
-            // commissioning modes that has not been process yet
-            bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_STEERING |
-                                   bdbCommissioningModeMsg->bdbRemainingCommissioningModes);
-        } else {
-            // Want to try other channels?
-            // try with bdb_setChannelAttribute
-        }
-        break;
-    case BDB_COMMISSIONING_NWK_STEERING:
-        if (bdbCommissioningModeMsg->bdbCommissioningStatus == BDB_COMMISSIONING_SUCCESS) {
-            // YOUR JOB:
-            // We are on the nwk, what now?
-        } else {
-            // See the possible errors for nwk steering procedure
-            // No suitable networks found
-            // Want to try other channels?
-            // try with bdb_setChannelAttribute
-        }
-        break;
-    case BDB_COMMISSIONING_FINDING_BINDING:
-        if (bdbCommissioningModeMsg->bdbCommissioningStatus == BDB_COMMISSIONING_SUCCESS) {
-            // YOUR JOB:
-        } else {
-            // YOUR JOB:
-            // retry?, wait for user interaction?
-        }
-        break;
-    case BDB_COMMISSIONING_INITIALIZATION:
-        // Initialization notification can only be successful. Failure on
-        // initialization only happens for ZED and is notified as
-        // BDB_COMMISSIONING_PARENT_LOST notification
-
-        // YOUR JOB:
-        // We are on a network, what now?
-
-        break;
-#if ZG_BUILD_ENDDEVICE_TYPE
-    case BDB_COMMISSIONING_PARENT_LOST:
-        if (bdbCommissioningModeMsg->bdbCommissioningStatus == BDB_COMMISSIONING_NETWORK_RESTORED) {
-            // We did recover from losing parent
-        } else {
-            // Parent not found, attempt to rejoin again after a fixed delay
-            osal_start_timerEx(zclGenericApp_TaskID, GENERICAPP_END_DEVICE_REJOIN_EVT,
-                               GENERICAPP_END_DEVICE_REJOIN_DELAY);
-        }
-        break;
-#endif
-    }
-}
 
 static void zclGenericApp_BindNotification(bdbBindNotificationData_t *data) {
     // GENERICAPP_TODO: process the new bind information
@@ -514,6 +444,7 @@ void zclSampleApp_BatteryWarningCB(uint8 voltLevel) {
 }
 
 static void zclGenericApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg) {
+    LREP("pInMsg->zclHdr.commandID 0x%x \n", pInMsg->zclHdr.commandID);
     switch (pInMsg->zclHdr.commandID) {
 #ifdef ZCL_READ
     case ZCL_CMD_READ_RSP:
@@ -565,6 +496,7 @@ static void zclGenericApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg) {
 static uint8 zclGenericApp_ProcessInReadRspCmd(zclIncomingMsg_t *pInMsg) {
     zclReadRspCmd_t *readRspCmd;
     uint8 i;
+    LREPMaster("zclGenericApp_ProcessInReadRspCmd\n");
 
     readRspCmd = (zclReadRspCmd_t *)pInMsg->attrCmd;
     for (i = 0; i < readRspCmd->numAttr; i++) {
@@ -613,12 +545,52 @@ static uint8 zclGenericApp_ProcessInDefaultRspCmd(zclIncomingMsg_t *pInMsg) {
 }
 afAddrType_t zclGenericApp_DstAddr;
 
+/* (( 3 * 1,15 ) / (( 2^12 / 2 ) - 1 )) * 10  */
+#define MULTI 0.0168539326
+
+static uint8 readVoltage(void) {
+    uint16 value;
+
+    HalAdcSetReference(HAL_ADC_REF_125V);
+    value = HalAdcRead(HAL_ADC_CHANNEL_VDD, HAL_ADC_RESOLUTION_12);
+    HalAdcSetReference(HAL_ADC_REF_AVDD);
+    return (uint8)(value * MULTI);
+}
+
+void zclGenericApp_ReportBattery(void) {
+
+    uint8 battery = readVoltage();
+
+    LREP("zclGenericApp_ReportBattery %d\n", battery);
+    const uint8 NUM_ATTRIBUTES = 1;
+
+    zclReportCmd_t *pReportCmd;
+    
+
+    pReportCmd = osal_mem_alloc(sizeof(zclReportCmd_t) + (NUM_ATTRIBUTES * sizeof(zclReport_t)));
+    if (pReportCmd != NULL) {
+        pReportCmd->numAttr = NUM_ATTRIBUTES;
+
+        pReportCmd->attrList[0].attrID = ATTRID_POWER_CFG_BATTERY_VOLTAGE;
+        pReportCmd->attrList[0].dataType = ZCL_DATATYPE_UINT8;
+        pReportCmd->attrList[0].attrData = (void *)(&battery);
+
+        zclGenericApp_DstAddr.addrMode = (afAddrMode_t)Addr16Bit;
+        zclGenericApp_DstAddr.addr.shortAddr = 0;
+        zclGenericApp_DstAddr.endPoint = 1;
+
+        zcl_SendReportCmd(1, &zclGenericApp_DstAddr, ZCL_CLUSTER_ID_GEN_POWER_CFG, pReportCmd,
+                          ZCL_FRAME_CLIENT_SERVER_DIR, false, SeqNum++);
+    }
+
+    osal_mem_free(pReportCmd);
+}
+
 // Информирование о состоянии реле
 void zclGenericApp_ReportOnOff(uint8 endPoint, bool state) {
     const uint8 NUM_ATTRIBUTES = 1;
 
     zclReportCmd_t *pReportCmd;
-
 
     pReportCmd = osal_mem_alloc(sizeof(zclReportCmd_t) + (NUM_ATTRIBUTES * sizeof(zclReport_t)));
     if (pReportCmd != NULL) {
@@ -632,8 +604,8 @@ void zclGenericApp_ReportOnOff(uint8 endPoint, bool state) {
         zclGenericApp_DstAddr.addr.shortAddr = 0;
         zclGenericApp_DstAddr.endPoint = 1;
 
-        zcl_SendReportCmd(zclGenericApp_SimpleDescs[0].EndPoint, &zclGenericApp_DstAddr, ZCL_CLUSTER_ID_GEN_ON_OFF,
-                          pReportCmd, ZCL_FRAME_CLIENT_SERVER_DIR, false, SeqNum++);
+        zcl_SendReportCmd(endPoint, &zclGenericApp_DstAddr, ZCL_CLUSTER_ID_GEN_ON_OFF, pReportCmd,
+                          ZCL_FRAME_CLIENT_SERVER_DIR, false, SeqNum++);
     }
 
     osal_mem_free(pReportCmd);

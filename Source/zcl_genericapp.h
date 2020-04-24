@@ -60,6 +60,7 @@ extern "C" {
 /*********************************************************************
  * CONSTANTS
  */
+#define SAMPLESW_ENDPOINT               8
 
 // Added to include ZLL Target functionality
 #define GENERICAPP_NUM_GRPS 2
@@ -93,7 +94,7 @@ extern "C" {
 #if defined(BDB_TL_INITIATOR) || defined(BDB_TL_TARGET)
 extern bdbTLDeviceInfo_t tlGenericApp_DeviceInfo;
 #endif
-
+extern SimpleDescriptionFormat_t zclSampleSw_SimpleDesc;
 extern SimpleDescriptionFormat_t zclGenericApp_SimpleDescs[];
 extern uint8 zclGenericApp_SimpleDescsCount;
 
