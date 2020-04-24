@@ -357,37 +357,28 @@ void GenericApp_HalKeyInit(void) {
 
     PICTL &= ~(PUSH1_EDGEBIT); /* Clear the edge bit */
     /* For falling edge, the bit must be set. */
-#if (PUSH1_6_EDGE == HAL_KEY_FALLING_EDGE)
-    PICTL |= PUSH1_EDGEBIT;
-#endif
+    #if (PUSH1_EDGE == HAL_KEY_FALLING_EDGE)
+        PICTL |= PUSH1_EDGEBIT;
+    #endif
 
-    P2SEL &= ~BV(0); // Port 2 Function Select =>Peripheral function
-    // P2SEL |= BV(0);
-    P2DIR &= ~BV(0); // Port 2 bit 0 Direction => Input
-    PICTL &= ~BV(3); // Rising edge on input(P2.0) gives interrupt.
-    P2IEN |= BV(0);  // Interrupt enabled on input (P2.0)
-    IEN2 |= BV(1);   // Port 2 interrupt enabled
-    P2IFG &= ~BV(0); // Port 2, input(P2.0) interrupt status flag. When the input port pin has an interrupt request
-                     // pending, the corresponding flag bit is set.
-    IEN0 |= BV(7); // Each interrupt source is individually enabled or disabled by setting its corresponding enable bit.
 
-    // PUSH2_SEL &= ~(PUSH2_BV);
-    // PUSH2_DIR &= ~(PUSH2_BV);
-    // PUSH2_ICTL |= PUSH2_ICTLBIT;
-    // PUSH2_IEN |= PUSH2_IENBIT;
-    // PUSH2_PXIFG = ~(PUSH2_BIT);
 
-    //  HAL_KEY_JOY_MOVE_ICTL |= HAL_KEY_JOY_MOVE_ICTLBIT;
-    // HAL_KEY_JOY_MOVE_IEN |= HAL_KEY_JOY_MOVE_IENBIT;
-    // HAL_KEY_JOY_MOVE_PXIFG = ~(HAL_KEY_JOY_MOVE_BIT);
 
-    // PUSH2_SEL &= ~(PUSH2_BV); /* Set pin function to GPIO */
-    // PUSH2_DIR &= ~(PUSH2_BV); /* Set pin direction to Input */
 
-    // PUSH2_ICTL &= ~(PUSH2_ICTLBIT); /* don't generate interrupt */
-    // PUSH2_IEN &= ~(PUSH2_IENBIT);   /* Clear interrupt enable bit */
+    PUSH2_SEL &= ~(PUSH2_BV);
+    PUSH2_DIR &= ~(PUSH2_BV);
+    PUSH2_ICTL |= PUSH2_ICTLBIT;
+    PUSH2_IEN |= PUSH2_IENBIT;
+    PUSH2_PXIFG = ~(PUSH2_BIT);
+
+
+    PICTL &= ~(PUSH2_EDGEBIT); /* Clear the edge bit */
+    /* For falling edge, the bit must be set. */
+    #if (PUSH2_EDGE == HAL_KEY_FALLING_EDGE)
+        PICTL |= PUSH2_EDGEBIT;
+    #endif
 }
-#define HAL_KEY_DEBOUNCE_VALUE 25
+
 
 void halProcessKeyInterrupt(void) {
     bool valid = true;

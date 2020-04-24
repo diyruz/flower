@@ -103,7 +103,7 @@
 #define PUSH1_ICTL P0IEN    /* Port Interrupt Control register */
 #define PUSH1_ICTLBIT BV(1) /* P0IEN - P0.1 enable/disable bit */
 #define PUSH1_EDGEBIT BV(0)
-#define PUSH1_EDGE HAL_KEY_FALLING_EDGE
+#define PUSH1_EDGE HAL_KEY_RISING_EDGE
 
 /* S2 - P2_0 */
 #define PUSH2_BIT BV(1)
@@ -115,11 +115,11 @@
 #define PUSH2_DIR P2DIR
 #define PUSH2_PXIFG P2IFG   /* Interrupt flag at source */
 #define PUSH2_IEN IEN2      /* CPU interrupt mask register */
-#define PUSH2_IENBIT BV(0)  /* Mask bit for all of Port_0 */
+#define PUSH2_IENBIT BV(1)  /* Mask bit for all of Port_0 */
 #define PUSH2_ICTL P2IEN    /* Port Interrupt Control register */
 #define PUSH2_ICTLBIT BV(0) /* P2IEN - P0.1 enable/disable bit */
-#define PUSH2_EDGEBIT BV(0)
-#define PUSH2_EDGE HAL_KEY_FALLING_EDGE
+#define PUSH2_EDGEBIT BV(3)
+#define PUSH2_EDGE HAL_KEY_RISING_EDGE
 
 
 
@@ -134,12 +134,6 @@
 // #define PUSH2_ICTL P2IEN    /* Port Interrupt Control register */
 // #define PUSH2_ICTLBIT BV(0) /* P0IEN - P2.0 enable/disable bit */
 
-// Конфигурация сенсора температуры
-#define TSENS_SBIT P2_1
-#define TSENS_BV BV(1)
-#define TSENS_DIR P2DIR
-
-// OSAL NV - постоянная внутренняя flash-память
 
 // Flash is partitioned into 8 banks of 32 KB or 16 pages.
 #define HAL_FLASH_PAGE_PER_BANK 16
