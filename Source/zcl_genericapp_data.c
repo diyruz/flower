@@ -33,16 +33,16 @@
 
 // Global attributes
 const uint16 zclGenericApp_clusterRevision_all = 0x0001;
-const uint16 zclGenericApp_BatteryVoltage = 3333;
+uint8 zclGenericApp_BatteryVoltage = 0x00;
+uint8 zclGenericApp_BatteryPercentageRemainig = 0x00;
 
 // Basic Cluster
 const uint8 zclGenericApp_HWRevision = GENERICAPP_HWVERSION;
 const uint8 zclGenericApp_ZCLVersion = GENERICAPP_ZCLVERSION;
 const uint8 zclGenericApp_ManufacturerName[] = {4, 'T', 'e', 's', 't'};
-const uint8 zclGenericApp_ModelId[] = {16,  'T', 'I', '0', '0', '0', '1', ' ', ' ',
-                                       ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '};
-const uint8 zclGenericApp_DateCode[] = {16,  '2', '0', '0', '6', '0', '8', '3', '1',
-                                        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '};
+
+const uint8 zclGenericApp_ModelId[] = {14, 'D', 'I', 'Y', 'R', 'u', 'Z', '_', 'F', 'r', 'e', 'e', 'P', 'a', 'd'};
+const uint8 zclGenericApp_DateCode[] = {8,  '2', '0', '2', '0', '0', '4', '2', '4'};
 const uint8 zclGenericApp_PowerSource = POWER_SOURCE_BATTERY;
 
 uint8 zclGenericApp_LocationDescription[17] = {16,  ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
@@ -124,8 +124,13 @@ CONST zclAttrRec_t zclGenericApp_Attrs[] = {
 
     {ZCL_CLUSTER_ID_GEN_POWER_CFG,
      {// Attribute record
-      ATTRID_POWER_CFG_BATTERY_VOLTAGE, ZCL_DATATYPE_UINT8, ACCESS_CONTROL_READ, (void *)&zclGenericApp_BatteryVoltage}},
+      ATTRID_POWER_CFG_BATTERY_VOLTAGE, ZCL_DATATYPE_UINT8, ACCESS_CONTROL_READ,
+      (void *)&zclGenericApp_BatteryVoltage}},
 
+    {ZCL_CLUSTER_ID_GEN_POWER_CFG,
+     {// Attribute record
+      ATTRID_POWER_CFG_BATTERY_PERCENTAGE_REMAINING, ZCL_DATATYPE_UINT8, ACCESS_CONTROL_READ,
+      (void *)&zclGenericApp_BatteryPercentageRemainig}},
 
     {ZCL_CLUSTER_ID_GEN_IDENTIFY,
      {// Attribute record

@@ -561,9 +561,11 @@ static uint8 readVoltage(void) {
 }
 
 void zclGenericApp_ReportBattery(void) {
-    uint8 battery = readVoltage();
-    LREP("zclGenericApp_ReportBattery %d\n", battery);
-    const uint8 NUM_ATTRIBUTES = 1;
+    zclGenericApp_BatteryVoltage = readVoltage();
+    zclGenericApp_BatteryPercentageRemainig = 100 / 33 * zclGenericApp_BatteryVoltage;
+
+    LREP("zclGenericApp_ReportBattery %d pct: %d\n", zclGenericApp_BatteryVoltage, zclGenericApp_BatteryPercentageRemainig);
+    const uint8 NUM_ATTRIBUTES = 2;
     zclReportCmd_t *pReportCmd;
     pReportCmd = osal_mem_alloc(sizeof(zclReportCmd_t) + (NUM_ATTRIBUTES * sizeof(zclReport_t)));
     if (pReportCmd != NULL) {
@@ -571,7 +573,14 @@ void zclGenericApp_ReportBattery(void) {
 
         pReportCmd->attrList[0].attrID = ATTRID_POWER_CFG_BATTERY_VOLTAGE;
         pReportCmd->attrList[0].dataType = ZCL_DATATYPE_UINT8;
-        pReportCmd->attrList[0].attrData = (void *)(&battery);
+        pReportCmd->attrList[0].attrData = (void *)(&zclGenericApp_BatteryVoltage);
+
+        pReportCmd->attrList[1].attrID = ATTRID_POWER_CFG_BATTERY_PERCENTAGE_REMAINING;
+        pReportCmd->attrList[1].dataType = ZCL_DATATYPE_UINT8;
+        pReportCmd->attrList[1].attrData = (void *)(&zclGenericApp_BatteryPercentageRemainig);
+
+        zcl_SendReportCmd(1, &inderect_DstAddr, ZCL_CLUSTER_ID_GEN_POWER_CFG, pReportCmd,
+                          ZCL_FRAME_CLIENT_SERVER_DIR, false, SeqNum++);
         zcl_SendReportCmd(1, &Coordinator_DstAddr, ZCL_CLUSTER_ID_GEN_POWER_CFG, pReportCmd,
                           ZCL_FRAME_CLIENT_SERVER_DIR, false, SeqNum++);
     }

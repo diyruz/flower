@@ -97,7 +97,8 @@ extern bdbTLDeviceInfo_t tlGenericApp_DeviceInfo;
 extern SimpleDescriptionFormat_t zclSampleSw_SimpleDesc;
 extern SimpleDescriptionFormat_t zclGenericApp_SimpleDescs[];
 extern uint8 zclGenericApp_SimpleDescsCount;
-
+extern uint8 zclGenericApp_BatteryVoltage;
+extern uint8 zclGenericApp_BatteryPercentageRemainig;
 extern CONST zclCommandRec_t zclGenericApp_Cmds[];
 
 extern CONST uint8 zclCmdsArraySize;
