@@ -16,12 +16,11 @@
 #define xMT_APP_CNF_FUNC
 #define MULTICAST_ENABLED FALSE
 #define ZCL_READ
-#define ZCL_WRITE
+
 #define ZCL_BASIC
-#define ZCL_DISCOVER
 #define ZCL_IDENTIFY
 #define ZCL_SCENES
-#define ZCL_GROUPS
+#define xZCL_GROUPS
 #define ZCL_ON_OFF
 #define DISABLE_GREENPOWER_BASIC_PROXY
 #define ZCL_REPORTING_DEVICE

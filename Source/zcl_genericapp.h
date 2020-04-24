@@ -66,11 +66,13 @@ extern "C" {
 #define GENERICAPP_NUM_GRPS 2
 
 // Application Events
-#define GENERICAPP_END_DEVICE_REJOIN_EVT 0x0004
+
+
+
 
 #define GENERICAPP_SW1_LONG_PRESS 0x0001
 #define GENERICAPP_EVT_GO_TO_SLEEP 0x0002
-
+#define GENERICAPP_END_DEVICE_REJOIN_EVT 0x0004
 
 /*
 #define GENERICAPP_EVT_2                    0x0010

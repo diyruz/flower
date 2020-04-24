@@ -53,19 +53,6 @@ uint8 zclGenericApp_DeviceEnable = DEVICE_ENABLED;
 // Identify Cluster
 uint16 zclGenericApp_IdentifyTime;
 
-/* GENERICAPP_TODO: declare attribute variables here. If its value can change,
- * initialize it in zclGenericApp_ResetAttributesToDefaultValues. If its
- * value will not change, initialize it here.
- */
-
-#ifdef ZCL_DISCOVER
-CONST zclCommandRec_t zclGenericApp_Cmds[] = {
-    {ZCL_CLUSTER_ID_GEN_BASIC, COMMAND_BASIC_RESET_FACT_DEFAULT, CMD_DIR_SERVER_RECEIVED},
-
-};
-
-CONST uint8 zclCmdsArraySize = (sizeof(zclGenericApp_Cmds) / sizeof(zclGenericApp_Cmds[0]));
-#endif // ZCL_DISCOVER
 
 /*********************************************************************
  * ATTRIBUTE DEFINITIONS - Uses REAL cluster IDs

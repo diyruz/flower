@@ -1,9 +1,12 @@
+
 #include "AF.h"
 #include "MT_SYS.h"
 #include "OSAL.h"
 #include "ZComDef.h"
 #include "ZDApp.h"
 #include "ZDObject.h"
+#include "math.h"
+
 
 #include "nwk_util.h"
 
@@ -51,7 +54,6 @@ byte zclGenericApp_TaskID;
  * LOCAL VARIABLES
  */
 
-uint8 SeqNum = 0;
 devStates_t zclGenericApp_NwkState = DEV_INIT;
 static uint8 halKeySavedKeys;
 
@@ -77,17 +79,9 @@ static void zclGenericApp_ProcessIncomingMsg(zclIncomingMsg_t *msg);
 #ifdef ZCL_READ
 static uint8 zclGenericApp_ProcessInReadRspCmd(zclIncomingMsg_t *pInMsg);
 #endif
-#ifdef ZCL_WRITE
-static uint8 zclGenericApp_ProcessInWriteRspCmd(zclIncomingMsg_t *pInMsg);
-#endif
-static uint8 zclGenericApp_ProcessInDefaultRspCmd(zclIncomingMsg_t *pInMsg);
-#ifdef ZCL_DISCOVER
-static uint8 zclGenericApp_ProcessInDiscCmdsRspCmd(zclIncomingMsg_t *pInMsg);
-static uint8 zclGenericApp_ProcessInDiscAttrsRspCmd(zclIncomingMsg_t *pInMsg);
-static uint8 zclGenericApp_ProcessInDiscAttrsExtRspCmd(zclIncomingMsg_t *pInMsg);
-#endif
 
-static void zclSampleApp_BatteryWarningCB(uint8 voltLevel);
+static uint8 zclGenericApp_ProcessInDefaultRspCmd(zclIncomingMsg_t *pInMsg);
+static void zclGenericApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
 
 /*********************************************************************
  * STATUS STRINGS
@@ -130,18 +124,11 @@ static zclGeneral_AppCallbacks_t zclGenericApp_CmdCallbacks = {
 
 void zclGenericApp_Init(byte task_id) {
     zclGenericApp_TaskID = task_id;
-
+    zclGenericApp_ResetAttributesToDefaultValues();
     for (int i = 0; i < zclGenericApp_SimpleDescsCount; i++) {
         bdb_RegisterSimpleDescriptor(&zclGenericApp_SimpleDescs[i]);
         zclGeneral_RegisterCmdCallbacks(zclGenericApp_SimpleDescs[i].EndPoint, &zclGenericApp_CmdCallbacks);
-        zclGenericApp_ResetAttributesToDefaultValues();
         zcl_registerAttrList(zclGenericApp_SimpleDescs[i].EndPoint, zclGenericApp_NumAttributes, zclGenericApp_Attrs);
-
-#ifdef ZCL_DISCOVER
-        // Register the application's command list
-        zcl_registerCmdList(zclGenericApp_SimpleDescs[i].EndPoint, zclCmdsArraySize, zclGenericApp_Cmds);
-#endif
-
         // Register for a test endpoint
 
 #ifdef ZCL_DIAGNOSTIC
@@ -156,20 +143,37 @@ void zclGenericApp_Init(byte task_id) {
 #endif
     }
     zcl_registerForMsg(zclGenericApp_TaskID);
-    // Register low voltage NV memory protection application callback
-    RegisterVoltageWarningCB(zclSampleApp_BatteryWarningCB);
 
     // Register for all key events - This app will handle all key events
     RegisterForKeys(zclGenericApp_TaskID);
 
     bdb_RegisterBindNotificationCB(zclGenericApp_BindNotification);
-
-    bdb_StartCommissioning(BDB_COMMISSIONING_REJOIN_EXISTING_NETWORK_ON_STARTUP | BDB_COMMISSIONING_MODE_NWK_STEERING |
-                           BDB_COMMISSIONING_MODE_FINDING_BINDING);
+    bdb_RegisterCommissioningStatusCB(zclGenericApp_ProcessCommissioningStatus);
+    bdb_StartCommissioning(BDB_COMMISSIONING_REJOIN_EXISTING_NETWORK_ON_STARTUP | BDB_COMMISSIONING_PARENT_LOST |
+                           BDB_COMMISSIONING_MODE_NWK_STEERING | BDB_COMMISSIONING_MODE_FINDING_BINDING);
 
     DebugInit();
     LREPMaster("Initialized debug module \n");
     LREPMaster("Hello world \n");
+}
+
+static void zclGenericApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
+    switch (bdbCommissioningModeMsg->bdbCommissioningMode) {
+    case BDB_COMMISSIONING_NWK_STEERING:
+        if (bdbCommissioningModeMsg->bdbCommissioningStatus == BDB_COMMISSIONING_SUCCESS) {
+            zclGenericApp_ReportBattery();
+            osal_stop_timerEx(zclGenericApp_TaskID, HAL_LED_BLINK_EVENT);
+        }
+        break;
+
+    case BDB_COMMISSIONING_PARENT_LOST:
+        if (bdbCommissioningModeMsg->bdbCommissioningStatus != BDB_COMMISSIONING_NETWORK_RESTORED) {
+            // Parent not found, attempt to rejoin again after a fixed delay
+            osal_start_timerEx(zclGenericApp_TaskID, GENERICAPP_END_DEVICE_REJOIN_EVT,
+                               GENERICAPP_END_DEVICE_REJOIN_DELAY);
+        }
+        break;
+    }
 }
 
 /*********************************************************************
@@ -198,7 +202,6 @@ uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events) {
             case KEY_CHANGE:
                 zclGenericApp_HandleKeys(((keyChange_t *)MSGpkt)->state, ((keyChange_t *)MSGpkt)->keys);
                 break;
-
             case ZDO_STATE_CHANGE:
                 zclGenericApp_NwkState = (devStates_t)(MSGpkt->hdr.status);
 
@@ -273,6 +276,11 @@ uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events) {
         return events ^ HAL_KEY_EVENT;
     }
 
+    if (events & GENERICAPP_END_DEVICE_REJOIN_EVT) {
+        bdb_ZedAttemptRecoverNwk();
+        return (events ^ GENERICAPP_END_DEVICE_REJOIN_EVT);
+    }
+
     // Discard unknown events
     return 0;
 }
@@ -319,7 +327,8 @@ static void zclGenericApp_HandleKeys(byte shift, byte keys) {
 
     if (keys & HAL_KEY_SW_1) {
         LREPMaster("Pressed button 1\n");
-        zclGeneral_SendOnOff_CmdToggle(zclGenericApp_SimpleDescs[0].EndPoint, &inderect_DstAddr, FALSE, SeqNum++);
+        zclGeneral_SendOnOff_CmdToggle(zclGenericApp_SimpleDescs[0].EndPoint, &inderect_DstAddr, FALSE,
+                                       bdb_getZCLFrameCounter());
 
         zclGenericApp_ReportBattery();
         // static bool LED_OnOff = FALSE;
@@ -439,25 +448,12 @@ static void zclGenericApp_BindNotification(bdbBindNotificationData_t *data) {
 
 static void zclGenericApp_BasicResetCB(void) { zclGenericApp_ResetAttributesToDefaultValues(); }
 
-void zclSampleApp_BatteryWarningCB(uint8 voltLevel) {
-    if (voltLevel == VOLT_LEVEL_CAUTIOUS) {
-        // Send warning message to the gateway and blink LED
-    } else if (voltLevel == VOLT_LEVEL_BAD) {
-        // Shut down the system
-    }
-}
-
 static void zclGenericApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg) {
     LREP("pInMsg->zclHdr.commandID 0x%x \n", pInMsg->zclHdr.commandID);
     switch (pInMsg->zclHdr.commandID) {
 #ifdef ZCL_READ
     case ZCL_CMD_READ_RSP:
         zclGenericApp_ProcessInReadRspCmd(pInMsg);
-        break;
-#endif
-#ifdef ZCL_WRITE
-    case ZCL_CMD_WRITE_RSP:
-        zclGenericApp_ProcessInWriteRspCmd(pInMsg);
         break;
 #endif
     case ZCL_CMD_CONFIG_REPORT:
@@ -471,23 +467,6 @@ static void zclGenericApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg) {
     case ZCL_CMD_DEFAULT_RSP:
         zclGenericApp_ProcessInDefaultRspCmd(pInMsg);
         break;
-#ifdef ZCL_DISCOVER
-    case ZCL_CMD_DISCOVER_CMDS_RECEIVED_RSP:
-        zclGenericApp_ProcessInDiscCmdsRspCmd(pInMsg);
-        break;
-
-    case ZCL_CMD_DISCOVER_CMDS_GEN_RSP:
-        zclGenericApp_ProcessInDiscCmdsRspCmd(pInMsg);
-        break;
-
-    case ZCL_CMD_DISCOVER_ATTRS_RSP:
-        zclGenericApp_ProcessInDiscAttrsRspCmd(pInMsg);
-        break;
-
-    case ZCL_CMD_DISCOVER_ATTRS_EXT_RSP:
-        zclGenericApp_ProcessInDiscAttrsExtRspCmd(pInMsg);
-        break;
-#endif
     default:
         break;
     }
@@ -512,22 +491,6 @@ static uint8 zclGenericApp_ProcessInReadRspCmd(zclIncomingMsg_t *pInMsg) {
     return (TRUE);
 }
 #endif // ZCL_READ
-
-#ifdef ZCL_WRITE
-
-static uint8 zclGenericApp_ProcessInWriteRspCmd(zclIncomingMsg_t *pInMsg) {
-    zclWriteRspCmd_t *writeRspCmd;
-    uint8 i;
-
-    writeRspCmd = (zclWriteRspCmd_t *)pInMsg->attrCmd;
-    for (i = 0; i < writeRspCmd->numAttr; i++) {
-        // Notify the device of the results of the its original write attributes
-        // command.
-    }
-
-    return (TRUE);
-}
-#endif // ZCL_WRITE
 
 /*********************************************************************
  * @fn      zclGenericApp_ProcessInDefaultRspCmd
@@ -562,9 +525,10 @@ static uint8 readVoltage(void) {
 
 void zclGenericApp_ReportBattery(void) {
     zclGenericApp_BatteryVoltage = readVoltage();
-    zclGenericApp_BatteryPercentageRemainig = 100 / 33 * zclGenericApp_BatteryVoltage;
+    zclGenericApp_BatteryPercentageRemainig = (uint8)MIN(100, ceil(100.0 / 33.0 * zclGenericApp_BatteryVoltage));
 
-    LREP("zclGenericApp_ReportBattery %d pct: %d\n", zclGenericApp_BatteryVoltage, zclGenericApp_BatteryPercentageRemainig);
+    LREP("zclGenericApp_ReportBattery %d pct: %d\n", zclGenericApp_BatteryVoltage,
+         zclGenericApp_BatteryPercentageRemainig);
     const uint8 NUM_ATTRIBUTES = 2;
     zclReportCmd_t *pReportCmd;
     pReportCmd = osal_mem_alloc(sizeof(zclReportCmd_t) + (NUM_ATTRIBUTES * sizeof(zclReport_t)));
@@ -579,52 +543,14 @@ void zclGenericApp_ReportBattery(void) {
         pReportCmd->attrList[1].dataType = ZCL_DATATYPE_UINT8;
         pReportCmd->attrList[1].attrData = (void *)(&zclGenericApp_BatteryPercentageRemainig);
 
-        zcl_SendReportCmd(1, &inderect_DstAddr, ZCL_CLUSTER_ID_GEN_POWER_CFG, pReportCmd,
-                          ZCL_FRAME_CLIENT_SERVER_DIR, false, SeqNum++);
+        zcl_SendReportCmd(1, &inderect_DstAddr, ZCL_CLUSTER_ID_GEN_POWER_CFG, pReportCmd, ZCL_FRAME_CLIENT_SERVER_DIR,
+                          false, bdb_getZCLFrameCounter());
         zcl_SendReportCmd(1, &Coordinator_DstAddr, ZCL_CLUSTER_ID_GEN_POWER_CFG, pReportCmd,
-                          ZCL_FRAME_CLIENT_SERVER_DIR, false, SeqNum++);
+                          ZCL_FRAME_CLIENT_SERVER_DIR, false, bdb_getZCLFrameCounter());
     }
 
     osal_mem_free(pReportCmd);
 }
-
-#ifdef ZCL_DISCOVER
-static uint8 zclGenericApp_ProcessInDiscCmdsRspCmd(zclIncomingMsg_t *pInMsg) {
-    zclDiscoverCmdsCmdRsp_t *discoverRspCmd;
-    uint8 i;
-
-    discoverRspCmd = (zclDiscoverCmdsCmdRsp_t *)pInMsg->attrCmd;
-    for (i = 0; i < discoverRspCmd->numCmd; i++) {
-        // Device is notified of the result of its attribute discovery command.
-    }
-
-    return (TRUE);
-}
-
-static uint8 zclGenericApp_ProcessInDiscAttrsRspCmd(zclIncomingMsg_t *pInMsg) {
-    zclDiscoverAttrsRspCmd_t *discoverRspCmd;
-    uint8 i;
-
-    discoverRspCmd = (zclDiscoverAttrsRspCmd_t *)pInMsg->attrCmd;
-    for (i = 0; i < discoverRspCmd->numAttr; i++) {
-        // Device is notified of the result of its attribute discovery command.
-    }
-
-    return (TRUE);
-}
-
-static uint8 zclGenericApp_ProcessInDiscAttrsExtRspCmd(zclIncomingMsg_t *pInMsg) {
-    zclDiscoverAttrsExtRsp_t *discoverRspCmd;
-    uint8 i;
-
-    discoverRspCmd = (zclDiscoverAttrsExtRsp_t *)pInMsg->attrCmd;
-    for (i = 0; i < discoverRspCmd->numAttr; i++) {
-        // Device is notified of the result of its attribute discovery command.
-    }
-
-    return (TRUE);
-}
-#endif // ZCL_DISCOVER
 
 /****************************************************************************
 ****************************************************************************/
