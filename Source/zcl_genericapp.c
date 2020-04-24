@@ -21,10 +21,10 @@
 #include "onboard.h"
 
 /* HAL */
+#include "hal_adc.h"
 #include "hal_drivers.h"
 #include "hal_key.h"
 #include "hal_led.h"
-#include "hal_adc.h"
 
 /*********************************************************************
  * MACROS
@@ -54,6 +54,10 @@ byte zclGenericApp_TaskID;
 uint8 SeqNum = 0;
 devStates_t zclGenericApp_NwkState = DEV_INIT;
 static uint8 halKeySavedKeys;
+
+afAddrType_t Coordinator_DstAddr = {.addrMode = (afAddrMode_t)Addr16Bit, .addr.shortAddr = 0, .endPoint = 1};
+
+afAddrType_t inderect_DstAddr = {.addrMode = (afAddrMode_t)AddrNotPresent, .endPoint = 0, .addr.shortAddr = 0};
 
 /*********************************************************************
  * LOCAL FUNCTIONS
@@ -160,7 +164,8 @@ void zclGenericApp_Init(byte task_id) {
 
     bdb_RegisterBindNotificationCB(zclGenericApp_BindNotification);
 
-    bdb_StartCommissioning(BDB_COMMISSIONING_REJOIN_EXISTING_NETWORK_ON_STARTUP | BDB_COMMISSIONING_MODE_NWK_STEERING);
+    bdb_StartCommissioning(BDB_COMMISSIONING_REJOIN_EXISTING_NETWORK_ON_STARTUP | BDB_COMMISSIONING_MODE_NWK_STEERING |
+                           BDB_COMMISSIONING_MODE_FINDING_BINDING);
 
     DebugInit();
     LREPMaster("Initialized debug module \n");
@@ -179,14 +184,11 @@ void zclGenericApp_Init(byte task_id) {
 uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events) {
     afIncomingMSGPacket_t *MSGpkt;
 
-    char buffer[11];
-    sprintf(buffer, "%x \n", events);
-    LREPMaster(buffer);
-
     (void)task_id; // Intentionally unreferenced parameter
 
     if (events & SYS_EVENT_MSG) {
         while ((MSGpkt = (afIncomingMSGPacket_t *)osal_msg_receive(zclGenericApp_TaskID))) {
+
             switch (MSGpkt->hdr.event) {
             case ZCL_INCOMING_MSG:
                 // Incoming ZCL Foundation command/response messages
@@ -317,7 +319,8 @@ static void zclGenericApp_HandleKeys(byte shift, byte keys) {
 
     if (keys & HAL_KEY_SW_1) {
         LREPMaster("Pressed button 1\n");
-        // zclGenericApp_ReportOnOff(zclGenericApp_SimpleDescs[0].EndPoint, TRUE);
+        zclGeneral_SendOnOff_CmdToggle(zclGenericApp_SimpleDescs[0].EndPoint, &inderect_DstAddr, FALSE, SeqNum++);
+
         zclGenericApp_ReportBattery();
         // static bool LED_OnOff = FALSE;
 
@@ -430,6 +433,7 @@ void GenericApp_HalKeyPoll(void) {
 }
 
 static void zclGenericApp_BindNotification(bdbBindNotificationData_t *data) {
+    LREP("zclGenericApp_BindNotification %x %x %x", data->dstAddr, data->ep, data->clusterId);
     // GENERICAPP_TODO: process the new bind information
 }
 
@@ -543,7 +547,6 @@ static uint8 zclGenericApp_ProcessInDefaultRspCmd(zclIncomingMsg_t *pInMsg) {
 
     return (TRUE);
 }
-afAddrType_t zclGenericApp_DstAddr;
 
 /* (( 3 * 1,15 ) / (( 2^12 / 2 ) - 1 )) * 10  */
 #define MULTI 0.0168539326
@@ -558,15 +561,10 @@ static uint8 readVoltage(void) {
 }
 
 void zclGenericApp_ReportBattery(void) {
-
     uint8 battery = readVoltage();
-
     LREP("zclGenericApp_ReportBattery %d\n", battery);
     const uint8 NUM_ATTRIBUTES = 1;
-
     zclReportCmd_t *pReportCmd;
-    
-
     pReportCmd = osal_mem_alloc(sizeof(zclReportCmd_t) + (NUM_ATTRIBUTES * sizeof(zclReport_t)));
     if (pReportCmd != NULL) {
         pReportCmd->numAttr = NUM_ATTRIBUTES;
@@ -574,37 +572,7 @@ void zclGenericApp_ReportBattery(void) {
         pReportCmd->attrList[0].attrID = ATTRID_POWER_CFG_BATTERY_VOLTAGE;
         pReportCmd->attrList[0].dataType = ZCL_DATATYPE_UINT8;
         pReportCmd->attrList[0].attrData = (void *)(&battery);
-
-        zclGenericApp_DstAddr.addrMode = (afAddrMode_t)Addr16Bit;
-        zclGenericApp_DstAddr.addr.shortAddr = 0;
-        zclGenericApp_DstAddr.endPoint = 1;
-
-        zcl_SendReportCmd(1, &zclGenericApp_DstAddr, ZCL_CLUSTER_ID_GEN_POWER_CFG, pReportCmd,
-                          ZCL_FRAME_CLIENT_SERVER_DIR, false, SeqNum++);
-    }
-
-    osal_mem_free(pReportCmd);
-}
-
-// Информирование о состоянии реле
-void zclGenericApp_ReportOnOff(uint8 endPoint, bool state) {
-    const uint8 NUM_ATTRIBUTES = 1;
-
-    zclReportCmd_t *pReportCmd;
-
-    pReportCmd = osal_mem_alloc(sizeof(zclReportCmd_t) + (NUM_ATTRIBUTES * sizeof(zclReport_t)));
-    if (pReportCmd != NULL) {
-        pReportCmd->numAttr = NUM_ATTRIBUTES;
-
-        pReportCmd->attrList[0].attrID = ATTRID_ON_OFF;
-        pReportCmd->attrList[0].dataType = ZCL_DATATYPE_BOOLEAN;
-        pReportCmd->attrList[0].attrData = (void *)(&state);
-
-        zclGenericApp_DstAddr.addrMode = (afAddrMode_t)Addr16Bit;
-        zclGenericApp_DstAddr.addr.shortAddr = 0;
-        zclGenericApp_DstAddr.endPoint = 1;
-
-        zcl_SendReportCmd(endPoint, &zclGenericApp_DstAddr, ZCL_CLUSTER_ID_GEN_ON_OFF, pReportCmd,
+        zcl_SendReportCmd(1, &Coordinator_DstAddr, ZCL_CLUSTER_ID_GEN_POWER_CFG, pReportCmd,
                           ZCL_FRAME_CLIENT_SERVER_DIR, false, SeqNum++);
     }
 
