@@ -7,7 +7,6 @@
 #include "ZDObject.h"
 #include "math.h"
 
-
 #include "nwk_util.h"
 
 #include "zcl.h"
@@ -68,7 +67,7 @@ afAddrType_t inderect_DstAddr = {.addrMode = (afAddrMode_t)AddrNotPresent, .endP
 static void zclGenericApp_HandleKeys(byte shift, byte keys);
 static void zclGenericApp_BasicResetCB(void);
 static void zclGenericApp_BindNotification(bdbBindNotificationData_t *data);
-void halProcessKeyInterrupt(void);
+bool halProcessKeyInterrupt(void);
 
 void GenericApp_HalKeyInit(void);
 void zclGenericApp_ReportOnOff(uint8 endPoint, bool state);
@@ -362,24 +361,13 @@ static void zclGenericApp_HandleKeys(byte shift, byte keys) {
 
     if (keys & HAL_KEY_SW_1) {
         LREPMaster("Pressed button 1\n");
-        zclGeneral_SendOnOff_CmdToggle(zclGenericApp_SimpleDescs[0].EndPoint, &inderect_DstAddr, FALSE,
-                                       bdb_getZCLFrameCounter());
+        zclGeneral_SendOnOff_CmdToggle(zclGenericApp_SimpleDescs[0].EndPoint, &inderect_DstAddr, FALSE, bdb_getZCLFrameCounter());
 
         zclGenericApp_ReportBattery();
-        // static bool LED_OnOff = FALSE;
-
-        // if (LED_OnOff) {
-        //     osal_stop_timerEx(zclGenericApp_TaskID, HAL_LED_BLINK_EVENT);
-        //     HalLedSet(HAL_LED_2, HAL_LED_MODE_OFF);
-        //     LED_OnOff = FALSE;
-        // } else {
-        //     osal_start_timerEx(zclGenericApp_TaskID, HAL_LED_BLINK_EVENT, 500);
-        //     HalLedSet(HAL_LED_2, HAL_LED_MODE_ON);
-        //     LED_OnOff = TRUE;
-        // }
     }
     if (keys & HAL_KEY_SW_2) {
         LREPMaster("Pressed button2\n");
+        zclGeneral_SendOnOff_CmdToggle(zclGenericApp_SimpleDescs[1].EndPoint, &inderect_DstAddr, FALSE, bdb_getZCLFrameCounter());
     }
 }
 
@@ -412,7 +400,7 @@ void GenericApp_HalKeyInit(void) {
 #endif
 }
 
-void halProcessKeyInterrupt(void) {
+bool halProcessKeyInterrupt(void) {
     bool valid = false;
 
     if (PUSH1_PXIFG & PUSH1_BIT) /* Interrupt Flag has been set */
@@ -431,23 +419,28 @@ void halProcessKeyInterrupt(void) {
         osal_start_reload_timer(zclGenericApp_TaskID, HAL_KEY_EVENT, 100);
         osal_start_timerEx(zclGenericApp_TaskID, GENERICAPP_SW1_LONG_PRESS, 5000);
     }
+    return valid;
 }
 
 HAL_ISR_FUNCTION(halKeyPort2Isr, P2INT_VECTOR) {
     HAL_ENTER_ISR();
-    halProcessKeyInterrupt();
-    HAL_KEY_CPU_PORT_2_IF = 0;
-    PUSH2_PXIFG = 0;
-    CLEAR_SLEEP_MODE();
+    if (halProcessKeyInterrupt()) {
+        HAL_KEY_CPU_PORT_2_IF = 0;
+        PUSH2_PXIFG = 0;
+        CLEAR_SLEEP_MODE();
+    }
+
     HAL_EXIT_ISR();
 }
 
 HAL_ISR_FUNCTION(halKeyPort0Isr, P0INT_VECTOR) {
     HAL_ENTER_ISR();
-    halProcessKeyInterrupt();
-    HAL_KEY_CPU_PORT_0_IF = 0;
-    PUSH1_PXIFG = 0;
-    CLEAR_SLEEP_MODE();
+    if (halProcessKeyInterrupt()) {
+        HAL_KEY_CPU_PORT_0_IF = 0;
+        PUSH1_PXIFG = 0;
+        CLEAR_SLEEP_MODE();
+    }
+
     HAL_EXIT_ISR();
 }
 

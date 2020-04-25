@@ -106,7 +106,7 @@
 #define PUSH1_EDGE HAL_KEY_RISING_EDGE
 
 /* S2 - P2_0 */
-#define PUSH2_BIT BV(1)
+#define PUSH2_BIT BV(0)
 #define PUSH2_BV BV(1)
 #define PUSH2_SBIT P2_0
 #define PUSH2_POLARITY ACTIVE_LOW
