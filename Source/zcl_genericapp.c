@@ -53,6 +53,7 @@ byte zclGenericApp_TaskID;
 /*********************************************************************
  * LOCAL VARIABLES
  */
+bool initilizeRejoin = false;
 
 devStates_t zclGenericApp_NwkState = DEV_INIT;
 static uint8 halKeySavedKeys;
@@ -73,6 +74,7 @@ void GenericApp_HalKeyInit(void);
 void zclGenericApp_ReportOnOff(uint8 endPoint, bool state);
 void zclGenericApp_LeaveNetwork(void);
 void zclGenericApp_ReportBattery(void);
+void rejoin(void);
 
 // Functions to process ZCL Foundation incoming Command/Response messages
 static void zclGenericApp_ProcessIncomingMsg(zclIncomingMsg_t *msg);
@@ -149,21 +151,48 @@ void zclGenericApp_Init(byte task_id) {
 
     bdb_RegisterBindNotificationCB(zclGenericApp_BindNotification);
     bdb_RegisterCommissioningStatusCB(zclGenericApp_ProcessCommissioningStatus);
-    bdb_StartCommissioning(BDB_COMMISSIONING_REJOIN_EXISTING_NETWORK_ON_STARTUP | BDB_COMMISSIONING_PARENT_LOST |
-                           BDB_COMMISSIONING_MODE_NWK_STEERING | BDB_COMMISSIONING_MODE_FINDING_BINDING);
+    bdb_initialize();
 
     DebugInit();
     LREPMaster("Initialized debug module \n");
     LREPMaster("Hello world \n");
 }
+const char *bdbCommissioningModes[] = {
+    "BDB_COMMISSIONING_INITIALIZATION",  "BDB_COMMISSIONING_NWK_STEERING", "BDB_COMMISSIONING_FORMATION",
+    "BDB_COMMISSIONING_FINDING_BINDING", "BDB_COMMISSIONING_TOUCHLINK",    "BDB_COMMISSIONING_PARENT_LOST,",
+};
 
+const char *bdbCommissioningStatuses[] = {"BDB_COMMISSIONING_SUCCESS",
+                                          "BDB_COMMISSIONING_IN_PROGRESS",
+                                          "BDB_COMMISSIONING_NO_NETWORK",
+                                          "BDB_COMMISSIONING_TL_TARGET_FAILURE",
+                                          "BDB_COMMISSIONING_TL_NOT_AA_CAPABL",
+                                          "BDB_COMMISSIONING_TL_NO_SCAN_RESPONS",
+                                          "BDB_COMMISSIONING_TL_NOT_PERMITTE",
+                                          "BDB_COMMISSIONING_TCLK_EX_FAILURE",
+                                          "BDB_COMMISSIONING_FORMATION_FAILUR",
+                                          "BDB_COMMISSIONING_FB_TARGET_IN_PROGRESS",
+                                          "BDB_COMMISSIONING_FB_INITITATOR_IN_PROGRES",
+                                          "BDB_COMMISSIONING_FB_NO_IDENTIFY_QUERY_RESPONS",
+                                          "BDB_COMMISSIONING_FB_BINDING_TABLE_FUL",
+                                          "BDB_COMMISSIONING_NETWORK_RESTORED",
+                                          "BDB_COMMISSIONING_FAILURE"};
 static void zclGenericApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
+    LREP("%s %s\n", bdbCommissioningModes[bdbCommissioningModeMsg->bdbCommissioningMode],
+         bdbCommissioningStatuses[bdbCommissioningModeMsg->bdbCommissioningStatus]);
+
     switch (bdbCommissioningModeMsg->bdbCommissioningMode) {
     case BDB_COMMISSIONING_NWK_STEERING:
-        if (bdbCommissioningModeMsg->bdbCommissioningStatus == BDB_COMMISSIONING_SUCCESS) {
+        switch (bdbCommissioningModeMsg->bdbCommissioningStatus) {
+        case BDB_COMMISSIONING_SUCCESS:
             zclGenericApp_ReportBattery();
             osal_stop_timerEx(zclGenericApp_TaskID, HAL_LED_BLINK_EVENT);
+            break;
+
+        default:
+            break;
         }
+
         break;
 
     case BDB_COMMISSIONING_PARENT_LOST:
@@ -172,6 +201,8 @@ static void zclGenericApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
             osal_start_timerEx(zclGenericApp_TaskID, GENERICAPP_END_DEVICE_REJOIN_EVT,
                                GENERICAPP_END_DEVICE_REJOIN_DELAY);
         }
+        break;
+    default:
         break;
     }
 }
@@ -250,20 +281,8 @@ uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events) {
 
     if (events & GENERICAPP_SW1_LONG_PRESS) {
         LREPMaster("GENERICAPP_SW1_LONG_PRESS detected \n");
-        osal_clear_event(zclGenericApp_TaskID, GENERICAPP_SW1_LONG_PRESS);
-        if (bdbAttributes.bdbNodeIsOnANetwork) {
-            // покидаем сеть
-            zclGenericApp_LeaveNetwork();
-        } else {
-            osal_clear_event(zclGenericApp_TaskID, HAL_KEY_EVENT);
 
-            // zclGenericApp_LeaveNetwork();
-            LREPMaster("bdb_StartCommissioning.(joining)...\n");
-            // // инициируем вход в сеть
-            bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_STEERING);
-            // // будем мигать пока не подключимся
-            osal_start_reload_timer(zclGenericApp_TaskID, HAL_LED_BLINK_EVENT, 100);
-        }
+        initilizeRejoin = true;
 
         return events ^ GENERICAPP_SW1_LONG_PRESS;
     }
@@ -301,12 +320,24 @@ void zclGenericApp_LeaveNetwork(void) {
     zgWriteStartupOptions(ZG_STARTUP_SET, ZCD_STARTOPT_DEFAULT_NETWORK_STATE);
 
     // Leave the network, and reset afterwards
-    if (NLME_LeaveReq(&leaveReq) != ZSuccess) {
-        // Couldn't send out leave; prepare to reset anyway
+
+    ZStatus_t leaveStatus = NLME_LeaveReq(&leaveReq);
+    LREP("NLME_LeaveReq(&leaveReq) %x\n", leaveStatus);
+    if (leaveStatus != ZSuccess) {
+        LREPMaster("Couldn't send out leave; prepare to reset anyway\n");
         ZDApp_LeaveReset(FALSE);
     }
 }
-
+void rejoin(void) {
+    initilizeRejoin = false;
+    if (bdbAttributes.bdbNodeIsOnANetwork) {
+        zclGenericApp_LeaveNetwork();
+    } else {
+        LREPMaster("bdb_StartCommissioning.(BDB_COMMISSIONING_MODE_NWK_STEERING)...\n");
+        bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_STEERING);
+        osal_start_reload_timer(zclGenericApp_TaskID, HAL_LED_BLINK_EVENT, 100);
+    }
+}
 static void zclGenericApp_HandleKeys(byte shift, byte keys) {
     LREP("zclGenericApp_HandleKeys" BYTE_TO_BINARY_PATTERN "", BYTE_TO_BINARY(keys));
     LREPMaster("\n");
@@ -321,6 +352,10 @@ static void zclGenericApp_HandleKeys(byte shift, byte keys) {
         osal_clear_event(zclGenericApp_TaskID, HAL_KEY_EVENT);
 
         halKeySavedKeys = 0;
+
+        if (initilizeRejoin) {
+            rejoin();
+        }
         // osal_start_timerEx(zclGenericApp_TaskID, GENERICAPP_EVT_GO_TO_SLEEP,
         // 10000);
     }
