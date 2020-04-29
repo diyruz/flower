@@ -55,7 +55,6 @@ byte zclGenericApp_TaskID;
 bool initilizeRejoin = false;
 
 devStates_t zclGenericApp_NwkState = DEV_INIT;
-static uint8 halKeySavedKeys;
 
 afAddrType_t Coordinator_DstAddr = {.addrMode = (afAddrMode_t)Addr16Bit, .addr.shortAddr = 0, .endPoint = 1};
 
@@ -69,7 +68,6 @@ static void zclGenericApp_BasicResetCB(void);
 static void zclGenericApp_BindNotification(bdbBindNotificationData_t *data);
 bool halProcessKeyInterrupt(void);
 
-void GenericApp_HalKeyInit(void);
 void zclGenericApp_ReportOnOff(uint8 endPoint, bool state);
 void zclGenericApp_LeaveNetwork(void);
 void zclGenericApp_ReportBattery(void);
@@ -155,6 +153,9 @@ void zclGenericApp_Init(byte task_id) {
     DebugInit();
     LREPMaster("Initialized debug module \n");
     LREPMaster("Hello world \n");
+    
+    // HalLedBlink(HAL_LED_1, HAL_LED_DEFAULT_FLASH_COUNT, HAL_LED_DEFAULT_DUTY_CYCLE, HAL_LED_DEFAULT_FLASH_TIME);
+    // osal_start_reload_timer(zclGenericApp_TaskID, HAL_LED_BLINK_EVENT, 500);
 }
 const char *bdbCommissioningModes[] = {
     "BDB_COMMISSIONING_INITIALIZATION",  "BDB_COMMISSIONING_NWK_STEERING", "BDB_COMMISSIONING_FORMATION",
@@ -256,12 +257,12 @@ uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events) {
         return (events ^ SYS_EVENT_MSG);
     }
 
-#if ZG_BUILD_ENDDEVICE_TYPE
+
     if (events & GENERICAPP_END_DEVICE_REJOIN_EVT) {
         bdb_ZedAttemptRecoverNwk();
         return (events ^ GENERICAPP_END_DEVICE_REJOIN_EVT);
     }
-#endif
+
 
     /* GENERICAPP_TODO: handle app events here */
 
@@ -286,13 +287,6 @@ uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events) {
         return events ^ GENERICAPP_SW1_LONG_PRESS;
     }
 
-    // событие опроса кнопок
-    if (events & HAL_KEY_EVENT) {
-        /* Считывание кнопок */
-        GenericApp_HalKeyPoll();
-
-        return events ^ HAL_KEY_EVENT;
-    }
 
     if (events & GENERICAPP_END_DEVICE_REJOIN_EVT) {
         bdb_ZedAttemptRecoverNwk();
@@ -339,135 +333,42 @@ void rejoin(void) {
 }
 static void zclGenericApp_HandleKeys(byte shift, byte keys) {
     LREP("zclGenericApp_HandleKeys" BYTE_TO_BINARY_PATTERN "", BYTE_TO_BINARY(keys));
-    LREPMaster("\n");
+    // LREPMaster("\n");
 
-    if (!keys) {
-        LREPMaster("Button released\n");
+    // if (!keys) {
+    //     LREPMaster("Button released\n");
 
-        osal_stop_timerEx(zclGenericApp_TaskID, GENERICAPP_SW1_LONG_PRESS);
-        osal_clear_event(zclGenericApp_TaskID, GENERICAPP_SW1_LONG_PRESS);
+    //     osal_stop_timerEx(zclGenericApp_TaskID, GENERICAPP_SW1_LONG_PRESS);
+    //     osal_clear_event(zclGenericApp_TaskID, GENERICAPP_SW1_LONG_PRESS);
 
-        osal_stop_timerEx(zclGenericApp_TaskID, HAL_KEY_EVENT);
-        osal_clear_event(zclGenericApp_TaskID, HAL_KEY_EVENT);
+    //     osal_stop_timerEx(zclGenericApp_TaskID, HAL_KEY_EVENT);
+    //     osal_clear_event(zclGenericApp_TaskID, HAL_KEY_EVENT);
 
-        halKeySavedKeys = 0;
+    //     halKeySavedKeys = 0;
 
-        if (initilizeRejoin) {
-            rejoin();
-        }
-        // osal_start_timerEx(zclGenericApp_TaskID, GENERICAPP_EVT_GO_TO_SLEEP,
-        // 10000);
-    }
+    //     if (initilizeRejoin) {
+    //         rejoin();
+    //     }
+    //     // osal_start_timerEx(zclGenericApp_TaskID, GENERICAPP_EVT_GO_TO_SLEEP,
+    //     // 10000);
+    // }
 
-    if (keys & HAL_KEY_SW_1) {
-        LREPMaster("Pressed button 1\n");
-        zclGeneral_SendOnOff_CmdToggle(zclGenericApp_SimpleDescs[0].EndPoint, &inderect_DstAddr, FALSE, bdb_getZCLFrameCounter());
+    // if (keys & HAL_KEY_SW_1) {
+    //     LREPMaster("Pressed button 1\n");
+    //     zclGeneral_SendOnOff_CmdToggle(zclGenericApp_SimpleDescs[0].EndPoint, &inderect_DstAddr, FALSE, bdb_getZCLFrameCounter());
 
-        zclGenericApp_ReportBattery();
-    }
-    if (keys & HAL_KEY_SW_2) {
-        LREPMaster("Pressed button2\n");
-        zclGeneral_SendOnOff_CmdToggle(zclGenericApp_SimpleDescs[1].EndPoint, &inderect_DstAddr, FALSE, bdb_getZCLFrameCounter());
-    }
+    //     zclGenericApp_ReportBattery();
+    // }
+    // if (keys & HAL_KEY_SW_2) {
+    //     LREPMaster("Pressed button2\n");
+    //     zclGeneral_SendOnOff_CmdToggle(zclGenericApp_SimpleDescs[1].EndPoint, &inderect_DstAddr, FALSE, bdb_getZCLFrameCounter());
+    // }
 }
 
-void GenericApp_HalKeyInit(void) {
-    /* Сбрасываем сохраняемое состояние кнопок в 0 */
-    halKeySavedKeys = 0;
 
-    PUSH1_SEL &= ~(PUSH1_BV);
-    PUSH1_DIR &= ~(PUSH1_BV);
-    PUSH1_ICTL |= PUSH1_ICTLBIT;
-    PUSH1_IEN |= PUSH1_IENBIT;
-    PUSH1_PXIFG = ~(PUSH1_BIT);
 
-    PICTL &= ~(PUSH1_EDGEBIT); /* Clear the edge bit */
-/* For falling edge, the bit must be set. */
-#if (PUSH1_EDGE == HAL_KEY_FALLING_EDGE)
-    PICTL |= PUSH1_EDGEBIT;
-#endif
 
-    PUSH2_SEL &= ~(PUSH2_BV);
-    PUSH2_DIR &= ~(PUSH2_BV);
-    PUSH2_ICTL |= PUSH2_ICTLBIT;
-    PUSH2_IEN |= PUSH2_IENBIT;
-    PUSH2_PXIFG = ~(PUSH2_BIT);
 
-    PICTL &= ~(PUSH2_EDGEBIT); /* Clear the edge bit */
-/* For falling edge, the bit must be set. */
-#if (PUSH2_EDGE == HAL_KEY_FALLING_EDGE)
-    PICTL |= PUSH2_EDGEBIT;
-#endif
-}
-
-bool halProcessKeyInterrupt(void) {
-    bool valid = false;
-
-    if (PUSH1_PXIFG & PUSH1_BIT) /* Interrupt Flag has been set */
-    {
-        PUSH1_PXIFG = ~(PUSH1_BIT); /* Clear Interrupt Flag */
-        valid = TRUE;
-    }
-
-    if (PUSH2_PXIFG & PUSH2_BIT) /* Interrupt Flag has been set */
-    {
-        PUSH2_PXIFG = ~(PUSH2_BIT); /* Clear Interrupt Flag */
-        valid = TRUE;
-    }
-
-    if (valid) {
-        osal_start_reload_timer(zclGenericApp_TaskID, HAL_KEY_EVENT, 100);
-        osal_start_timerEx(zclGenericApp_TaskID, GENERICAPP_SW1_LONG_PRESS, 5000);
-    }
-    return valid;
-}
-
-HAL_ISR_FUNCTION(halKeyPort2Isr, P2INT_VECTOR) {
-    HAL_ENTER_ISR();
-    if (halProcessKeyInterrupt()) {
-        HAL_KEY_CPU_PORT_2_IF = 0;
-        PUSH2_PXIFG = 0;
-        CLEAR_SLEEP_MODE();
-    }
-
-    HAL_EXIT_ISR();
-}
-
-HAL_ISR_FUNCTION(halKeyPort0Isr, P0INT_VECTOR) {
-    HAL_ENTER_ISR();
-    if (halProcessKeyInterrupt()) {
-        HAL_KEY_CPU_PORT_0_IF = 0;
-        PUSH1_PXIFG = 0;
-        CLEAR_SLEEP_MODE();
-    }
-
-    HAL_EXIT_ISR();
-}
-
-// Считывание кнопок
-void GenericApp_HalKeyPoll(void) {
-    uint8 keys = 0;
-
-    // нажата кнопка 1 ?
-    if (HAL_PUSH_BUTTON1()) {
-        keys |= HAL_KEY_SW_1;
-    }
-
-    // нажата кнопка 2 ?
-    if (HAL_PUSH_BUTTON2()) {
-        keys |= HAL_KEY_SW_2;
-    }
-
-    if (keys == halKeySavedKeys) {
-        // Выход - нет изменений
-        return;
-    }
-    // Сохраним текущее состояние кнопок для сравнения в след раз
-    halKeySavedKeys = keys;
-
-    // Вызовем генерацию события изменений кнопок
-    OnBoard_SendKeys(keys, HAL_KEY_STATE_NORMAL);
-}
 
 static void zclGenericApp_BindNotification(bdbBindNotificationData_t *data) {
     LREP("zclGenericApp_BindNotification %x %x %x", data->dstAddr, data->ep, data->clusterId);

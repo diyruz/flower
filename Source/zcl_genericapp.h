@@ -134,8 +134,7 @@ extern UINT16 zclGenericApp_event_loop(byte task_id, UINT16 events);
  */
 extern void zclGenericApp_ResetAttributesToDefaultValues(void);
 
-extern void GenericApp_HalKeyInit(void);
-extern void GenericApp_HalKeyPoll(void);
+
 
 /*********************************************************************
  *********************************************************************/

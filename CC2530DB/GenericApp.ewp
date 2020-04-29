@@ -3065,11 +3065,11 @@
                 </option>
                 <option>
                     <name>XOutOverride</name>
-                    <state>1</state>
+                    <state>0</state>
                 </option>
                 <option>
                     <name>OutputFile</name>
-                    <state>GenericApp.hex</state>
+                    <state>GenericApp.d51</state>
                 </option>
                 <option>
                     <name>OutputFormat</name>
@@ -3243,7 +3243,7 @@
                 </option>
                 <option>
                     <name>DebugInformation</name>
-                    <state>1</state>
+                    <state>0</state>
                 </option>
                 <option>
                     <name>RuntimeControl</name>
@@ -3255,11 +3255,11 @@
                 </option>
                 <option>
                     <name>AllowExtraOutput</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>GenerateExtraOutput</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>XExtraOutOverride</name>
@@ -3267,12 +3267,12 @@
                 </option>
                 <option>
                     <name>ExtraOutputFile</name>
-                    <state>GenericApp.sim</state>
+                    <state>GenericApp.a51</state>
                 </option>
                 <option>
                     <name>ExtraOutputFormat</name>
                     <version>11</version>
-                    <state>60</state>
+                    <state>23</state>
                 </option>
                 <option>
                     <name>ExtraFormatVariant</name>
@@ -3445,6 +3445,12 @@
             <name>$PROJ_DIR$\..\Source\Debug.h</name>
         </file>
         <file>
+            <name>$PROJ_DIR$\..\Source\hal_key.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\Source\hal_key.h</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\Source\OSAL_GenericApp.c</name>
         </file>
         <file>
@@ -3546,6 +3552,9 @@
                 <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_board.h</name>
             </file>
             <file>
+                <name>$PROJ_DIR$\..\Source\hal_board_cfg.h</name>
+            </file>
+            <file>
                 <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_defs.h</name>
             </file>
             <file>
@@ -3553,9 +3562,6 @@
             </file>
             <file>
                 <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_flash.h</name>
-            </file>
-            <file>
-                <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_key.h</name>
             </file>
             <file>
                 <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_lcd.h</name>
@@ -3579,9 +3585,6 @@
                 <name>CC2530EB</name>
                 <group>
                     <name>Config</name>
-                    <file>
-                        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_board_cfg.h</name>
-                    </file>
                 </group>
                 <group>
                     <name>Drivers</name>
@@ -3593,9 +3596,6 @@
                     </file>
                     <file>
                         <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_flash.c</name>
-                    </file>
-                    <file>
-                        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_key.c</name>
                     </file>
                     <file>
                         <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_lcd.c</name>
@@ -3632,71 +3632,6 @@
                     </file>
                     <file>
                         <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_types.h</name>
-                    </file>
-                </group>
-            </group>
-            <group>
-                <name>ZLIGHT</name>
-                <excluded>
-                    <configuration>CoordinatorEB</configuration>
-                    <configuration>RouterEB</configuration>
-                    <configuration>EndDeviceEB</configuration>
-                </excluded>
-                <group>
-                    <name>Config</name>
-                    <file>
-                        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530PMP4712\hal_board_cfg.h</name>
-                    </file>
-                </group>
-                <group>
-                    <name>Drivers</name>
-                    <file>
-                        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530PMP4712\hal_adc.c</name>
-                    </file>
-                    <file>
-                        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530PMP4712\hal_dma.c</name>
-                    </file>
-                    <file>
-                        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530PMP4712\hal_flash.c</name>
-                    </file>
-                    <file>
-                        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530PMP4712\hal_key.c</name>
-                    </file>
-                    <file>
-                        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530PMP4712\hal_lcd.c</name>
-                    </file>
-                    <file>
-                        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530PMP4712\hal_led.c</name>
-                    </file>
-                    <file>
-                        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530PMP4712\hal_sleep.c</name>
-                    </file>
-                    <file>
-                        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530PMP4712\hal_startup.c</name>
-                    </file>
-                    <file>
-                        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530PMP4712\hal_timer.c</name>
-                    </file>
-                    <file>
-                        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530PMP4712\hal_uart.c</name>
-                    </file>
-                </group>
-                <group>
-                    <name>Include</name>
-                    <file>
-                        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530PMP4712\hal_aes.h</name>
-                    </file>
-                    <file>
-                        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530PMP4712\hal_ccm.h</name>
-                    </file>
-                    <file>
-                        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530PMP4712\hal_dma.h</name>
-                    </file>
-                    <file>
-                        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530PMP4712\hal_mcu.h</name>
-                    </file>
-                    <file>
-                        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530PMP4712\hal_types.h</name>
                     </file>
                 </group>
             </group>

@@ -2,9 +2,7 @@
 #define TC_LINKKEY_JOIN
 #define NV_INIT
 #define NV_RESTORE
-#define HAL_UART TRUE
-#define HAL_UART_ISR 1
-#define HAL_UART_DMA 2
+
 // #define POWER_SAVING
 #define NWK_AUTO_POLL
 #define xZTOOL_P1
@@ -34,4 +32,40 @@
 #define DEFAULT_CHANLIST 0x07FFF800
 #endif
 
-#include "hal_board_cfg_dev.h"
+/* ----------- Minimum safe bus voltage ---------- */
+
+// Vdd/3 / Internal Reference X ENOB --> (Vdd / 3) / 1.15 X 127
+#define VDD_2_0  74   // 2.0 V required to safely read/write internal flash.
+#define VDD_2_7  100  // 2.7 V required for the Numonyx device.
+
+#define VDD_MIN_NV   (VDD_2_0+4)  // 5% margin over minimum to survive a page erase and compaction.
+#define VDD_MIN_GOOD (VDD_2_0+8)  // 10% margin over minimum to survive a page erase and compaction.
+#define VDD_MIN_XNV  (VDD_2_7+5)  // 5% margin over minimum to survive a page erase and compaction.
+
+#define ISR_KEYINTERRUPT
+#define HAL_BUZZER FALSE
+
+#define HAL_LED TRUE
+#define BLINK_LEDS TRUE
+
+
+//one of this boards
+#define HAL_BOARD_FREEPAD_20
+// #define HAL_BOARD_FREEPAD_12
+// #define HAL_BOARD_FREEPAD_8
+// #define HAL_BOARD_CHDTECH_DEV
+
+
+#if defined(HAL_BOARD_FREEPAD_20) || defined(HAL_BOARD_FREEPAD_12) || defined(HAL_BOARD_FREEPAD_8)
+    #define HAL_BOARD_FREEPAD
+#endif
+
+#ifdef HAL_BOARD_CHDTECH_DEV
+#define HAL_UART TRUE
+#define HAL_UART_ISR 1
+#define HAL_UART_DMA 2
+#endif
+
+
+#include "hal_board_cfg.h"
+// #include "hal_board_cfg_dev.h"
