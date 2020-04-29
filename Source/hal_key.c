@@ -181,11 +181,7 @@ void HalKeyConfig(bool interruptEnable, halKeyCBack_t cback) {
  **************************************************************************************************/
 uint8 HalKeyRead(void) {
 
-    uint8 keys, colcode = HAL_KEY_NUM_COLUMNS, rowcode = HAL_KEY_NUM_ROWS, i;
-
-    // Disable interrupt, as interrupt can be triggered without key press during
-    // scanning process
-    // P0IEN &= ~(HAL_KEY_P0_INTERRUPT_PINS);
+    uint8 colcode = HAL_KEY_CODE_NOKEY, rowcode = HAL_KEY_CODE_NOKEY;
     P1IEN &= ~(HAL_KEY_P1_INTERRUPT_PINS);
 
     for (int i = 0; i < 8; i++) {
@@ -198,43 +194,33 @@ uint8 HalKeyRead(void) {
     P2INP &= ~HAL_KEY_BIT5; // pull up port 0
     P2INP |= HAL_KEY_BIT6;  // pull down port 1
 
-    // TODO: Adjust the delay, create a macro in board configuration
-    for (i = 0; i < 255; i++)
+    for (int i = 0; i < 255; i++) {
         asm("NOP");
+    }
 
-     for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 8; i++) {
         if ((HAL_KEY_P0_INPUT_PINS >> i) & 1 && ((P0 >> i) & 0x01) == 0) {
             rowcode = i;
             break;
         }
     }
-    printf("rowcode %d colcode %d\n", rowcode, colcode);
+    // printf("rowcode %d colcode %d\n", rowcode, colcode);
 
     // change KPb pins back
 
     P2INP |= HAL_KEY_BIT5;  // pull up port 1
     P2INP &= ~HAL_KEY_BIT6; // pull down port 0
 
-    if (Hal_KeyIntEnable) {
-        // clear interrupt flag. It is necessary since key scanning sets
-        // interrupt flag bits.
-        // P0IFG = (uint8)(~HAL_KEY_P0_INTERRUPT_PINS);
-        P1IFG = (uint8)(~HAL_KEY_P1_INTERRUPT_PINS);
-        P0IF = 0;
-        P1IF = 0;
+    P1IFG = (uint8)(~HAL_KEY_P1_INTERRUPT_PINS);
+    P0IF = 0;
+    P1IF = 0;
+    P1IEN |= HAL_KEY_P1_INTERRUPT_PINS;
 
-        // re-enable interrupts
-        // P0IEN |= HAL_KEY_P0_INTERRUPT_PINS;
-        P1IEN |= HAL_KEY_P1_INTERRUPT_PINS;
-    }
-
-    if (colcode == HAL_KEY_NUM_COLUMNS || rowcode == HAL_KEY_NUM_ROWS) {
-        keys = HAL_KEY_CODE_NOKEY; // no key pressed
+    if (colcode == HAL_KEY_CODE_NOKEY || rowcode == HAL_KEY_CODE_NOKEY) {
+        return HAL_KEY_CODE_NOKEY; // no key pressed
     } else {
-        keys = (rowcode << 4) | colcode;
+        return (rowcode << 4) | colcode;
     }
-
-    return HAL_KEY_CODE_NOKEY; //keys;
 }
 
 /**************************************************************************************************
@@ -295,13 +281,6 @@ void HalKeyPoll(void) {
 void halProcessKeyInterrupt(void) {
 
     if ((P1IFG & HAL_KEY_P1_INTERRUPT_PINS)) { //(P0IFG & HAL_KEY_P0_INTERRUPT_PINS) ||
-
-        HalLedSet(HAL_LED_1, HAL_LED_MODE_TOGGLE);
-        // P0IFG = (uint8)(~HAL_KEY_P0_INTERRUPT_PINS); // clear interrupt flag
-        // P1IFG = (uint8)(~HAL_KEY_P1_INTERRUPT_PINS);
-        // return;
-        // Disable interrupt
-        // P0IEN &= (uint8)~HAL_KEY_P0_INTERRUPT_PINS;
         P1IEN &= (uint8)~HAL_KEY_P1_INTERRUPT_PINS;
         // interrupt flag has been set
         // P0IFG = (uint8)(~HAL_KEY_P0_INTERRUPT_PINS); // clear interrupt flag
@@ -310,8 +289,6 @@ void halProcessKeyInterrupt(void) {
             halKeyTimerRunning = TRUE;
             osal_start_timerEx(Hal_TaskID, HAL_KEY_EVENT, HAL_KEY_DEBOUNCE_VALUE);
         }
-        // Enable interrupt
-        // P0IEN |= HAL_KEY_P0_INTERRUPT_PINS;
         P1IEN |= HAL_KEY_P1_INTERRUPT_PINS;
     }
 }

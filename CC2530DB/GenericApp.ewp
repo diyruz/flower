@@ -3263,11 +3263,11 @@
                 </option>
                 <option>
                     <name>XExtraOutOverride</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>ExtraOutputFile</name>
-                    <state>GenericApp.a51</state>
+                    <state>GenericApp1.hex</state>
                 </option>
                 <option>
                     <name>ExtraOutputFormat</name>

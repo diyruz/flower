@@ -2,6 +2,7 @@
 #include "AF.h"
 #include "MT_SYS.h"
 #include "OSAL.h"
+#include "OSAL_Clock.h"
 #include "ZComDef.h"
 #include "ZDApp.h"
 #include "ZDObject.h"
@@ -31,6 +32,27 @@
 /*********************************************************************
  * MACROS
  */
+#define HAL_KEY_CODE_RELEASE_KEY HAL_KEY_CODE_NOKEY
+#define HAL_KEY_CODE_1 0x22  // 2x2
+#define HAL_KEY_CODE_2 0x32  // 3x2
+#define HAL_KEY_CODE_3 0x42  // 4x2
+#define HAL_KEY_CODE_4 0x52  // 5x2
+#define HAL_KEY_CODE_5 0x62  // 6x2
+#define HAL_KEY_CODE_6 0x23  // 2x3
+#define HAL_KEY_CODE_7 0x33  // 3x3
+#define HAL_KEY_CODE_8 0x43  // 4x3
+#define HAL_KEY_CODE_9 0x53  // 5x3
+#define HAL_KEY_CODE_10 0x63 // 6x3
+#define HAL_KEY_CODE_11 0x24 // 2x4
+#define HAL_KEY_CODE_12 0x34 // 3x4
+#define HAL_KEY_CODE_13 0x44 // 4x4
+#define HAL_KEY_CODE_14 0x54 // 5x4
+#define HAL_KEY_CODE_15 0x64 // 6x4
+#define HAL_KEY_CODE_16 0x25 // 2x5
+#define HAL_KEY_CODE_17 0x35 // 3x5
+#define HAL_KEY_CODE_18 0x45 // 4x5
+#define HAL_KEY_CODE_19 0x55 // 5x5
+#define HAL_KEY_CODE_20 0x65 // 6x5
 
 /*********************************************************************
  * CONSTANTS
@@ -151,9 +173,9 @@ void zclGenericApp_Init(byte task_id) {
     bdb_initialize();
 
     DebugInit();
-    LREPMaster("Initialized debug module \n");
-    LREPMaster("Hello world \n");
-    
+    printf("Initialized debug module \n");
+    printf("Hello world \n");
+
     // HalLedBlink(HAL_LED_1, HAL_LED_DEFAULT_FLASH_COUNT, HAL_LED_DEFAULT_DUTY_CYCLE, HAL_LED_DEFAULT_FLASH_TIME);
     // osal_start_reload_timer(zclGenericApp_TaskID, HAL_LED_BLINK_EVENT, 500);
 }
@@ -207,15 +229,6 @@ static void zclGenericApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
     }
 }
 
-/*********************************************************************
- * @fn          zclSample_event_loop
- *
- * @brief       Event Loop Processor for zclGeneral.
- *
- * @param       none
- *
- * @return      none
- */
 uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events) {
     afIncomingMSGPacket_t *MSGpkt;
 
@@ -240,7 +253,7 @@ uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events) {
                 if ((zclGenericApp_NwkState == DEV_ZB_COORD) || (zclGenericApp_NwkState == DEV_ROUTER) ||
                     (zclGenericApp_NwkState == DEV_END_DEVICE)) {
                     osal_stop_timerEx(zclGenericApp_TaskID, HAL_LED_BLINK_EVENT);
-                    LREPMaster("Connected to network....\n");
+                    printf("Connected to network....\n");
                     zclGenericApp_ReportBattery();
                 }
                 break;
@@ -257,12 +270,10 @@ uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events) {
         return (events ^ SYS_EVENT_MSG);
     }
 
-
     if (events & GENERICAPP_END_DEVICE_REJOIN_EVT) {
         bdb_ZedAttemptRecoverNwk();
         return (events ^ GENERICAPP_END_DEVICE_REJOIN_EVT);
     }
-
 
     /* GENERICAPP_TODO: handle app events here */
 
@@ -274,19 +285,18 @@ uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events) {
     }
 
     if (events & GENERICAPP_EVT_GO_TO_SLEEP) {
-        LREPMaster("Going to sleep....\n");
+        printf("Going to sleep....\n");
         halSleep(10000);
         return (events ^ GENERICAPP_EVT_GO_TO_SLEEP);
     }
 
     if (events & GENERICAPP_SW1_LONG_PRESS) {
-        LREPMaster("GENERICAPP_SW1_LONG_PRESS detected \n");
+        printf("GENERICAPP_SW1_LONG_PRESS detected \n");
 
         initilizeRejoin = true;
 
         return events ^ GENERICAPP_SW1_LONG_PRESS;
     }
-
 
     if (events & GENERICAPP_END_DEVICE_REJOIN_EVT) {
         bdb_ZedAttemptRecoverNwk();
@@ -299,7 +309,7 @@ uint16 zclGenericApp_event_loop(uint8 task_id, uint16 events) {
 
 // Инициализация выхода из сети
 void zclGenericApp_LeaveNetwork(void) {
-    LREPMaster("Leaving network\n");
+    printf("Leaving network\n");
     zclGenericApp_ResetAttributesToDefaultValues();
 
     NLME_LeaveReq_t leaveReq;
@@ -317,7 +327,7 @@ void zclGenericApp_LeaveNetwork(void) {
     ZStatus_t leaveStatus = NLME_LeaveReq(&leaveReq);
     LREP("NLME_LeaveReq(&leaveReq) %x\n", leaveStatus);
     if (leaveStatus != ZSuccess) {
-        LREPMaster("Couldn't send out leave; prepare to reset anyway\n");
+        printf("Couldn't send out leave; prepare to reset anyway\n");
         ZDApp_LeaveReset(FALSE);
     }
 }
@@ -326,17 +336,60 @@ void rejoin(void) {
     if (bdbAttributes.bdbNodeIsOnANetwork) {
         zclGenericApp_LeaveNetwork();
     } else {
-        LREPMaster("bdb_StartCommissioning.(BDB_COMMISSIONING_MODE_NWK_STEERING)...\n");
+        printf("bdb_StartCommissioning.(BDB_COMMISSIONING_MODE_NWK_STEERING)...\n");
         bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_STEERING);
         osal_start_reload_timer(zclGenericApp_TaskID, HAL_LED_BLINK_EVENT, 100);
     }
 }
 static void zclGenericApp_HandleKeys(byte shift, byte keys) {
-    LREP("zclGenericApp_HandleKeys" BYTE_TO_BINARY_PATTERN "", BYTE_TO_BINARY(keys));
-    // LREPMaster("\n");
+    static uint32 pressTime = 0;
+
+    static byte prevKey = 0;
+    if (keys == prevKey) {
+        return;
+    } else {
+        prevKey = keys;
+    }
+    HalLedSet(HAL_LED_1, HAL_LED_MODE_FLASH);
+    printf("printf zclGenericApp_HandleKeys Decimal: %d, Hex: 0x%X\n", keys, keys);
+
+    if (keys == HAL_KEY_CODE_RELEASE_KEY) {
+        printf("Released key");
+
+        if (pressTime > 0) {
+            uint16 timeDiff = (osal_getClock() - pressTime);
+            pressTime = 0;
+
+            if (timeDiff < 3) {
+                printf("It was short press\n");
+                // short press : scene recall
+
+            } else {
+                printf("It was long press\n");
+                return;
+            }
+        }
+
+    } else {
+        pressTime = osal_getClock();
+
+        if (keys == HAL_KEY_CODE_1) {
+            printf("Pressed button1\n");
+            // zclGeneral_SendOnOff_CmdOn(SAMPLEREMOTE_ENDPOINT, &zllSampleRemote_DstAddr, FALSE, sampleRemoteSeqNum++);
+        }
+
+        if (keys == HAL_KEY_CODE_2) {
+            printf("Pressed button2\n");
+            // zclGeneral_SendOnOff_CmdOn(SAMPLEREMOTE_ENDPOINT, &zllSampleRemote_DstAddr, FALSE, sampleRemoteSeqNum++);
+        }
+    }
+
+    // LREP("zclGenericApp_HandleKeys" BYTE_TO_BINARY_PATTERN "", BYTE_TO_BINARY(keys));
+    // printf("\n");
 
     // if (!keys) {
-    //     LREPMaster("Button released\n");
+    //     printf("Button released\n");
+    // }
 
     //     osal_stop_timerEx(zclGenericApp_TaskID, GENERICAPP_SW1_LONG_PRESS);
     //     osal_clear_event(zclGenericApp_TaskID, GENERICAPP_SW1_LONG_PRESS);
@@ -353,22 +406,18 @@ static void zclGenericApp_HandleKeys(byte shift, byte keys) {
     //     // 10000);
     // }
 
-    // if (keys & HAL_KEY_SW_1) {
-    //     LREPMaster("Pressed button 1\n");
-    //     zclGeneral_SendOnOff_CmdToggle(zclGenericApp_SimpleDescs[0].EndPoint, &inderect_DstAddr, FALSE, bdb_getZCLFrameCounter());
-
+    // if (keys & HAL_KEY_CODE_1) {
+    //     printf("Pressed button 1\n");
+    //     zclGeneral_SendOnOff_CmdToggle(zclGenericApp_SimpleDescs[0].EndPoint, &inderect_DstAddr, FALSE,
+    //                                    bdb_getZCLFrameCounter());
     //     zclGenericApp_ReportBattery();
     // }
     // if (keys & HAL_KEY_SW_2) {
-    //     LREPMaster("Pressed button2\n");
-    //     zclGeneral_SendOnOff_CmdToggle(zclGenericApp_SimpleDescs[1].EndPoint, &inderect_DstAddr, FALSE, bdb_getZCLFrameCounter());
+    //     printf("Pressed button2\n");
+    //     zclGeneral_SendOnOff_CmdToggle(zclGenericApp_SimpleDescs[1].EndPoint, &inderect_DstAddr, FALSE,
+    //     bdb_getZCLFrameCounter());
     // }
 }
-
-
-
-
-
 
 static void zclGenericApp_BindNotification(bdbBindNotificationData_t *data) {
     LREP("zclGenericApp_BindNotification %x %x %x", data->dstAddr, data->ep, data->clusterId);
@@ -408,7 +457,7 @@ static void zclGenericApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg) {
 static uint8 zclGenericApp_ProcessInReadRspCmd(zclIncomingMsg_t *pInMsg) {
     zclReadRspCmd_t *readRspCmd;
     uint8 i;
-    LREPMaster("zclGenericApp_ProcessInReadRspCmd\n");
+    printf("zclGenericApp_ProcessInReadRspCmd\n");
 
     readRspCmd = (zclReadRspCmd_t *)pInMsg->attrCmd;
     for (i = 0; i < readRspCmd->numAttr; i++) {
