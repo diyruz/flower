@@ -300,11 +300,7 @@ extern void MAC_RfFrontendSetup(void);
 
 /* Set to TRUE enable UART usage, FALSE disable it */
 #ifndef HAL_UART
-#if (defined ZAPP_P1) || (defined ZAPP_P2) || (defined ZTOOL_P1) || (defined ZTOOL_P2)
-#define HAL_UART TRUE
-#else
 #define HAL_UART FALSE
-#endif
 #endif
 
 #if HAL_UART

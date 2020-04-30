@@ -1,5 +1,5 @@
 /**************************************************************************************************
-  Filename:       zcl_genericapp.h
+  Filename:       zcl_FREEPADAPP.h
   Revised:        $Date: 2014-06-19 08:38:22 -0700 (Thu, 19 Jun 2014) $
   Revision:       $Revision: 39101 $
 
@@ -38,8 +38,8 @@
   contact Texas Instruments Incorporated at www.TI.com.
 **************************************************************************************************/
 
-#ifndef ZCL_GENERICAPP_H
-#define ZCL_GENERICAPP_H
+#ifndef ZCL_FREEPADAPP_H
+#define ZCL_FREEPADAPP_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,36 +50,29 @@ extern "C" {
  */
 #include "zcl.h"
 
-// Added to include ZLL Target functionality
-#if defined(BDB_TL_INITIATOR) || defined(BDB_TL_TARGET)
-#include "bdb_tlCommissioning.h"
-#include "zcl_general.h"
-
-#endif
-
 /*********************************************************************
  * CONSTANTS
  */
-#define SAMPLESW_ENDPOINT               8
 
-// Added to include ZLL Target functionality
-#define GENERICAPP_NUM_GRPS 2
+#ifdef HAL_BOARD_FREEPAD_20
+    #define FREEPAD_BUTTONS_COUNT 20
+#elif defined(HAL_BOARD_FREEPAD_12)
+    #define FREEPAD_BUTTONS_COUNT 12
+#elif defined(HAL_BOARD_FREEPAD_8)
+    #define FREEPAD_BUTTONS_COUNT 8
+#endif
+
 
 // Application Events
 
 
 
 
-#define GENERICAPP_SW1_LONG_PRESS 0x0001
-#define GENERICAPP_EVT_GO_TO_SLEEP 0x0002
-#define GENERICAPP_END_DEVICE_REJOIN_EVT 0x0004
 
-/*
-#define GENERICAPP_EVT_2                    0x0010
-#define GENERICAPP_EVT_3                    0x0020
-*/
+#define FREEPADAPP_EVT_GO_TO_SLEEP 0x0002
+#define FREEPADAPP_END_DEVICE_REJOIN_EVT 0x0004
 
-#define GENERICAPP_END_DEVICE_REJOIN_DELAY 10000
+#define FREEPADAPP_END_DEVICE_REJOIN_DELAY 10000
 
 /*********************************************************************
  * MACROS
@@ -92,28 +85,24 @@ extern "C" {
  * VARIABLES
  */
 
-// Added to include ZLL Target functionality
-#if defined(BDB_TL_INITIATOR) || defined(BDB_TL_TARGET)
-extern bdbTLDeviceInfo_t tlGenericApp_DeviceInfo;
-#endif
-extern SimpleDescriptionFormat_t zclSampleSw_SimpleDesc;
-extern SimpleDescriptionFormat_t zclGenericApp_SimpleDescs[];
-extern uint8 zclGenericApp_SimpleDescsCount;
-extern uint8 zclGenericApp_BatteryVoltage;
-extern uint8 zclGenericApp_BatteryPercentageRemainig;
-extern CONST zclCommandRec_t zclGenericApp_Cmds[];
+
+extern SimpleDescriptionFormat_t zclFreePadApp_SimpleDescs[];
+extern uint8 zclFreePadApp_SimpleDescsCount;
+extern uint8 zclFreePadApp_BatteryVoltage;
+extern uint8 zclFreePadApp_BatteryPercentageRemainig;
+extern CONST zclCommandRec_t zclFreePadApp_Cmds[];
 
 extern CONST uint8 zclCmdsArraySize;
 
 // attribute list
-extern CONST zclAttrRec_t zclGenericApp_Attrs[];
-extern CONST uint8 zclGenericApp_NumAttributes;
+extern CONST zclAttrRec_t zclFreePadApp_Attrs[];
+extern CONST uint8 zclFreePadApp_NumAttributes;
 
 // Identify attributes
-extern uint16 zclGenericApp_IdentifyTime;
-extern uint8 zclGenericApp_IdentifyCommissionState;
+extern uint16 zclFreePadApp_IdentifyTime;
+extern uint8 zclFreePadApp_IdentifyCommissionState;
 
-// GENERICAPP_TODO: Declare application specific attributes here
+// FREEPADAPP_TODO: Declare application specific attributes here
 
 /*********************************************************************
  * FUNCTIONS
@@ -122,17 +111,14 @@ extern uint8 zclGenericApp_IdentifyCommissionState;
 /*
  * Initialization for the task
  */
-extern void zclGenericApp_Init(byte task_id);
+extern void zclFreePadApp_Init(byte task_id);
+extern void zclFreePadApp_InitClusters(void);
 
 /*
  *  Event Process for the task
  */
-extern UINT16 zclGenericApp_event_loop(byte task_id, UINT16 events);
+extern UINT16 zclFreePadApp_event_loop(byte task_id, UINT16 events);
 
-/*
- *  Reset all writable attributes to their default values.
- */
-extern void zclGenericApp_ResetAttributesToDefaultValues(void);
 
 
 
@@ -143,4 +129,4 @@ extern void zclGenericApp_ResetAttributesToDefaultValues(void);
 }
 #endif
 
-#endif /* ZCL_GENERICAPP_H */
+#endif /* ZCL_FREEPADAPP_H */

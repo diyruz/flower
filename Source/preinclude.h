@@ -3,25 +3,20 @@
 #define NV_INIT
 #define NV_RESTORE
 
-// #define POWER_SAVING
+#define POWER_SAVING
 #define NWK_AUTO_POLL
-#define xZTOOL_P1
-#define xMT_TASK
-#define xMT_APP_FUNC
-#define xMT_SYS_FUNC
-#define xMT_ZDO_FUNC
-#define xMT_ZDO_MGMT
-#define xMT_APP_CNF_FUNC
+
 #define MULTICAST_ENABLED FALSE
 #define ZCL_READ
 
 #define ZCL_BASIC
 #define ZCL_IDENTIFY
-#define ZCL_SCENES
-#define xZCL_GROUPS
 #define ZCL_ON_OFF
-#define DISABLE_GREENPOWER_BASIC_PROXY
+#define ZCL_LEVEL_CTRL
+
 #define ZCL_REPORTING_DEVICE
+
+#define DISABLE_GREENPOWER_BASIC_PROXY
 #define BDB_FINDING_BINDING_CAPABILITY_ENABLED 1
 #define BDB_REPORTING TRUE
 
@@ -56,6 +51,7 @@
 // #define HAL_BOARD_CHDTECH_DEV
 
 
+
 #if defined(HAL_BOARD_FREEPAD_20) || defined(HAL_BOARD_FREEPAD_12) || defined(HAL_BOARD_FREEPAD_8)
     #define HAL_BOARD_FREEPAD
     #define HAL_UART FALSE
@@ -69,4 +65,3 @@
 
 
 #include "hal_board_cfg.h"
-// #include "hal_board_cfg_dev.h"
