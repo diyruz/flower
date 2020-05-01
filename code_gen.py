@@ -8,6 +8,14 @@ for colcode in range(start_col, start_col + cols):
         print(f'#define HAL_KEY_CODE_{key_num} { hex((rowcode << 4) | colcode)}   //{rowcode}x{colcode}')
         key_num+=1
 
+key_num = 1
+for colcode in range(start_col, start_col + cols):
+    for rowcode in range(start_row, start_row + rows):
+        print(f'case HAL_KEY_CODE_{key_num}:')
+        print(f'    return {key_num};')
+        key_num+=1
+
+
 
 case_begin = """
 switch (keys) {

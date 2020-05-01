@@ -31,7 +31,6 @@
 #define HAL_KEY_RISING_EDGE 0
 #define HAL_KEY_FALLING_EDGE 1
 
-
 #define HAL_KEY_DEBOUNCE_VALUE 25 // TODO: adjust this value
 
 #if defined(HAL_BOARD_FREEPAD_20)
@@ -84,8 +83,6 @@ void HalKeyInit(void) {
 void HalKeyConfig(bool interruptEnable, halKeyCBack_t cback) {
     Hal_KeyIntEnable = true;
 
-
-
     pHalKeyProcessFunction = cback;
 
     PICTL |= (HAL_KEY_BIT1 | HAL_KEY_BIT2);
@@ -110,7 +107,7 @@ uint8 HalKeyRead(void) {
     }
 
     P2INP &= ~HAL_KEY_BIT5; // pull up port 0
-    P2INP |= HAL_KEY_BIT6;  // pull down port 1
+    // P2INP |= HAL_KEY_BIT6;  // pull down port 1
 
     HAL_BOARD_DELAY_USEC(50);
 
@@ -121,8 +118,8 @@ uint8 HalKeyRead(void) {
         }
     }
 
-    P2INP |= HAL_KEY_BIT5;  // pull up port 1
-    P2INP &= ~HAL_KEY_BIT6; // pull down port 0
+    P2INP |= HAL_KEY_BIT5;  // pull down port 1
+    P2INP &= ~HAL_KEY_BIT6; // pull up port 0
 
     HAL_BOARD_DELAY_USEC(50);
 

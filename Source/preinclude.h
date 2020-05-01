@@ -43,10 +43,10 @@
 #define HAL_LED TRUE
 #define BLINK_LEDS TRUE
 
-#ifdef NWK_MAX_BINDING_ENTRIES
-    #undef NWK_MAX_BINDING_ENTRIES
-#endif
-#define NWK_MAX_BINDING_ENTRIES 20
+// #ifdef NWK_MAX_BINDING_ENTRIES
+//     #undef NWK_MAX_BINDING_ENTRIES
+// #endif
+// #define NWK_MAX_BINDING_ENTRIES 20
 
 //one of this boards
 #define HAL_BOARD_FREEPAD_20

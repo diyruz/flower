@@ -8,6 +8,7 @@
 #include "ZDObject.h"
 #include "math.h"
 
+
 #include "nwk_util.h"
 
 #include "zcl.h"
@@ -54,6 +55,8 @@
 #define HAL_KEY_CODE_19 0x55 // 5x5
 #define HAL_KEY_CODE_20 0x65 // 6x5
 
+#define HAL_UNKNOWN_BUTTON 255
+
 /*********************************************************************
  * CONSTANTS
  */
@@ -84,13 +87,16 @@ afAddrType_t inderect_DstAddr = {.addrMode = (afAddrMode_t)AddrNotPresent, .endP
 /*********************************************************************
  * LOCAL FUNCTIONS
  */
+static uint8 zclFreePadApp_KeyCodeToButton(byte key);
+
 static void zclFreePadApp_HandleKeys(byte shift, byte keys);
 static void zclFreePadApp_BindNotification(bdbBindNotificationData_t *data);
 
 static void zclFreePadApp_LeaveNetwork(void);
 static void zclFreePadApp_ReportBattery(void);
 static void zclFreePadApp_Rejoin(void);
-static void zclFreePadApp_SendButton(int buttonNumber);
+static void zclFreePadApp_SendButton(uint8 buttonNumber);
+static void zclFreePadApp_SendButtonRelease(uint8 buttonNumber);
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
 
 /*********************************************************************
@@ -251,19 +257,90 @@ static void zclFreePadApp_Rejoin(void) {
     }
 }
 
-static void zclFreePadApp_SendButton(int buttonNumber) {
-    printf("Pressed button %d\n", buttonNumber);
-    zclGeneral_SendOnOff_CmdToggle(zclFreePadApp_SimpleDescs[buttonNumber - 1].EndPoint, &inderect_DstAddr, FALSE,
-                                   bdb_getZCLFrameCounter());
+static void zclFreePadApp_SendButton(uint8 buttonNumber) {
+    if (buttonNumber != HAL_UNKNOWN_BUTTON) {
+        printf("Pressed button %d\n", buttonNumber);
+        zclGeneral_SendOnOff_CmdToggle(zclFreePadApp_SimpleDescs[buttonNumber - 1].EndPoint, &inderect_DstAddr, FALSE,
+                                       bdb_getZCLFrameCounter());
+
+        const uint8 NUM_ATTRIBUTES = 1;
+        zclReportCmd_t *pReportCmd;
+        pReportCmd = osal_mem_alloc(sizeof(zclReportCmd_t) + (NUM_ATTRIBUTES * sizeof(zclReport_t)));
+        if (pReportCmd != NULL) {
+            pReportCmd->numAttr = NUM_ATTRIBUTES;
+            pReportCmd->attrList[0].attrID = ATTRID_ON_OFF;
+            pReportCmd->attrList[0].dataType = ZCL_DATATYPE_BOOLEAN;
+            pReportCmd->attrList[0].attrData = (void *)(true);
+
+            zcl_SendReportCmd(zclFreePadApp_SimpleDescs[buttonNumber - 1].EndPoint, &Coordinator_DstAddr, ZCL_CLUSTER_ID_GEN_ON_OFF, pReportCmd,
+                              ZCL_FRAME_CLIENT_SERVER_DIR, false, bdb_getZCLFrameCounter());
+        }
+        osal_mem_free(pReportCmd);
+    }
 }
+
+static void zclFreePadApp_SendButtonRelease(uint8 buttonNumber) {
+    if (buttonNumber != HAL_UNKNOWN_BUTTON) {
+        zclGeneral_SendOnOff_CmdOff(zclFreePadApp_SimpleDescs[buttonNumber - 1].EndPoint, &Coordinator_DstAddr, FALSE,
+                                    bdb_getZCLFrameCounter());
+    }
+}
+
+static uint8 zclFreePadApp_KeyCodeToButton(byte key) {
+    switch (key) {
+    case HAL_KEY_CODE_1:
+        return 1;
+    case HAL_KEY_CODE_2:
+        return 2;
+    case HAL_KEY_CODE_3:
+        return 3;
+    case HAL_KEY_CODE_4:
+        return 4;
+    case HAL_KEY_CODE_5:
+        return 5;
+    case HAL_KEY_CODE_6:
+        return 6;
+    case HAL_KEY_CODE_7:
+        return 7;
+    case HAL_KEY_CODE_8:
+        return 8;
+    case HAL_KEY_CODE_9:
+        return 9;
+    case HAL_KEY_CODE_10:
+        return 10;
+    case HAL_KEY_CODE_11:
+        return 11;
+    case HAL_KEY_CODE_12:
+        return 12;
+    case HAL_KEY_CODE_13:
+        return 13;
+    case HAL_KEY_CODE_14:
+        return 14;
+    case HAL_KEY_CODE_15:
+        return 15;
+    case HAL_KEY_CODE_16:
+        return 16;
+    case HAL_KEY_CODE_17:
+        return 17;
+    case HAL_KEY_CODE_18:
+        return 18;
+    case HAL_KEY_CODE_19:
+        return 19;
+    case HAL_KEY_CODE_20:
+        return 20;
+
+    default:
+        return HAL_UNKNOWN_BUTTON;
+        break;
+    }
+}
+
 static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
     static uint32 pressTime = 0;
 
     static byte prevKey = 0;
     if (keys == prevKey) {
         return;
-    } else {
-        prevKey = keys;
     }
     // printf("zclFreePadApp_HandleKeys Decimal: %d, Hex: 0x%X\n", keys, keys);
 
@@ -282,110 +359,18 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
 
             } else {
                 printf("It was short press\n");
-                return;
+
+                zclFreePadApp_SendButtonRelease(zclFreePadApp_KeyCodeToButton(prevKey));
             }
         }
 
     } else {
         HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
         pressTime = osal_getClock();
-
-        switch (keys) {
-#if defined(HAL_BOARD_FREEPAD_8) || defined(HAL_BOARD_FREEPAD_12) || defined(HAL_BOARD_FREEPAD_20)
-
-        case HAL_KEY_CODE_1:
-            zclFreePadApp_SendButton(1);
-            break;
-
-        case HAL_KEY_CODE_2:
-            zclFreePadApp_SendButton(2);
-            break;
-
-        case HAL_KEY_CODE_3:
-            zclFreePadApp_SendButton(3);
-            break;
-
-        case HAL_KEY_CODE_4:
-            zclFreePadApp_SendButton(4);
-            break;
-
-        case HAL_KEY_CODE_5:
-            zclFreePadApp_SendButton(5);
-            break;
-
-        case HAL_KEY_CODE_6:
-            zclFreePadApp_SendButton(6);
-            break;
-
-        case HAL_KEY_CODE_7:
-            zclFreePadApp_SendButton(7);
-            break;
-
-        case HAL_KEY_CODE_8:
-            zclFreePadApp_SendButton(8);
-            break;
-
-#endif
-#if defined(HAL_BOARD_FREEPAD_12) || defined(HAL_BOARD_FREEPAD_20)
-
-        case HAL_KEY_CODE_9:
-            zclFreePadApp_SendButton(9);
-            break;
-
-        case HAL_KEY_CODE_10:
-            zclFreePadApp_SendButton(10);
-            break;
-
-        case HAL_KEY_CODE_11:
-            zclFreePadApp_SendButton(11);
-            break;
-
-        case HAL_KEY_CODE_12:
-            zclFreePadApp_SendButton(12);
-            break;
-
-#endif
-#ifdef HAL_BOARD_FREEPAD_20
-
-        case HAL_KEY_CODE_13:
-            zclFreePadApp_SendButton(13);
-            break;
-
-        case HAL_KEY_CODE_14:
-            zclFreePadApp_SendButton(14);
-            break;
-
-        case HAL_KEY_CODE_15:
-            zclFreePadApp_SendButton(15);
-            break;
-
-        case HAL_KEY_CODE_16:
-            zclFreePadApp_SendButton(16);
-            break;
-
-        case HAL_KEY_CODE_17:
-            zclFreePadApp_SendButton(17);
-            break;
-
-        case HAL_KEY_CODE_18:
-            zclFreePadApp_SendButton(18);
-            break;
-
-        case HAL_KEY_CODE_19:
-            zclFreePadApp_SendButton(19);
-            break;
-
-        case HAL_KEY_CODE_20:
-            zclFreePadApp_SendButton(20);
-            break;
-
-#endif
-
-        default:
-            break;
-        }
+        zclFreePadApp_SendButton(zclFreePadApp_KeyCodeToButton(keys));
     }
-    zclFreePadApp_ReportBattery();
+    // zclFreePadApp_ReportBattery();
+    prevKey = keys;
 }
 
 static void zclFreePadApp_BindNotification(bdbBindNotificationData_t *data) {
