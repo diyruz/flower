@@ -11,12 +11,12 @@ for colcode in range(start_col, start_col + cols):
 
 case_begin = """
 switch (keys) {
+    #if defined(HAL_BOARD_FREEPAD_8) || defined(HAL_BOARD_FREEPAD_12) || defined(HAL_BOARD_FREEPAD_20)
 """
 
 case_template = """
      case HAL_KEY_CODE_{key_num}:
-            printf("Pressed button{key_num}\\n");
-            zclGeneral_SendOnOff_CmdToggle(zclFreePadApp_SimpleDescs[{idx_num}].EndPoint, &inderect_DstAddr, FALSE, bdb_getZCLFrameCounter());
+            zclFreePadApp_SendButton({key_num});
             break;
 """
 
@@ -31,4 +31,13 @@ case_end = """
 print(case_begin)
 for i in range(0, 20):
     print(case_template.format(key_num=i+1, idx_num=i))
+    if i == 7:
+        print("#endif")
+        print("#if defined(HAL_BOARD_FREEPAD_12) || defined(HAL_BOARD_FREEPAD_20)")
+    if i == 11:
+        print("#endif")
+        print("#ifdef HAL_BOARD_FREEPAD_20")
+    if i == 19:
+        print("#endif")
+
 print(case_end)

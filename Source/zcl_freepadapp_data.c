@@ -42,16 +42,10 @@ const uint8 zclFreePadApp_ZCLVersion = FREEPADAPP_ZCLVERSION;
 //{lenght, 'd', 'a', 't', 'a'}
 const uint8 zclFreePadApp_ManufacturerName[] = {9, 'm', 'o', 'd', 'k', 'a', 'm', '.', 'r', 'u'};
 const uint8 zclFreePadApp_ModelId[] = {14, 'D', 'I', 'Y', 'R', 'u', 'Z', '_', 'F', 'r', 'e', 'e', 'P', 'a', 'd'};
-const uint8 zclFreePadApp_DateCode[] = {8, '2', '0', '2', '0', '0', '4', '2', '4'};
 const uint8 zclFreePadApp_PowerSource = POWER_SOURCE_BATTERY;
 
-uint8 zclFreePadApp_LocationDescription[17] = {16,  ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-                                               ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '};
-uint8 zclFreePadApp_PhysicalEnvironment = 0;
-uint8 zclFreePadApp_DeviceEnable = DEVICE_ENABLED;
-
 // Identify Cluster
-uint16 zclFreePadApp_IdentifyTime;
+uint16 zclFreePadApp_IdentifyTime = 60;
 
 /*********************************************************************
  * ATTRIBUTE DEFINITIONS - Uses REAL cluster IDs
@@ -78,24 +72,10 @@ CONST zclAttrRec_t zclFreePadApp_Attrs[] = {
     {ZCL_CLUSTER_ID_GEN_BASIC,
      {// Attribute record
       ATTRID_BASIC_MODEL_ID, ZCL_DATATYPE_CHAR_STR, ACCESS_CONTROL_READ, (void *)&zclFreePadApp_ModelId}},
-    {ZCL_CLUSTER_ID_GEN_BASIC,
-     {// Attribute record
-      ATTRID_BASIC_DATE_CODE, ZCL_DATATYPE_CHAR_STR, ACCESS_CONTROL_READ, (void *)&zclFreePadApp_DateCode}},
+
     {ZCL_CLUSTER_ID_GEN_BASIC,
      {// Attribute record
       ATTRID_BASIC_POWER_SOURCE, ZCL_DATATYPE_ENUM8, ACCESS_CONTROL_READ, (void *)&zclFreePadApp_PowerSource}},
-    {ZCL_CLUSTER_ID_GEN_BASIC,
-     {// Attribute record
-      ATTRID_BASIC_LOCATION_DESC, ZCL_DATATYPE_CHAR_STR, (ACCESS_CONTROL_READ | ACCESS_CONTROL_WRITE),
-      (void *)&zclFreePadApp_LocationDescription}},
-    {ZCL_CLUSTER_ID_GEN_BASIC,
-     {// Attribute record
-      ATTRID_BASIC_PHYSICAL_ENV, ZCL_DATATYPE_ENUM8, (ACCESS_CONTROL_READ | ACCESS_CONTROL_WRITE),
-      (void *)&zclFreePadApp_PhysicalEnvironment}},
-    {ZCL_CLUSTER_ID_GEN_BASIC,
-     {// Attribute record
-      ATTRID_BASIC_DEVICE_ENABLED, ZCL_DATATYPE_BOOLEAN, (ACCESS_CONTROL_READ | ACCESS_CONTROL_WRITE),
-      (void *)&zclFreePadApp_DeviceEnable}},
 
     // *** Identify Cluster Attribute ***
     {ZCL_CLUSTER_ID_GEN_IDENTIFY,
@@ -124,12 +104,11 @@ CONST zclAttrRec_t zclFreePadApp_Attrs[] = {
 
 uint8 CONST zclFreePadApp_NumAttributes = (sizeof(zclFreePadApp_Attrs) / sizeof(zclFreePadApp_Attrs[0]));
 
-const cId_t zclSampleSw_InClusterList[] = {ZCL_CLUSTER_ID_GEN_BASIC, ZCL_CLUSTER_ID_GEN_IDENTIFY,
-                                           ZCL_CLUSTER_ID_GEN_ON_OFF_SWITCH_CONFIG};
+const cId_t zclSampleSw_InClusterList[] = {ZCL_CLUSTER_ID_GEN_BASIC, ZCL_CLUSTER_ID_GEN_IDENTIFY};
 
 #define ZCLSAMPLESW_MAX_INCLUSTERS (sizeof(zclSampleSw_InClusterList) / sizeof(zclSampleSw_InClusterList[0]))
 
-const cId_t zclSampleSw_OutClusterList[] = {ZCL_CLUSTER_ID_GEN_IDENTIFY, ZCL_CLUSTER_ID_GEN_ON_OFF};
+const cId_t zclSampleSw_OutClusterList[] = {ZCL_CLUSTER_ID_GEN_ON_OFF};
 
 #define ZCLSAMPLESW_MAX_OUTCLUSTERS (sizeof(zclSampleSw_OutClusterList) / sizeof(zclSampleSw_OutClusterList[0]))
 
