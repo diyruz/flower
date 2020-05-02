@@ -34,7 +34,6 @@
  */
 #define HAL_KEY_CODE_RELEASE_KEY HAL_KEY_CODE_NOKEY
 
-
 /*********************************************************************
  * CONSTANTS
  */
@@ -111,8 +110,7 @@ void zclFreePadApp_Init(byte task_id) {
     DebugInit();
     printf("Initialized debug module \n");
 
-    osal_start_reload_timer( zclFreePadApp_TaskID, FREEPADAPP_SEND_BATTERY_EVT, (uint32) FREEPADAPP_BATTERY_REPORT_TIMEOUT);
-
+    osal_start_reload_timer(zclFreePadApp_TaskID, FREEPADAPP_EVT_GO_TO_SLEEP, (uint32)FREEPADAPP_AWAKE_TIMEOUT);
 }
 
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
@@ -121,7 +119,6 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
     case BDB_COMMISSIONING_NWK_STEERING:
         switch (bdbCommissioningModeMsg->bdbCommissioningStatus) {
         case BDB_COMMISSIONING_SUCCESS:
-            // zclFreePadApp_ReportBattery();
             HalLedSet(HAL_LED_1, HAL_LED_MODE_OFF);
             break;
 
@@ -161,12 +158,6 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
                 // Теперь мы в сети
                 if (zclFreePadApp_NwkState == DEV_END_DEVICE) {
                     HalLedSet(HAL_LED_1, HAL_LED_MODE_OFF);
-                    // printf("Connected to network....\n");
-                    // zclFreePadApp_ReportBattery();
-                    // for (int i = 0; i < zclFreePadApp_SimpleDescsCount; i++) {
-                    //     zclGeneral_SendIdentify(zclFreePadApp_SimpleDescs[i].EndPoint, &Coordinator_DstAddr,
-                    //                             zclFreePadApp_IdentifyTime, true, bdb_getZCLFrameCounter());
-                    // }
                 }
                 break;
 
@@ -187,16 +178,9 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
         return (events ^ FREEPADAPP_END_DEVICE_REJOIN_EVT);
     }
 
-    
-
-    if (events & FREEPADAPP_SEND_BATTERY_EVT) {
-        zclFreePadApp_ReportBattery();
-        return (events ^ FREEPADAPP_SEND_BATTERY_EVT);
-    }
-
     if (events & FREEPADAPP_EVT_GO_TO_SLEEP) {
         // printf("Going to sleep....\n");
-        halSleep(10000);
+        halSleep(0);
         return (events ^ FREEPADAPP_EVT_GO_TO_SLEEP);
     }
 
@@ -223,12 +207,9 @@ static void zclFreePadApp_LeaveNetwork(void) {
     // Set the NV startup option to force a "new" join.
     zgWriteStartupOptions(ZG_STARTUP_SET, ZCD_STARTOPT_DEFAULT_NETWORK_STATE);
 
-    // Leave the network, and reset afterwards
-
     ZStatus_t leaveStatus = NLME_LeaveReq(&leaveReq);
     LREP("NLME_LeaveReq(&leaveReq) %x\n", leaveStatus);
     if (leaveStatus != ZSuccess) {
-        // printf("Couldn't send out leave; prepare to reset anyway\n");
         ZDApp_LeaveReset(FALSE);
     }
     osal_mem_free(&leaveReq);
@@ -244,7 +225,12 @@ static void zclFreePadApp_Rejoin(void) {
 
 static void zclFreePadApp_SendButtonPress(byte buttonNumber) {
     if (buttonNumber != HAL_UNKNOWN_BUTTON) {
+
         printf("Pressed button %d\n", buttonNumber);
+
+        if (buttonNumber == 1) {
+            zclFreePadApp_ReportBattery();
+        }
         zclGeneral_SendOnOff_CmdToggle(zclFreePadApp_SimpleDescs[buttonNumber - 1].EndPoint, &inderect_DstAddr, FALSE,
                                        bdb_getZCLFrameCounter());
 
@@ -265,9 +251,7 @@ static void zclFreePadApp_SendButtonPress(byte buttonNumber) {
     }
 }
 
-static void zclFreePadApp_SendButtonLongPress(uint8 buttonNumber) {
-
-}
+static void zclFreePadApp_SendButtonLongPress(uint8 buttonNumber) {}
 
 static void zclFreePadApp_SendButtonRelease(uint8 buttonNumber) {
     if (buttonNumber != HAL_UNKNOWN_BUTTON) {
@@ -276,8 +260,6 @@ static void zclFreePadApp_SendButtonRelease(uint8 buttonNumber) {
     }
 }
 
-
-
 static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
     static uint32 pressTime = 0;
 
@@ -285,7 +267,6 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
     if (keys == prevKey) {
         return;
     }
-    // printf("zclFreePadApp_HandleKeys Decimal: %d, Hex: 0x%X\n", keys, keys);
 
     if (keys == HAL_KEY_CODE_RELEASE_KEY) {
         printf("Released key\n");
