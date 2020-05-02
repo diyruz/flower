@@ -183,12 +183,6 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
         halSleep(0);
         return (events ^ FREEPADAPP_EVT_GO_TO_SLEEP);
     }
-
-    if (events & FREEPADAPP_END_DEVICE_REJOIN_EVT) {
-        bdb_ZedAttemptRecoverNwk();
-        return (events ^ FREEPADAPP_END_DEVICE_REJOIN_EVT);
-    }
-
     // Discard unknown events
     return 0;
 }
