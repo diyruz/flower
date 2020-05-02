@@ -165,16 +165,31 @@ void halProcessKeyInterrupt(void) {
     }
 }
 
-void HalKeyEnterSleep(void) {}
+void HalKeyEnterSleep(void) {
+    uint8 clkcmd = CLKCONCMD;
+    uint8 clksta = CLKCONSTA;
+    // Switch to 16MHz before setting the DC/DC to bypass to reduce risk of flash corruption
+    CLKCONCMD = (CLKCONCMD_16MHZ | OSC_32KHZ);
+    // wait till clock speed stablizes
+    while (CLKCONSTA != (CLKCONCMD_16MHZ | OSC_32KHZ))
+        ;
+
+    CLKCONCMD = clkcmd;
+    while (CLKCONSTA != (clksta))
+        ;
+}
 
 uint8 HalKeyExitSleep(void) {
-    /* Wakeup!!!
-     * Nothing to do. In fact. HalKeyRead() may not be called here.
-     * Calling HalKeyRead() will trigger key scanning and interrupt flag clearing in the end,
-     * which is no longer compatible with hal_sleep.c module.
-     */
+    uint8 clkcmd = CLKCONCMD;
+    // Switch to 16MHz before setting the DC/DC to on to reduce risk of flash corruption
+    CLKCONCMD = (CLKCONCMD_16MHZ | OSC_32KHZ);
+    // wait till clock speed stablizes
+    while (CLKCONSTA != (CLKCONCMD_16MHZ | OSC_32KHZ));
+
+    CLKCONCMD = clkcmd;
+
     /* Wake up and read keys */
-    return TRUE;
+    return (HalKeyRead());
 }
 
 HAL_ISR_FUNCTION(halKeyPort0Isr, P0INT_VECTOR) {
