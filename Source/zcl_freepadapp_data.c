@@ -128,3 +128,54 @@ void zclFreePadApp_InitClusters(void) {
     }
 }
 uint8 zclFreePadApp_SimpleDescsCount = FREEPAD_BUTTONS_COUNT;
+
+
+byte zclFreePadApp_KeyCodeToButton(byte key) {
+    switch (key) {
+
+    case 0x9: // row=4 col=4
+        return 1;
+    case 0xa: // row=4 col=8
+        return 2;
+    case 0xc: // row=4 col=16
+        return 3;
+    case 0x8: // row=4 col=32
+        return 4;
+    case 0x11: // row=8 col=4
+        return 5;
+    case 0x12: // row=8 col=8
+        return 6;
+    case 0x14: // row=8 col=16
+        return 7;
+    case 0x18: // row=8 col=32
+        return 8;
+    case 0x21: // row=16 col=4
+        return 9;
+    case 0x22: // row=16 col=8
+        return 10;
+    case 0x24: // row=16 col=16
+        return 11;
+    case 0x28: // row=16 col=32
+        return 12;
+    case 0x41: // row=32 col=4
+        return 13;
+    case 0x42: // row=32 col=8
+        return 14;
+    case 0x44: // row=32 col=16
+        return 15;
+    case 0x48: // row=32 col=32
+        return 16;
+    case 0x81: // row=64 col=4
+        return 17;
+    case 0x82: // row=64 col=8
+        return 18;
+    case 0x84: // row=64 col=16
+        return 19;
+    case 0x88: // row=64 col=32
+        return 20;
+
+    default:
+        return HAL_UNKNOWN_BUTTON;
+        break;
+    }
+}

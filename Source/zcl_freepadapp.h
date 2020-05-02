@@ -62,15 +62,16 @@ extern "C" {
     #define FREEPAD_BUTTONS_COUNT 8
 #endif
 
-
+#define HAL_UNKNOWN_BUTTON HAL_KEY_CODE_NOKEY
 // Application Events
 
 
-
+#define FREEPADAPP_BATTERY_REPORT_TIMEOUT 1000 * 60 * 30 //30 minutes
 
 
 #define FREEPADAPP_EVT_GO_TO_SLEEP 0x0002
 #define FREEPADAPP_END_DEVICE_REJOIN_EVT 0x0004
+#define FREEPADAPP_SEND_BATTERY_EVT 0x0005
 
 #define FREEPADAPP_END_DEVICE_REJOIN_DELAY 10000
 
@@ -113,6 +114,7 @@ extern uint8 zclFreePadApp_IdentifyCommissionState;
  */
 extern void zclFreePadApp_Init(byte task_id);
 extern void zclFreePadApp_InitClusters(void);
+extern byte zclFreePadApp_KeyCodeToButton(byte key);
 
 /*
  *  Event Process for the task

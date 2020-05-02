@@ -33,7 +33,7 @@
  * MACROS
  */
 #define HAL_KEY_CODE_RELEASE_KEY HAL_KEY_CODE_NOKEY
-#define HAL_UNKNOWN_BUTTON 0xff
+
 
 /*********************************************************************
  * CONSTANTS
@@ -65,15 +65,14 @@ afAddrType_t inderect_DstAddr = {.addrMode = (afAddrMode_t)AddrNotPresent, .endP
 /*********************************************************************
  * LOCAL FUNCTIONS
  */
-static byte zclFreePadApp_KeyCodeToButton(byte key);
-
 static void zclFreePadApp_HandleKeys(byte shift, byte keys);
 static void zclFreePadApp_BindNotification(bdbBindNotificationData_t *data);
 
 static void zclFreePadApp_LeaveNetwork(void);
 static void zclFreePadApp_ReportBattery(void);
 static void zclFreePadApp_Rejoin(void);
-static void zclFreePadApp_SendButton(uint8 buttonNumber);
+static void zclFreePadApp_SendButtonPress(uint8 buttonNumber);
+static void zclFreePadApp_SendButtonLongPress(uint8 buttonNumber);
 static void zclFreePadApp_SendButtonRelease(uint8 buttonNumber);
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
 
@@ -111,6 +110,9 @@ void zclFreePadApp_Init(byte task_id) {
 
     DebugInit();
     printf("Initialized debug module \n");
+
+    osal_start_reload_timer( zclFreePadApp_TaskID, FREEPADAPP_SEND_BATTERY_EVT, (uint32) FREEPADAPP_BATTERY_REPORT_TIMEOUT);
+
 }
 
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
@@ -185,7 +187,12 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
         return (events ^ FREEPADAPP_END_DEVICE_REJOIN_EVT);
     }
 
-    /* FREEPADAPP_TODO: handle app events here */
+    
+
+    if (events & FREEPADAPP_SEND_BATTERY_EVT) {
+        zclFreePadApp_ReportBattery();
+        return (events ^ FREEPADAPP_SEND_BATTERY_EVT);
+    }
 
     if (events & FREEPADAPP_EVT_GO_TO_SLEEP) {
         // printf("Going to sleep....\n");
@@ -235,7 +242,7 @@ static void zclFreePadApp_Rejoin(void) {
     }
 }
 
-static void zclFreePadApp_SendButton(byte buttonNumber) {
+static void zclFreePadApp_SendButtonPress(byte buttonNumber) {
     if (buttonNumber != HAL_UNKNOWN_BUTTON) {
         printf("Pressed button %d\n", buttonNumber);
         zclGeneral_SendOnOff_CmdToggle(zclFreePadApp_SimpleDescs[buttonNumber - 1].EndPoint, &inderect_DstAddr, FALSE,
@@ -258,6 +265,10 @@ static void zclFreePadApp_SendButton(byte buttonNumber) {
     }
 }
 
+static void zclFreePadApp_SendButtonLongPress(uint8 buttonNumber) {
+
+}
+
 static void zclFreePadApp_SendButtonRelease(uint8 buttonNumber) {
     if (buttonNumber != HAL_UNKNOWN_BUTTON) {
         zclGeneral_SendOnOff_CmdOff(zclFreePadApp_SimpleDescs[buttonNumber - 1].EndPoint, &Coordinator_DstAddr, FALSE,
@@ -265,55 +276,7 @@ static void zclFreePadApp_SendButtonRelease(uint8 buttonNumber) {
     }
 }
 
-static byte zclFreePadApp_KeyCodeToButton(byte key) {
-    switch (key) {
 
-    case 0x9: // row=4 col=4
-        return 1;
-    case 0xa: // row=4 col=8
-        return 2;
-    case 0xc: // row=4 col=16
-        return 3;
-    case 0x8: // row=4 col=32
-        return 4;
-    case 0x11: // row=8 col=4
-        return 5;
-    case 0x12: // row=8 col=8
-        return 6;
-    case 0x14: // row=8 col=16
-        return 7;
-    case 0x18: // row=8 col=32
-        return 8;
-    case 0x21: // row=16 col=4
-        return 9;
-    case 0x22: // row=16 col=8
-        return 10;
-    case 0x24: // row=16 col=16
-        return 11;
-    case 0x28: // row=16 col=32
-        return 12;
-    case 0x41: // row=32 col=4
-        return 13;
-    case 0x42: // row=32 col=8
-        return 14;
-    case 0x44: // row=32 col=16
-        return 15;
-    case 0x48: // row=32 col=32
-        return 16;
-    case 0x81: // row=64 col=4
-        return 17;
-    case 0x82: // row=64 col=8
-        return 18;
-    case 0x84: // row=64 col=16
-        return 19;
-    case 0x88: // row=64 col=32
-        return 20;
-
-    default:
-        return HAL_UNKNOWN_BUTTON;
-        break;
-    }
-}
 
 static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
     static uint32 pressTime = 0;
@@ -333,13 +296,12 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
 
             if (timeDiff > 5) {
                 printf("It was very long press\n");
-                // zclFreePadApp_Rejoin();
+                zclFreePadApp_Rejoin();
             } else if (timeDiff > 3) {
                 printf("It was long press\n");
-
+                zclFreePadApp_SendButtonLongPress(zclFreePadApp_KeyCodeToButton(prevKey));
             } else {
                 printf("It was short press\n");
-
                 zclFreePadApp_SendButtonRelease(zclFreePadApp_KeyCodeToButton(prevKey));
             }
         }
@@ -347,7 +309,7 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
     } else {
         HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
         pressTime = osal_getClock();
-        zclFreePadApp_SendButton(zclFreePadApp_KeyCodeToButton(keys));
+        zclFreePadApp_SendButtonPress(zclFreePadApp_KeyCodeToButton(keys));
     }
     // zclFreePadApp_ReportBattery();
     prevKey = keys;
