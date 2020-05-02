@@ -293,6 +293,7 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
         }
 
     } else {
+        bdb_ZedAttemptRecoverNwk();
         HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
         pressTime = osal_getClock();
         zclFreePadApp_SendButtonPress(zclFreePadApp_KeyCodeToButton(keys));
