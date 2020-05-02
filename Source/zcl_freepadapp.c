@@ -225,14 +225,7 @@ static void zclFreePadApp_Rejoin(void) {
 
 static void zclFreePadApp_SendButtonPress(byte buttonNumber) {
     if (buttonNumber != HAL_UNKNOWN_BUTTON) {
-
         printf("Pressed button %d\n", buttonNumber);
-
-        if (buttonNumber == 1) {
-            zclFreePadApp_ReportBattery();
-        }
-        zclGeneral_SendOnOff_CmdToggle(zclFreePadApp_SimpleDescs[buttonNumber - 1].EndPoint, &inderect_DstAddr, FALSE,
-                                       bdb_getZCLFrameCounter());
 
         const uint8 NUM_ATTRIBUTES = 1;
         zclReportCmd_t *pReportCmd;
@@ -255,8 +248,19 @@ static void zclFreePadApp_SendButtonLongPress(uint8 buttonNumber) {}
 
 static void zclFreePadApp_SendButtonRelease(uint8 buttonNumber) {
     if (buttonNumber != HAL_UNKNOWN_BUTTON) {
-        zclGeneral_SendOnOff_CmdOff(zclFreePadApp_SimpleDescs[buttonNumber - 1].EndPoint, &Coordinator_DstAddr, FALSE,
-                                    bdb_getZCLFrameCounter());
+        const uint8 NUM_ATTRIBUTES = 1;
+        zclReportCmd_t *pReportCmd;
+        pReportCmd = osal_mem_alloc(sizeof(zclReportCmd_t) + (NUM_ATTRIBUTES * sizeof(zclReport_t)));
+        if (pReportCmd != NULL) {
+            pReportCmd->numAttr = NUM_ATTRIBUTES;
+            pReportCmd->attrList[0].attrID = ATTRID_ON_OFF;
+            pReportCmd->attrList[0].dataType = ZCL_DATATYPE_BOOLEAN;
+            pReportCmd->attrList[0].attrData = (void *)(false);
+
+            zcl_SendReportCmd(zclFreePadApp_SimpleDescs[buttonNumber - 1].EndPoint, &Coordinator_DstAddr,
+                              ZCL_CLUSTER_ID_GEN_ON_OFF, pReportCmd, ZCL_FRAME_CLIENT_SERVER_DIR, false,
+                              bdb_getZCLFrameCounter());
+        }
     }
 }
 
@@ -274,16 +278,23 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
         if (pressTime > 0) {
             uint16 timeDiff = (osal_getClock() - pressTime);
             pressTime = 0;
-
-            if (timeDiff > 5) {
+            byte button = zclFreePadApp_KeyCodeToButton(prevKey);
+            if (timeDiff > 10) {
                 printf("It was very long press\n");
                 zclFreePadApp_Rejoin();
             } else if (timeDiff > 3) {
                 printf("It was long press\n");
-                zclFreePadApp_SendButtonLongPress(zclFreePadApp_KeyCodeToButton(prevKey));
+                zclFreePadApp_SendButtonLongPress(button);
             } else {
                 printf("It was short press\n");
-                zclFreePadApp_SendButtonRelease(zclFreePadApp_KeyCodeToButton(prevKey));
+                zclFreePadApp_SendButtonRelease(button);
+                if (button != HAL_UNKNOWN_BUTTON) {
+                    zclGeneral_SendOnOff_CmdToggle(zclFreePadApp_SimpleDescs[button - 1].EndPoint, &inderect_DstAddr,
+                                                   FALSE, bdb_getZCLFrameCounter());
+                }
+                if (button == 1) {
+                    zclFreePadApp_ReportBattery();
+                }
             }
         }
 
