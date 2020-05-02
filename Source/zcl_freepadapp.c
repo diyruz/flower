@@ -8,7 +8,6 @@
 #include "ZDObject.h"
 #include "math.h"
 
-
 #include "nwk_util.h"
 
 #include "zcl.h"
@@ -34,28 +33,7 @@
  * MACROS
  */
 #define HAL_KEY_CODE_RELEASE_KEY HAL_KEY_CODE_NOKEY
-#define HAL_KEY_CODE_1 0x22  // 2x2
-#define HAL_KEY_CODE_2 0x32  // 3x2
-#define HAL_KEY_CODE_3 0x42  // 4x2
-#define HAL_KEY_CODE_4 0x52  // 5x2
-#define HAL_KEY_CODE_5 0x62  // 6x2
-#define HAL_KEY_CODE_6 0x23  // 2x3
-#define HAL_KEY_CODE_7 0x33  // 3x3
-#define HAL_KEY_CODE_8 0x43  // 4x3
-#define HAL_KEY_CODE_9 0x53  // 5x3
-#define HAL_KEY_CODE_10 0x63 // 6x3
-#define HAL_KEY_CODE_11 0x24 // 2x4
-#define HAL_KEY_CODE_12 0x34 // 3x4
-#define HAL_KEY_CODE_13 0x44 // 4x4
-#define HAL_KEY_CODE_14 0x54 // 5x4
-#define HAL_KEY_CODE_15 0x64 // 6x4
-#define HAL_KEY_CODE_16 0x25 // 2x5
-#define HAL_KEY_CODE_17 0x35 // 3x5
-#define HAL_KEY_CODE_18 0x45 // 4x5
-#define HAL_KEY_CODE_19 0x55 // 5x5
-#define HAL_KEY_CODE_20 0x65 // 6x5
-
-#define HAL_UNKNOWN_BUTTON 255
+#define HAL_UNKNOWN_BUTTON 0xff
 
 /*********************************************************************
  * CONSTANTS
@@ -87,7 +65,7 @@ afAddrType_t inderect_DstAddr = {.addrMode = (afAddrMode_t)AddrNotPresent, .endP
 /*********************************************************************
  * LOCAL FUNCTIONS
  */
-static uint8 zclFreePadApp_KeyCodeToButton(byte key);
+static byte zclFreePadApp_KeyCodeToButton(byte key);
 
 static void zclFreePadApp_HandleKeys(byte shift, byte keys);
 static void zclFreePadApp_BindNotification(bdbBindNotificationData_t *data);
@@ -257,7 +235,7 @@ static void zclFreePadApp_Rejoin(void) {
     }
 }
 
-static void zclFreePadApp_SendButton(uint8 buttonNumber) {
+static void zclFreePadApp_SendButton(byte buttonNumber) {
     if (buttonNumber != HAL_UNKNOWN_BUTTON) {
         printf("Pressed button %d\n", buttonNumber);
         zclGeneral_SendOnOff_CmdToggle(zclFreePadApp_SimpleDescs[buttonNumber - 1].EndPoint, &inderect_DstAddr, FALSE,
@@ -272,8 +250,9 @@ static void zclFreePadApp_SendButton(uint8 buttonNumber) {
             pReportCmd->attrList[0].dataType = ZCL_DATATYPE_BOOLEAN;
             pReportCmd->attrList[0].attrData = (void *)(true);
 
-            zcl_SendReportCmd(zclFreePadApp_SimpleDescs[buttonNumber - 1].EndPoint, &Coordinator_DstAddr, ZCL_CLUSTER_ID_GEN_ON_OFF, pReportCmd,
-                              ZCL_FRAME_CLIENT_SERVER_DIR, false, bdb_getZCLFrameCounter());
+            zcl_SendReportCmd(zclFreePadApp_SimpleDescs[buttonNumber - 1].EndPoint, &Coordinator_DstAddr,
+                              ZCL_CLUSTER_ID_GEN_ON_OFF, pReportCmd, ZCL_FRAME_CLIENT_SERVER_DIR, false,
+                              bdb_getZCLFrameCounter());
         }
         osal_mem_free(pReportCmd);
     }
@@ -286,47 +265,48 @@ static void zclFreePadApp_SendButtonRelease(uint8 buttonNumber) {
     }
 }
 
-static uint8 zclFreePadApp_KeyCodeToButton(byte key) {
+static byte zclFreePadApp_KeyCodeToButton(byte key) {
     switch (key) {
-    case HAL_KEY_CODE_1:
+
+    case 0x9: // row=4 col=4
         return 1;
-    case HAL_KEY_CODE_2:
+    case 0xa: // row=4 col=8
         return 2;
-    case HAL_KEY_CODE_3:
+    case 0xc: // row=4 col=16
         return 3;
-    case HAL_KEY_CODE_4:
+    case 0x8: // row=4 col=32
         return 4;
-    case HAL_KEY_CODE_5:
+    case 0x11: // row=8 col=4
         return 5;
-    case HAL_KEY_CODE_6:
+    case 0x12: // row=8 col=8
         return 6;
-    case HAL_KEY_CODE_7:
+    case 0x14: // row=8 col=16
         return 7;
-    case HAL_KEY_CODE_8:
+    case 0x18: // row=8 col=32
         return 8;
-    case HAL_KEY_CODE_9:
+    case 0x21: // row=16 col=4
         return 9;
-    case HAL_KEY_CODE_10:
+    case 0x22: // row=16 col=8
         return 10;
-    case HAL_KEY_CODE_11:
+    case 0x24: // row=16 col=16
         return 11;
-    case HAL_KEY_CODE_12:
+    case 0x28: // row=16 col=32
         return 12;
-    case HAL_KEY_CODE_13:
+    case 0x41: // row=32 col=4
         return 13;
-    case HAL_KEY_CODE_14:
+    case 0x42: // row=32 col=8
         return 14;
-    case HAL_KEY_CODE_15:
+    case 0x44: // row=32 col=16
         return 15;
-    case HAL_KEY_CODE_16:
+    case 0x48: // row=32 col=32
         return 16;
-    case HAL_KEY_CODE_17:
+    case 0x81: // row=64 col=4
         return 17;
-    case HAL_KEY_CODE_18:
+    case 0x82: // row=64 col=8
         return 18;
-    case HAL_KEY_CODE_19:
+    case 0x84: // row=64 col=16
         return 19;
-    case HAL_KEY_CODE_20:
+    case 0x88: // row=64 col=32
         return 20;
 
     default:
@@ -345,7 +325,7 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
     // printf("zclFreePadApp_HandleKeys Decimal: %d, Hex: 0x%X\n", keys, keys);
 
     if (keys == HAL_KEY_CODE_RELEASE_KEY) {
-        printf("Released key");
+        printf("Released key\n");
 
         if (pressTime > 0) {
             uint16 timeDiff = (osal_getClock() - pressTime);
@@ -353,7 +333,7 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
 
             if (timeDiff > 5) {
                 printf("It was very long press\n");
-                zclFreePadApp_Rejoin();
+                // zclFreePadApp_Rejoin();
             } else if (timeDiff > 3) {
                 printf("It was long press\n");
 
