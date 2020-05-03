@@ -103,8 +103,7 @@ void zclFreePadApp_Init(byte task_id) {
 
     bdb_RegisterBindNotificationCB(zclFreePadApp_BindNotification);
     bdb_RegisterCommissioningStatusCB(zclFreePadApp_ProcessCommissioningStatus);
-    bdb_StartCommissioning(BDB_COMMISSIONING_FINDING_BINDING | BDB_COMMISSIONING_NWK_STEERING |
-                           BDB_COMMISSIONING_PARENT_LOST);
+    bdb_StartCommissioning(BDB_COMMISSIONING_NWK_STEERING | BDB_COMMISSIONING_FINDING_BINDING);
 
     DebugInit();
 }
@@ -121,6 +120,9 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
             break;
 
         default:
+            HalLedSet(HAL_LED_1, HAL_LED_MODE_FLASH);
+            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_END_DEVICE_REJOIN_EVT,
+                               FREEPADAPP_END_DEVICE_REJOIN_DELAY);
             break;
         }
 
@@ -128,7 +130,7 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
 
     case BDB_COMMISSIONING_PARENT_LOST:
         if (bdbCommissioningModeMsg->bdbCommissioningStatus != BDB_COMMISSIONING_NETWORK_RESTORED) {
-            HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
+            HalLedSet(HAL_LED_1, HAL_LED_MODE_FLASH);
             // Parent not found, attempt to rejoin again after a fixed delay
             osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_END_DEVICE_REJOIN_EVT,
                                FREEPADAPP_END_DEVICE_REJOIN_DELAY);
