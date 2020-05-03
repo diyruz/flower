@@ -108,7 +108,7 @@ void zclFreePadApp_Init(byte task_id) {
     bdb_initialize();
 
     DebugInit();
-    printf("Initialized debug module \n");
+    LREPMaster("Initialized debug module \n\r");
 
     osal_start_reload_timer(zclFreePadApp_TaskID, FREEPADAPP_EVT_GO_TO_SLEEP, (uint32)FREEPADAPP_AWAKE_TIMEOUT);
 }
@@ -179,7 +179,7 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
     }
 
     if (events & FREEPADAPP_EVT_GO_TO_SLEEP) {
-        // printf("Going to sleep....\n");
+        LREPMaster("Going to sleep....\n\r");
         halSleep(0);
         return (events ^ FREEPADAPP_EVT_GO_TO_SLEEP);
     }
@@ -189,7 +189,7 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
 
 // Инициализация выхода из сети
 static void zclFreePadApp_LeaveNetwork(void) {
-    // printf("Leaving network\n");
+    LREPMaster("Leaving network\n\r");
 
     NLME_LeaveReq_t leaveReq;
     // Set every field to 0
@@ -202,7 +202,7 @@ static void zclFreePadApp_LeaveNetwork(void) {
     zgWriteStartupOptions(ZG_STARTUP_SET, ZCD_STARTOPT_DEFAULT_NETWORK_STATE);
 
     ZStatus_t leaveStatus = NLME_LeaveReq(&leaveReq);
-    LREP("NLME_LeaveReq(&leaveReq) %x\n", leaveStatus);
+    LREP("NLME_LeaveReq(&leaveReq) %x\n\r", leaveStatus);
     if (leaveStatus != ZSuccess) {
         ZDApp_LeaveReset(FALSE);
     }
@@ -219,7 +219,7 @@ static void zclFreePadApp_Rejoin(void) {
 
 static void zclFreePadApp_SendButtonPress(byte buttonNumber) {
     if (buttonNumber != HAL_UNKNOWN_BUTTON) {
-        printf("Pressed button %d\n", buttonNumber);
+        LREP("Pressed button %d\n\r", buttonNumber);
 
         const uint8 NUM_ATTRIBUTES = 1;
         zclReportCmd_t *pReportCmd;
@@ -267,20 +267,20 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
     }
 
     if (keys == HAL_KEY_CODE_RELEASE_KEY) {
-        printf("Released key\n");
+        LREPMaster("Released key\n\r");
 
         if (pressTime > 0) {
             uint16 timeDiff = (osal_getClock() - pressTime);
             pressTime = 0;
             byte button = zclFreePadApp_KeyCodeToButton(prevKey);
             if (timeDiff > 10) {
-                printf("It was very long press\n");
+                LREPMaster("It was very long press\n\r");
                 zclFreePadApp_Rejoin();
             } else if (timeDiff > 3) {
-                printf("It was long press\n");
+                LREPMaster("It was long press\n\r");
                 zclFreePadApp_SendButtonLongPress(button);
             } else {
-                printf("It was short press\n");
+                LREPMaster("It was short press\n\r");
                 zclFreePadApp_SendButtonRelease(button);
                 if (button != HAL_UNKNOWN_BUTTON) {
                     zclGeneral_SendOnOff_CmdToggle(zclFreePadApp_SimpleDescs[button - 1].EndPoint, &inderect_DstAddr,

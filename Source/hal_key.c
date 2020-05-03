@@ -2,6 +2,7 @@
  *                                            INCLUDES
  **************************************************************************************************/
 #include "hal_key.h"
+#include "Debug.h"
 #include "hal_adc.h"
 #include "hal_defs.h"
 #include "hal_drivers.h"
@@ -36,13 +37,25 @@
 #if defined(HAL_BOARD_FREEPAD_20)
 #define HAL_KEY_P0_GPIO_PINS (HAL_KEY_BIT2 | HAL_KEY_BIT3 | HAL_KEY_BIT4 | HAL_KEY_BIT5 | HAL_KEY_BIT6)
 #define HAL_KEY_P1_GPIO_PINS (HAL_KEY_BIT2 | HAL_KEY_BIT3 | HAL_KEY_BIT4 | HAL_KEY_BIT5)
+#define HAL_KEY_P2_GPIO_PINS 0x00
 
 #define HAL_KEY_P0_INPUT_PINS (HAL_KEY_BIT2 | HAL_KEY_BIT3 | HAL_KEY_BIT4 | HAL_KEY_BIT5 | HAL_KEY_BIT6)
 #define HAL_KEY_P1_INPUT_PINS (HAL_KEY_BIT2 | HAL_KEY_BIT3 | HAL_KEY_BIT4 | HAL_KEY_BIT5)
 
 #define HAL_KEY_P0_INTERRUPT_PINS HAL_KEY_P0_INPUT_PINS
 #define HAL_KEY_P1_INTERRUPT_PINS 0x00
+#elif defined(HAL_BOARD_CHDTECH_DEV)
+#define HAL_KEY_P0_GPIO_PINS (HAL_KEY_BIT1)
+#define HAL_KEY_P1_GPIO_PINS 0x00
+#define HAL_KEY_P2_GPIO_PINS (HAL_KEY_BIT0)
 
+#define HAL_KEY_P0_INPUT_PINS (HAL_KEY_BIT1)
+#define HAL_KEY_P1_INPUT_PINS 0x00
+#define HAL_KEY_P2_INPUT_PINS (HAL_KEY_BIT0)
+
+#define HAL_KEY_P0_INTERRUPT_PINS (HAL_KEY_BIT1)
+#define HAL_KEY_P1_INTERRUPT_PINS 0x00
+#define HAL_KEY_P2_INTERRUPT_PINS (HAL_KEY_BIT0)
 #endif
 
 /**************************************************************************************************
@@ -68,6 +81,9 @@ void halProcessKeyInterrupt(void);
 void HalKeyInit(void) {
     P0SEL &= ~HAL_KEY_P0_GPIO_PINS;
     P1SEL &= ~HAL_KEY_P1_GPIO_PINS;
+    P2SEL &= ~HAL_KEY_P2_GPIO_PINS;
+
+#ifdef HAL_BOARD_FREEPAD
     /**
      * columns (p1)
      **/
@@ -84,7 +100,12 @@ void HalKeyInit(void) {
     P0INP &= ~HAL_KEY_P0_INPUT_PINS; // pull pins
     P2INP |= HAL_KEY_BIT5;           // pull down port0
     HAL_BOARD_DELAY_USEC(50);
+#elif defined(HAL_BOARD_CHDTECH_DEV)
+    P0DIR &= ~(HAL_KEY_P0_INPUT_PINS);
+    P1DIR &= ~(HAL_KEY_P1_INPUT_PINS);
+    P2DIR &= ~(HAL_KEY_P2_INPUT_PINS);
 
+#endif
     pHalKeyProcessFunction = NULL;
 
     halKeyTimerRunning = FALSE;
@@ -92,17 +113,26 @@ void HalKeyInit(void) {
 
 void HalKeyConfig(bool interruptEnable, halKeyCBack_t cback) {
     Hal_KeyIntEnable = true;
-
     pHalKeyProcessFunction = cback;
+    P0IEN |= HAL_KEY_P0_INTERRUPT_PINS;
+    P1IEN |= HAL_KEY_P1_INTERRUPT_PINS;
+    P2IEN |= HAL_KEY_P2_INTERRUPT_PINS;
+#ifdef HAL_BOARD_FREEPAD
+    PICTL &= ~HAL_KEY_BIT0; // set rising edge on port 0
+                            // enable intrupt on row pins
+    IEN1 |= HAL_KEY_BIT5;   // enable port0 int
+#elif defined(HAL_BOARD_CHDTECH_DEV)
+    PICTL |= HAL_KEY_BIT0 | HAL_KEY_BIT3; // set falling edge on port 0 and 2
+    IEN1 |= HAL_KEY_BIT5;                 // enable port0 int
+    IEN2 |= HAL_KEY_BIT1;                 // enable port2 int
 
-    PICTL &= ~HAL_KEY_BIT0;             // set rising edge on port 0
-    P0IEN |= HAL_KEY_P0_INTERRUPT_PINS; // enable intrupt on row pins
-    IEN1 |= HAL_KEY_BIT5;               // enable port0 int
+#endif
 }
 uint8 HalKeyRead(void) {
 
-    uint8 row, col, key = HAL_KEY_CODE_NOKEY;
-
+    uint8 key = HAL_KEY_CODE_NOKEY;
+#ifdef HAL_BOARD_FREEPAD
+    uint8 row, col;
     row = P0 & HAL_KEY_P0_INPUT_PINS;
 
     if (row) {
@@ -138,8 +168,18 @@ uint8 HalKeyRead(void) {
         P2INP |= HAL_KEY_BIT5;           // pull down port0
 
         key = (((row << 2) | col >> 1)) >> 1;
-        printf("row %d col %d key 0x%X %d \n", row, col, key, key);
     }
+    // LREP("row %d col %d key 0x%X %d \n\r", row, col, key, key);
+#elif defined(HAL_BOARD_CHDTECH_DEV)
+    uint8 p0value = P0 & HAL_KEY_P0_INPUT_PINS;
+    if (!p0value) {
+        key = 0x9; // value from Source/zcl_freepadapp_data.c #zclFreePadApp_KeyCodeToButton
+    }
+    uint8 p2value = P2 & HAL_KEY_P2_INPUT_PINS;
+    if (!p2value) {
+        key = 0xa; // value from Source/zcl_freepadapp_data.c #zclFreePadApp_KeyCodeToButton
+    }
+#endif
 
     return key;
 }
@@ -184,7 +224,8 @@ uint8 HalKeyExitSleep(void) {
     // Switch to 16MHz before setting the DC/DC to on to reduce risk of flash corruption
     CLKCONCMD = (CLKCONCMD_16MHZ | OSC_32KHZ);
     // wait till clock speed stablizes
-    while (CLKCONSTA != (CLKCONCMD_16MHZ | OSC_32KHZ));
+    while (CLKCONSTA != (CLKCONCMD_16MHZ | OSC_32KHZ))
+        ;
 
     CLKCONCMD = clkcmd;
 
@@ -201,6 +242,34 @@ HAL_ISR_FUNCTION(halKeyPort0Isr, P0INT_VECTOR) {
 
     P0IFG &= ~HAL_KEY_P0_INTERRUPT_PINS;
     P0IF = 0;
+
+    CLEAR_SLEEP_MODE();
+    HAL_EXIT_ISR();
+}
+
+HAL_ISR_FUNCTION(halKeyPort1Isr, P1INT_VECTOR) {
+    HAL_ENTER_ISR();
+
+    if (P1IFG & HAL_KEY_P1_INTERRUPT_PINS) {
+        halProcessKeyInterrupt();
+    }
+
+    P1IFG &= ~HAL_KEY_P1_INTERRUPT_PINS;
+    P1IF = 0;
+
+    CLEAR_SLEEP_MODE();
+    HAL_EXIT_ISR();
+}
+
+HAL_ISR_FUNCTION(halKeyPort2Isr, P2INT_VECTOR) {
+    HAL_ENTER_ISR();
+
+    if (P2IFG & HAL_KEY_P2_INTERRUPT_PINS) {
+        halProcessKeyInterrupt();
+    }
+
+    P2IFG &= ~HAL_KEY_P2_INTERRUPT_PINS;
+    P2IF = 0;
 
     CLEAR_SLEEP_MODE();
     HAL_EXIT_ISR();

@@ -60,6 +60,8 @@ extern "C" {
     #define FREEPAD_BUTTONS_COUNT 12
 #elif defined(HAL_BOARD_FREEPAD_8)
     #define FREEPAD_BUTTONS_COUNT 8
+#elif defined(HAL_BOARD_CHDTECH_DEV)
+    #define FREEPAD_BUTTONS_COUNT 2
 #endif
 
 #define HAL_UNKNOWN_BUTTON HAL_KEY_CODE_NOKEY

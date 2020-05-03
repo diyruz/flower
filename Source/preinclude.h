@@ -49,19 +49,17 @@
 // #define NWK_MAX_BINDING_ENTRIES 20
 
 //one of this boards
-#define HAL_BOARD_FREEPAD_20
+// #define HAL_BOARD_FREEPAD_20
 // #define HAL_BOARD_FREEPAD_12
 // #define HAL_BOARD_FREEPAD_8
-// #define HAL_BOARD_CHDTECH_DEV
+#define HAL_BOARD_CHDTECH_DEV
 
 
 
 #if defined(HAL_BOARD_FREEPAD_20) || defined(HAL_BOARD_FREEPAD_12) || defined(HAL_BOARD_FREEPAD_8)
     #define HAL_BOARD_FREEPAD
     #define HAL_UART FALSE
-#endif
-
-#ifdef HAL_BOARD_CHDTECH_DEV
+#elif defined(HAL_BOARD_CHDTECH_DEV)
     #define HAL_UART TRUE
     #define HAL_UART_ISR 1
     #define HAL_UART_DMA 2

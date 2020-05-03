@@ -12,21 +12,6 @@
 #include "hal_types.h"
 
 
-/* ------------------------------------------------------------------------------------------------
- *                                       Board Indentifier
- *
- *      Define the Board Identifier to HAL_BOARD_CC2530EB_REV13 for SmartRF05 EB 1.3 board
- * ------------------------------------------------------------------------------------------------
- */
-
-#if !defined (HAL_BOARD_CC2530ARC)
-#define HAL_BOARD_CC2530ARC
-#endif
-
-// CC2530RC does not populate 32K oscillator by default
-#if !defined (OSC32K_CRYSTAL_INSTALLED)
-  #define OSC32K_CRYSTAL_INSTALLED FALSE
-#endif
 
 /* ------------------------------------------------------------------------------------------------
  *                                          Clock Speed
@@ -61,26 +46,8 @@
 #define HAL_NUM_LEDS            0
 
 #define HAL_LED_BLINK_DELAY()   st( { volatile uint32 i; for (i=0; i<0x5800; i++) { }; } )
-
-/* ------------------------------------------------------------------------------------------------
- *                                    Push Button Configuration
- * ------------------------------------------------------------------------------------------------
- */
-
 #define ACTIVE_LOW        !
 #define ACTIVE_HIGH       !!    /* double negation forces result to be '1' */
-
-
-/* S1 Emulation */
-#define PUSH1_BV          BV(6)
-#define PUSH1_SBIT        P0_6
-
-#define PUSH1_POLARITY    ACTIVE_HIGH
-
-/* Joystick Center Press emulation */
-#define PUSH2_BV          BV(7)
-#define PUSH2_SBIT        P0_7
-#define PUSH2_POLARITY    ACTIVE_HIGH
 
 /* ------------------------------------------------------------------------------------------------
  *                         OSAL NV implemented by internal flash pages.
@@ -185,8 +152,8 @@ extern void MAC_RfFrontendSetup(void);
 #define HAL_DEBOUNCE(expr)    { int i; for (i=0; i<500; i++) { if (!(expr)) i = 0; } }
 
 /* ----------- Push Buttons ---------- */
-#define HAL_PUSH_BUTTON1()        (PUSH1_POLARITY (PUSH1_SBIT))
-#define HAL_PUSH_BUTTON2()        (PUSH2_POLARITY (PUSH2_SBIT))
+#define HAL_PUSH_BUTTON1()        (0)
+#define HAL_PUSH_BUTTON2()        (0)
 #define HAL_PUSH_BUTTON3()        (0)
 #define HAL_PUSH_BUTTON4()        (0)
 #define HAL_PUSH_BUTTON5()        (0)
@@ -199,6 +166,12 @@ extern void MAC_RfFrontendSetup(void);
   #define LED1_SBIT         P0_1
   #define LED1_DDR          P0DIR
   #define LED1_POLARITY     ACTIVE_HIGH
+#elif defined(HAL_BOARD_CHDTECH_DEV)
+/* 1 - P1_0 Зеленый */
+  #define LED1_BV           BV(0)
+  #define LED1_SBIT         P1_0
+  #define LED1_DDR          P1DIR
+  #define LED1_POLARITY     ACTIVE_LOW
 #endif
 
 #define HAL_TURN_OFF_LED1()       st( LED1_SBIT = LED1_POLARITY (0); )
