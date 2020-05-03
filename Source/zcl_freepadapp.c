@@ -66,8 +66,6 @@ afAddrType_t inderect_DstAddr = {.addrMode = (afAddrMode_t)AddrNotPresent, .endP
  */
 static void zclFreePadApp_HandleKeys(byte shift, byte keys);
 static void zclFreePadApp_BindNotification(bdbBindNotificationData_t *data);
-
-static void zclFreePadApp_LeaveNetwork(void);
 static void zclFreePadApp_ReportBattery(void);
 static void zclFreePadApp_Rejoin(void);
 static void zclFreePadApp_SendButtonPress(uint8 buttonNumber);
@@ -105,13 +103,16 @@ void zclFreePadApp_Init(byte task_id) {
 
     bdb_RegisterBindNotificationCB(zclFreePadApp_BindNotification);
     bdb_RegisterCommissioningStatusCB(zclFreePadApp_ProcessCommissioningStatus);
-    bdb_initialize();
+    bdb_StartCommissioning(BDB_COMMISSIONING_FINDING_BINDING | BDB_COMMISSIONING_NWK_STEERING |
+                           BDB_COMMISSIONING_PARENT_LOST);
 
     DebugInit();
 }
 
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
-
+    LREP("bdbCommissioningMode=%d bdbCommissioningStatus=%d bdbRemainingCommissioningModes=0x%X\n\r",
+         bdbCommissioningModeMsg->bdbCommissioningMode, bdbCommissioningModeMsg->bdbCommissioningStatus,
+         bdbCommissioningModeMsg->bdbRemainingCommissioningModes);
     switch (bdbCommissioningModeMsg->bdbCommissioningMode) {
     case BDB_COMMISSIONING_NWK_STEERING:
         switch (bdbCommissioningModeMsg->bdbCommissioningStatus) {
@@ -185,34 +186,9 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
     return 0;
 }
 
-// Инициализация выхода из сети
-static void zclFreePadApp_LeaveNetwork(void) {
-    LREPMaster("Leaving network\n\r");
-
-    NLME_LeaveReq_t leaveReq;
-    // Set every field to 0
-    osal_memset(&leaveReq, 0, sizeof(NLME_LeaveReq_t));
-
-    // This will enable the device to rejoin the network after reset.
-    leaveReq.rejoin = FALSE;
-
-    // Set the NV startup option to force a "new" join.
-    zgWriteStartupOptions(ZG_STARTUP_SET, ZCD_STARTOPT_DEFAULT_NETWORK_STATE);
-
-    ZStatus_t leaveStatus = NLME_LeaveReq(&leaveReq);
-    LREP("NLME_LeaveReq(&leaveReq) %x\n\r", leaveStatus);
-    if (leaveStatus != ZSuccess) {
-        ZDApp_LeaveReset(FALSE);
-    }
-    osal_mem_free(&leaveReq);
-}
 static void zclFreePadApp_Rejoin(void) {
     HalLedSet(HAL_LED_1, HAL_LED_MODE_FLASH);
-    if (bdbAttributes.bdbNodeIsOnANetwork) {
-        zclFreePadApp_LeaveNetwork();
-    } else {
-        bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_STEERING);
-    }
+    bdb_resetLocalAction();
 }
 
 static void zclFreePadApp_SendButtonPress(byte buttonNumber) {
@@ -271,7 +247,7 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
             uint16 timeDiff = (osal_getClock() - pressTime);
             pressTime = 0;
             byte button = zclFreePadApp_KeyCodeToButton(prevKey);
-            if (timeDiff > 10) {
+            if (timeDiff > 5) {
                 LREPMaster("It was very long press\n\r");
                 zclFreePadApp_Rejoin();
             } else if (timeDiff > 3) {
