@@ -127,6 +127,7 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
 
     case BDB_COMMISSIONING_PARENT_LOST:
         if (bdbCommissioningModeMsg->bdbCommissioningStatus != BDB_COMMISSIONING_NETWORK_RESTORED) {
+            HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
             // Parent not found, attempt to rejoin again after a fixed delay
             osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_END_DEVICE_REJOIN_EVT,
                                FREEPADAPP_END_DEVICE_REJOIN_DELAY);
@@ -303,6 +304,7 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
 
 static void zclFreePadApp_BindNotification(bdbBindNotificationData_t *data) {
     HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
+    LREP("Recieved bind request clusterId=0x%X dstAddr=0x%X \n\r", data->clusterId, data->dstAddr);
 }
 
 /* (( 3 * 1,15 ) / (( 2^12 / 2 ) - 1 )) * 10  */
