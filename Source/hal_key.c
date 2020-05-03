@@ -171,13 +171,13 @@ uint8 HalKeyRead(void) {
     }
     // LREP("row %d col %d key 0x%X %d \n\r", row, col, key, key);
 #elif defined(HAL_BOARD_CHDTECH_DEV)
-    uint8 p0value = P0 & HAL_KEY_P0_INPUT_PINS;
-    if (!p0value) {
-        key = 0x9; // value from Source/zcl_freepadapp_data.c #zclFreePadApp_KeyCodeToButton
+
+    if (ACTIVE_LOW(P0 & HAL_KEY_P0_INPUT_PINS)) {
+        key = 0x01;
     }
-    uint8 p2value = P2 & HAL_KEY_P2_INPUT_PINS;
-    if (!p2value) {
-        key = 0xa; // value from Source/zcl_freepadapp_data.c #zclFreePadApp_KeyCodeToButton
+
+    if (ACTIVE_LOW(P2 & HAL_KEY_P2_INPUT_PINS)) {
+        key = 0x02;
     }
 #endif
 

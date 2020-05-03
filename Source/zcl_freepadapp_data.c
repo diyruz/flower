@@ -129,10 +129,9 @@ void zclFreePadApp_InitClusters(void) {
 }
 uint8 zclFreePadApp_SimpleDescsCount = FREEPAD_BUTTONS_COUNT;
 
-
 byte zclFreePadApp_KeyCodeToButton(byte key) {
     switch (key) {
-
+#if defined(HAL_BOARD_FREEPAD_20) || defined(HAL_BOARD_FREEPAD_12) || defined(HAL_BOARD_FREEPAD_8)
     case 0x9: // row=4 col=4
         return 1;
     case 0xa: // row=4 col=8
@@ -173,6 +172,13 @@ byte zclFreePadApp_KeyCodeToButton(byte key) {
         return 19;
     case 0x88: // row=64 col=32
         return 20;
+
+#elif defined(HAL_BOARD_CHDTECH_DEV)
+    case 0x1: // row=4 col=4
+        return 1;
+    case 0x2: // row=4 col=8
+        return 2;
+#endif
 
     default:
         return HAL_UNKNOWN_BUTTON;
