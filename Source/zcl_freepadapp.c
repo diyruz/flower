@@ -108,9 +108,6 @@ void zclFreePadApp_Init(byte task_id) {
     bdb_initialize();
 
     DebugInit();
-    LREPMaster("Initialized debug module \n\r");
-
-    osal_start_reload_timer(zclFreePadApp_TaskID, FREEPADAPP_EVT_GO_TO_SLEEP, (uint32)FREEPADAPP_AWAKE_TIMEOUT);
 }
 
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
@@ -291,8 +288,10 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
                 }
             }
         }
+        osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_EVT_GO_TO_SLEEP, (uint32)FREEPADAPP_AWAKE_TIMEOUT);
 
     } else {
+        osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_EVT_GO_TO_SLEEP);
         bdb_ZedAttemptRecoverNwk();
         HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
         pressTime = osal_getClock();

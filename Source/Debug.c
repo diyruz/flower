@@ -18,7 +18,11 @@ bool DebugInit() {
     halUARTConfig.intEnable = TRUE;
     halUARTConfig.callBackFunc = HalUARTCback;
     HalUARTInit();
-    return HalUARTOpen(UART_PORT, &halUARTConfig) == HAL_UART_SUCCESS;
+    if (HalUARTOpen(UART_PORT, &halUARTConfig) == HAL_UART_SUCCESS) {
+        LREPMaster("Initialized debug module \n\r");
+        return true;
+    }
+    return false;
 }
 
 void vprint(const char *fmt, va_list argp) {
@@ -45,8 +49,6 @@ void LREP(char *format, ...) {
 #include <stdio.h>
 bool DebugInit() {}
 void LREP(char *format, ...) {}
-void LREPMaster(const char *data) {
-    printf(data);
-}
-void vprint(const char *fmt, va_list argp){}
+void LREPMaster(const char *data) { printf(data); }
+void vprint(const char *fmt, va_list argp) {}
 #endif
