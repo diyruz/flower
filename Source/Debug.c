@@ -10,7 +10,7 @@ bool DebugInit() {
     halUARTConfig.configured = TRUE;
     halUARTConfig.baudRate = HAL_UART_BR_115200;
     halUARTConfig.flowControl = FALSE;
-    halUARTConfig.flowControlThreshold = 10; // this parameter indicates number of bytes left before Rx Buffer
+    halUARTConfig.flowControlThreshold = 48; // this parameter indicates number of bytes left before Rx Buffer
                                              // reaches maxRxBufSize
     halUARTConfig.idleTimeout = 10;          // this parameter indicates rx timeout period in millisecond
     halUARTConfig.rx.maxBufSize = BUFFLEN;

@@ -3,7 +3,7 @@
 #define NV_INIT
 #define NV_RESTORE
 
-#define POWER_SAVING
+
 #define NWK_AUTO_POLL
 
 #define MULTICAST_ENABLED FALSE
@@ -59,10 +59,11 @@
 #if defined(HAL_BOARD_FREEPAD_20) || defined(HAL_BOARD_FREEPAD_12) || defined(HAL_BOARD_FREEPAD_8)
     #define HAL_BOARD_FREEPAD
     #define HAL_UART FALSE
+    #define POWER_SAVING
 #elif defined(HAL_BOARD_CHDTECH_DEV)
     #define HAL_UART TRUE
-    #define HAL_UART_ISR 1
-    #define HAL_UART_DMA 2
+    #define HAL_UART_ISR 2
+    #define HAL_UART_DMA 1
 #endif
 
 
