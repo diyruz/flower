@@ -187,6 +187,9 @@ static void zclFreePadApp_Send_Keys(byte keyCode, byte pressCount, byte holdTime
             zclFreePadApp_ReportBattery();
         }
     }
+#ifdef HAL_BOARD_FREEPAD
+    halSleep(0); // sleep
+#endif
 }
 
 uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
