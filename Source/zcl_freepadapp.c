@@ -110,6 +110,8 @@ void zclFreePadApp_Init(byte task_id) {
 
     DebugInit();
     HalLedSet(HAL_LED_1, HAL_LED_MODE_FLASH);
+
+    osal_start_reload_timer(zclFreePadApp_TaskID, FREEPADAPP_SLEEP_EVT, (uint32)FREEPADAPP_SLEEP_DELAY);
 }
 
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
@@ -187,9 +189,6 @@ static void zclFreePadApp_Send_Keys(byte keyCode, byte pressCount, byte holdTime
             zclFreePadApp_ReportBattery();
         }
     }
-#ifdef HAL_BOARD_FREEPAD
-    halSleep(0); // sleep
-#endif
 }
 
 uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
@@ -242,6 +241,15 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
         return (events ^ FREEPADAPP_RESET_EVT);
     }
 
+    if (events & FREEPADAPP_SLEEP_EVT) {
+        LREPMaster("Sleep... \n\r");
+#ifdef HAL_BOARD_FREEPAD
+        osal_clear_event(zclFreePadApp_TaskID, FREEPADAPP_SLEEP_EVT);
+        halSleep(0); // sleep
+#endif
+        return (events ^ FREEPADAPP_SLEEP_EVT);
+    }
+
     // Discard unknown events
     return 0;
 }
@@ -281,6 +289,10 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
             osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_SEND_KEYS_EVT, FREEPADAPP_SEND_KEYS_DELAY);
         }
     } else {
+        osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_SLEEP_EVT);
+        osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_SLEEP_EVT, (uint32)FREEPADAPP_SLEEP_DELAY);
+
+
         osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT, FREEPADAPP_RESET_DELAY);
         osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_SEND_KEYS_EVT);
         bdb_ZedAttemptRecoverNwk();

@@ -158,6 +158,7 @@ byte zclFreePadApp_KeyCodeToButton(byte key) {
         return 7;
     case 0x18: // row=8 col=32
         return 8;
+#if defined(HAL_BOARD_FREEPAD_12) || defined(HAL_BOARD_FREEPAD_20)
     case 0x21: // row=16 col=4
         return 9;
     case 0x22: // row=16 col=8
@@ -166,6 +167,8 @@ byte zclFreePadApp_KeyCodeToButton(byte key) {
         return 11;
     case 0x28: // row=16 col=32
         return 12;
+#endif
+#if defined(HAL_BOARD_FREEPAD_20)
     case 0x41: // row=32 col=4
         return 13;
     case 0x42: // row=32 col=8
@@ -182,7 +185,7 @@ byte zclFreePadApp_KeyCodeToButton(byte key) {
         return 19;
     case 0x88: // row=64 col=32
         return 20;
-
+#endif
 #elif defined(HAL_BOARD_CHDTECH_DEV)
     case 0x1: // row=4 col=4
         return 1;
