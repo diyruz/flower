@@ -70,11 +70,13 @@ extern "C" {
 
 #define FREEPADAPP_AWAKE_TIMEOUT 1000 * 60 //60 seconds
 
-
-#define FREEPADAPP_EVT_GO_TO_SLEEP 0x0002
 #define FREEPADAPP_END_DEVICE_REJOIN_EVT 0x0004
+#define FREEPADAPP_SEND_KEYS_EVT 0x0008
+#define FREEPADAPP_RESET_EVT 0x0016
 
 
+#define FREEPADAPP_SEND_KEYS_DELAY 300
+#define FREEPADAPP_RESET_DELAY 10000
 #define FREEPADAPP_END_DEVICE_REJOIN_DELAY 10000
 
 /*********************************************************************
