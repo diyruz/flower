@@ -77,7 +77,7 @@ extern "C" {
 
 #define FREEPADAPP_SEND_KEYS_DELAY 300
 #define FREEPADAPP_RESET_DELAY 10000
-#define FREEPADAPP_END_DEVICE_REJOIN_DELAY 10000
+#define FREEPADAPP_END_DEVICE_REJOIN_DELAY 10000 //10 seconds
 
 /*********************************************************************
  * MACROS
