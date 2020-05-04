@@ -66,6 +66,8 @@
 
 #define HAL_KEY_P0_INTERRUPT_PINS HAL_KEY_P0_INPUT_PINS
 #define HAL_KEY_P1_INTERRUPT_PINS 0x00
+
+#define HAL_KEY_P2_INTERRUPT_PINS 0x00
 #endif
 
 /**************************************************************************************************
