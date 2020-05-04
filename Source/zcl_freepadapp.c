@@ -55,7 +55,7 @@ byte zclFreePadApp_TaskID;
  * LOCAL VARIABLES
  */
 
-uint32 timeDiff = 0;
+bool holdSend = false;
 byte currentKey = 0;
 byte clicksCount = 0;
 
@@ -74,7 +74,7 @@ static void zclFreePadApp_ReportBattery(void);
 static void zclFreePadApp_Rejoin(void);
 static void zclFreePadApp_SendButtonPress(uint8 endPoint, byte clicksCount);
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
-static void zclFreePadApp_Send_Keys(byte keyCode, byte pressCount, byte pressTime);
+static void zclFreePadApp_SendKeys(byte keyCode, byte pressCount, byte pressTime);
 
 /*********************************************************************
  * ZCL General Profile Callback table
@@ -111,7 +111,7 @@ void zclFreePadApp_Init(byte task_id) {
     DebugInit();
     HalLedSet(HAL_LED_1, HAL_LED_MODE_FLASH);
 
-    osal_start_reload_timer(zclFreePadApp_TaskID, FREEPADAPP_SLEEP_EVT, (uint32)FREEPADAPP_SLEEP_DELAY);
+    osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_SLEEP_EVT, (uint32)FREEPADAPP_SLEEP_DELAY);
 }
 
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
@@ -123,6 +123,7 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
         switch (bdbCommissioningModeMsg->bdbCommissioningStatus) {
         case BDB_COMMISSIONING_SUCCESS:
             HalLedSet(HAL_LED_1, HAL_LED_MODE_OFF);
+            osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_END_DEVICE_REJOIN_EVT);
             break;
 
         default:
@@ -149,10 +150,10 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
 
 #define HOLD_CODE 0
 #define RELEASE_CODE 255
-static void zclFreePadApp_Send_Keys(byte keyCode, byte pressCount, byte holdTime) {
+static void zclFreePadApp_SendKeys(byte keyCode, byte pressCount, bool isRelease) {
 
     byte button = zclFreePadApp_KeyCodeToButton(keyCode);
-    LREP("button %d clicks %d hold %d\n\r", button, pressCount, holdTime);
+    LREP("button %d clicks %d isRelease %d\n\r", button, pressCount, isRelease);
     if (button != HAL_UNKNOWN_BUTTON) {
         uint8 endPoint = zclFreePadApp_SimpleDescs[button - 1].EndPoint;
         switch (pressCount) {
@@ -179,14 +180,10 @@ static void zclFreePadApp_Send_Keys(byte keyCode, byte pressCount, byte holdTime
             break;
         }
 
-        if (holdTime >= 2) {
-            zclFreePadApp_SendButtonPress(endPoint, HOLD_CODE);
+        if (isRelease) {
+            zclFreePadApp_SendButtonPress(endPoint, RELEASE_CODE);
         } else {
             zclFreePadApp_SendButtonPress(endPoint, pressCount);
-        }
-        zclFreePadApp_SendButtonPress(endPoint, RELEASE_CODE);
-        if (button == 1) {
-            zclFreePadApp_ReportBattery();
         }
     }
 }
@@ -225,29 +222,48 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
     }
 
     if (events & FREEPADAPP_END_DEVICE_REJOIN_EVT) {
+        LREPMaster("FREEPADAPP_END_DEVICE_REJOIN_EVT\n\r");
         bdb_ZedAttemptRecoverNwk();
         return (events ^ FREEPADAPP_END_DEVICE_REJOIN_EVT);
     }
+
     if (events & FREEPADAPP_SEND_KEYS_EVT) {
-        zclFreePadApp_Send_Keys(currentKey, clicksCount, timeDiff);
+        LREPMaster("FREEPADAPP_SEND_KEYS_EVT\n\r");
+        zclFreePadApp_SendKeys(currentKey, clicksCount, holdSend);
         clicksCount = 0;
         currentKey = 0;
+        holdSend = false;
         return (events ^ FREEPADAPP_SEND_KEYS_EVT);
     }
-
     if (events & FREEPADAPP_RESET_EVT) {
-        LREPMaster("Initialize rejoin seqence \n\r");
+        LREPMaster("FREEPADAPP_RESET_EVT\n\r");
         zclFreePadApp_Rejoin();
         return (events ^ FREEPADAPP_RESET_EVT);
     }
 
     if (events & FREEPADAPP_SLEEP_EVT) {
-        LREPMaster("Sleep... \n\r");
+        LREPMaster("FREEPADAPP_SLEEP_EVT\n\r");
 #ifdef HAL_BOARD_FREEPAD
         osal_clear_event(zclFreePadApp_TaskID, FREEPADAPP_SLEEP_EVT);
         halSleep(0); // sleep
 #endif
         return (events ^ FREEPADAPP_SLEEP_EVT);
+    }
+
+    if (events & FREEPADAPP_REPORT_EVT) {
+        LREPMaster("FREEPADAPP_REPORT_EVT\n\r");
+        zclFreePadApp_ReportBattery();
+        return (events ^ FREEPADAPP_REPORT_EVT);
+    }
+    if (events & FREEPADAPP_HOLD_START_EVT) {
+        LREPMaster("FREEPADAPP_HOLD_START_EVT\n\r");
+        byte button = zclFreePadApp_KeyCodeToButton(currentKey);
+        if (button != HAL_UNKNOWN_BUTTON) {
+            uint8 endPoint = zclFreePadApp_SimpleDescs[button - 1].EndPoint;
+            zclFreePadApp_SendButtonPress(endPoint, HOLD_CODE);
+            holdSend = true;
+        }
+        return (events ^ FREEPADAPP_HOLD_START_EVT);
     }
 
     // Discard unknown events
@@ -284,21 +300,29 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
     if (keys == HAL_KEY_CODE_RELEASE_KEY) {
         osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT);
         if (pressTime > 0) {
-            timeDiff = (osal_getClock() - pressTime);
             pressTime = 0;
             osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_SEND_KEYS_EVT, FREEPADAPP_SEND_KEYS_DELAY);
+            osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_HOLD_START_EVT);
         }
     } else {
+        bdb_ZedAttemptRecoverNwk();
+
         osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_SLEEP_EVT);
         osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_SLEEP_EVT, (uint32)FREEPADAPP_SLEEP_DELAY);
-        if (!bdbAttributes.bdbNodeIsOnANetwork) {
+
+        osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_REPORT_EVT);
+        osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_REPORT_EVT, FREEPADAPP_REPORT_DELAY);
+
+        if (bdb_isDeviceNonFactoryNew()) {
             osal_set_event(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT);
         } else {
             osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT, FREEPADAPP_RESET_DELAY);
         }
 
         osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_SEND_KEYS_EVT);
-        bdb_ZedAttemptRecoverNwk();
+        osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_HOLD_START_EVT);
+        osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_HOLD_START_EVT, FREEPADAPP_HOLD_START_DELAY);
+
         HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
         pressTime = osal_getClock();
         clicksCount++;
