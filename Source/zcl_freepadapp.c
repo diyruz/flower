@@ -162,14 +162,14 @@ static void zclFreePadApp_SendKeys(byte keyCode, byte pressCount, bool isRelease
 
             if (button % 2 == 0) {
                 // even numbers (2 4, send up to lower odd number)
-                zclGeneral_SendLevelControlMoveWithOnOff(endPoint - 1, &inderect_DstAddr, LEVEL_MOVE_UP,
-                                                         FREEPADAPP_CMD_LEVEL_MOVE_RATE, FALSE,
-                                                         bdb_getZCLFrameCounter());
+                zclGeneral_SendLevelControlStepWithOnOff(endPoint - 1, &inderect_DstAddr, LEVEL_STEP_UP,
+                                                         FREEPADAPP_LEVEL_STEP_SIZE, FREEPADAPP_LEVEL_TRANSITION_TIME,
+                                                         FALSE, bdb_getZCLFrameCounter());
             } else {
                 // odd number (1 3, send LEVEL_MOVE_DOWN to self)
-                zclGeneral_SendLevelControlMoveWithOnOff(endPoint, &inderect_DstAddr, LEVEL_MOVE_DOWN,
-                                                         FREEPADAPP_CMD_LEVEL_MOVE_RATE, FALSE,
-                                                         bdb_getZCLFrameCounter());
+                zclGeneral_SendLevelControlStepWithOnOff(endPoint, &inderect_DstAddr, LEVEL_STEP_DOWN,
+                                                         FREEPADAPP_LEVEL_STEP_SIZE, FREEPADAPP_LEVEL_TRANSITION_TIME,
+                                                         FALSE, bdb_getZCLFrameCounter());
             }
 
             break;
