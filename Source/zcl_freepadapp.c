@@ -291,9 +291,12 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
     } else {
         osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_SLEEP_EVT);
         osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_SLEEP_EVT, (uint32)FREEPADAPP_SLEEP_DELAY);
+        if (!bdbAttributes.bdbNodeIsOnANetwork) {
+            osal_set_event(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT);
+        } else {
+            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT, FREEPADAPP_RESET_DELAY);
+        }
 
-
-        osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT, FREEPADAPP_RESET_DELAY);
         osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_SEND_KEYS_EVT);
         bdb_ZedAttemptRecoverNwk();
         HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
