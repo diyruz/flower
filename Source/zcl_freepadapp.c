@@ -153,11 +153,30 @@ static void zclFreePadApp_Send_Keys(byte keyCode, byte pressCount, byte holdTime
     LREP("button %d clicks %d hold %d\n\r", button, pressCount, holdTime);
     if (button != HAL_UNKNOWN_BUTTON) {
         uint8 endPoint = zclFreePadApp_SimpleDescs[button - 1].EndPoint;
-
-        if (pressCount == 1 && holdTime == 0) {
-            // send single click
+        switch (pressCount) {
+        case 1:
             zclGeneral_SendOnOff_CmdToggle(endPoint, &inderect_DstAddr, FALSE, bdb_getZCLFrameCounter());
+
+            if (button % 2 == 0) {
+                // even numbers (2 4, send up to lower odd number)
+                zclGeneral_SendLevelControlMoveWithOnOff(endPoint - 1, &inderect_DstAddr, LEVEL_MOVE_UP,
+                                                         FREEPADAPP_CMD_LEVEL_MOVE_RATE, FALSE,
+                                                         bdb_getZCLFrameCounter());
+            } else {
+                // odd number (1 3, send LEVEL_MOVE_DOWN to self)
+                zclGeneral_SendLevelControlMoveWithOnOff(endPoint, &inderect_DstAddr, LEVEL_MOVE_DOWN,
+                                                         FREEPADAPP_CMD_LEVEL_MOVE_RATE, FALSE,
+                                                         bdb_getZCLFrameCounter());
+            }
+
+            break;
+        case 2:
+            break;
+
+        default:
+            break;
         }
+
         if (holdTime >= 2) {
             zclFreePadApp_SendButtonPress(endPoint, HOLD_CODE);
         } else {

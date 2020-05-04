@@ -79,6 +79,9 @@ extern "C" {
 #define FREEPADAPP_RESET_DELAY 10000
 #define FREEPADAPP_END_DEVICE_REJOIN_DELAY 10000 //10 seconds
 
+
+#define FREEPADAPP_CMD_LEVEL_MOVE_RATE   20 //per second
+
 /*********************************************************************
  * MACROS
  */

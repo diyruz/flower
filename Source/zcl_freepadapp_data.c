@@ -108,23 +108,33 @@ const cId_t zclSampleSw_InClusterList[] = {ZCL_CLUSTER_ID_GEN_BASIC, ZCL_CLUSTER
 
 #define ZCLSAMPLESW_MAX_INCLUSTERS (sizeof(zclSampleSw_InClusterList) / sizeof(zclSampleSw_InClusterList[0]))
 
-const cId_t zclSampleSw_OutClusterList[] = {ZCL_CLUSTER_ID_GEN_ON_OFF};
+const cId_t zclSampleSw_OutClusterListOdd[] = {ZCL_CLUSTER_ID_GEN_ON_OFF, ZCL_CLUSTER_ID_GEN_LEVEL_CONTROL};
+const cId_t zclSampleSw_OutClusterListEven[] = {ZCL_CLUSTER_ID_GEN_ON_OFF};
 
-#define ZCLSAMPLESW_MAX_OUTCLUSTERS (sizeof(zclSampleSw_OutClusterList) / sizeof(zclSampleSw_OutClusterList[0]))
+#define ZCLSAMPLESW_MAX_OUTCLUSTERS_EVEN                                                                               \
+    (sizeof(zclSampleSw_OutClusterListEven) / sizeof(zclSampleSw_OutClusterListEven[0]))
+#define ZCLSAMPLESW_MAX_OUTCLUSTERS_ODD                                                                                \
+    (sizeof(zclSampleSw_OutClusterListOdd) / sizeof(zclSampleSw_OutClusterListOdd[0]))
 
 SimpleDescriptionFormat_t zclFreePadApp_SimpleDescs[FREEPAD_BUTTONS_COUNT];
 
 void zclFreePadApp_InitClusters(void) {
     for (int i = 0; i < (int)FREEPAD_BUTTONS_COUNT; i++) {
-        zclFreePadApp_SimpleDescs[i].EndPoint = i + 1;
+        uint8 endPoint = i + 1;
+        zclFreePadApp_SimpleDescs[i].EndPoint = endPoint;
         zclFreePadApp_SimpleDescs[i].AppProfId = ZCL_HA_PROFILE_ID;
         zclFreePadApp_SimpleDescs[i].AppDeviceId = ZCL_HA_DEVICEID_REMOTE_CONTROL;
         zclFreePadApp_SimpleDescs[i].AppDevVer = FREEPADAPP_DEVICE_VERSION;
         zclFreePadApp_SimpleDescs[i].Reserved = FREEPADAPP_FLAGS; // AF_V1_SUPPORT uses for AppFlags:4.
         zclFreePadApp_SimpleDescs[i].AppNumInClusters = ZCLSAMPLESW_MAX_INCLUSTERS;
         zclFreePadApp_SimpleDescs[i].pAppInClusterList = (cId_t *)zclSampleSw_InClusterList;
-        zclFreePadApp_SimpleDescs[i].AppNumOutClusters = ZCLSAMPLESW_MAX_OUTCLUSTERS;
-        zclFreePadApp_SimpleDescs[i].pAppOutClusterList = (cId_t *)zclSampleSw_OutClusterList;
+        if (endPoint % 2 == 0) {
+            zclFreePadApp_SimpleDescs[i].AppNumOutClusters = ZCLSAMPLESW_MAX_OUTCLUSTERS_EVEN;
+            zclFreePadApp_SimpleDescs[i].pAppOutClusterList = (cId_t *)zclSampleSw_OutClusterListEven;
+        } else {
+            zclFreePadApp_SimpleDescs[i].AppNumOutClusters = ZCLSAMPLESW_MAX_OUTCLUSTERS_ODD;
+            zclFreePadApp_SimpleDescs[i].pAppOutClusterList = (cId_t *)zclSampleSw_OutClusterListOdd;
+        }
     }
 }
 uint8 zclFreePadApp_SimpleDescsCount = FREEPAD_BUTTONS_COUNT;
