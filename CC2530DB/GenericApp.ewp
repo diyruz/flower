@@ -4578,6 +4578,9 @@
             <name>$PROJ_DIR$\..\Source\preinclude.h</name>
         </file>
         <file>
+            <name>$PROJ_DIR$\..\Source\version.c</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\Source\version.h</name>
         </file>
         <file>

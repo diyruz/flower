@@ -1,0 +1,1 @@
+extern const uint8 zclFreePadApp_DateCode[];

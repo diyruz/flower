@@ -49,6 +49,7 @@ extern "C" {
  * INCLUDES
  */
 #include "zcl.h"
+#include "version.h"
 
 /*********************************************************************
  * CONSTANTS

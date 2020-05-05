@@ -8,8 +8,8 @@
 #include "zcl_ha.h"
 
 #include "zcl_freepadapp.h"
-#include "version.h"
 
+#include "version.h"
 /*********************************************************************
  * CONSTANTS
  */

@@ -29,6 +29,7 @@
 #include "hal_key.h"
 #include "hal_led.h"
 
+#include "version.h"
 /*********************************************************************
  * MACROS
  */
@@ -71,6 +72,7 @@ afAddrType_t inderect_DstAddr = {.addrMode = (afAddrMode_t)AddrNotPresent, .endP
 static void zclFreePadApp_HandleKeys(byte shift, byte keys);
 static void zclFreePadApp_BindNotification(bdbBindNotificationData_t *data);
 static void zclFreePadApp_ReportBattery(void);
+static void zclFreePadApp_ReportBuildDate(void);
 static void zclFreePadApp_Rejoin(void);
 static void zclFreePadApp_SendButtonPress(uint8 endPoint, byte clicksCount);
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
@@ -124,6 +126,9 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
         case BDB_COMMISSIONING_SUCCESS:
             HalLedSet(HAL_LED_1, HAL_LED_MODE_OFF);
             osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_END_DEVICE_REJOIN_EVT);
+            LREPMaster("BDB_COMMISSIONING_SUCCESS\n\r");
+            zclFreePadApp_ReportBuildDate();
+            zclFreePadApp_ReportBattery();
             break;
 
         default:
@@ -314,7 +319,8 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
         osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_REPORT_EVT, FREEPADAPP_REPORT_DELAY);
 
         if (bdb_isDeviceNonFactoryNew()) {
-            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT, FREEPADAPP_RESET_DELAY >> 1); //twice less hold time
+            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT,
+                               FREEPADAPP_RESET_DELAY >> 1); // twice less hold time
         } else {
             osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT, FREEPADAPP_RESET_DELAY);
         }
@@ -347,7 +353,7 @@ static uint8 readVoltage(void) {
     return (uint8)(value * MULTI);
 }
 
-void zclFreePadApp_ReportBattery(void) {
+static void zclFreePadApp_ReportBattery(void) {
     zclFreePadApp_BatteryVoltage = readVoltage();
     zclFreePadApp_BatteryPercentageRemainig = (uint8)MIN(100, ceil(100.0 / 33.0 * zclFreePadApp_BatteryVoltage));
     const uint8 NUM_ATTRIBUTES = 2;
@@ -371,5 +377,21 @@ void zclFreePadApp_ReportBattery(void) {
     osal_mem_free(pReportCmd);
 }
 
+static void zclFreePadApp_ReportBuildDate(void) {
+    zclReportCmd_t *pReportCmd;
+    pReportCmd = osal_mem_alloc(sizeof(zclReportCmd_t) + (sizeof(zclReport_t)));
+    if (pReportCmd != NULL) {
+        pReportCmd->numAttr = 1;
+
+        pReportCmd->attrList[0].attrID = ATTRID_BASIC_DATE_CODE;
+        pReportCmd->attrList[0].dataType = ZCL_DATATYPE_CHAR_STR;
+        pReportCmd->attrList[0].attrData = (void *)(&zclFreePadApp_DateCode);
+
+        zcl_SendReportCmd(1, &Coordinator_DstAddr, ZCL_CLUSTER_ID_GEN_BASIC, pReportCmd, ZCL_FRAME_CLIENT_SERVER_DIR,
+                          false, bdb_getZCLFrameCounter());
+    }
+
+    osal_mem_free(pReportCmd);
+}
 /****************************************************************************
 ****************************************************************************/
