@@ -126,7 +126,7 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
             HalLedSet(HAL_LED_1, HAL_LED_MODE_OFF);
             osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_END_DEVICE_REJOIN_EVT);
             LREPMaster("BDB_COMMISSIONING_SUCCESS\n\r");
-            zclFreePadApp_ReportBattery();
+            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_REPORT_EVT, FREEPADAPP_REPORT_DELAY);
             break;
 
         default:
