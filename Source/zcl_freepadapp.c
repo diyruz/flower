@@ -107,7 +107,8 @@ void zclFreePadApp_Init(byte task_id) {
 
     bdb_RegisterBindNotificationCB(zclFreePadApp_BindNotification);
     bdb_RegisterCommissioningStatusCB(zclFreePadApp_ProcessCommissioningStatus);
-    bdb_StartCommissioning(BDB_COMMISSIONING_NWK_STEERING | BDB_COMMISSIONING_FINDING_BINDING);
+    bdb_StartCommissioning(BDB_COMMISSIONING_REJOIN_EXISTING_NETWORK_ON_STARTUP |
+                           BDB_COMMISSIONING_MODE_FINDING_BINDING);
 
     DebugInit();
     HalLedSet(HAL_LED_1, HAL_LED_MODE_FLASH);
@@ -273,7 +274,20 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
     return 0;
 }
 
-static void zclFreePadApp_Rejoin(void) { bdb_resetLocalAction(); }
+static void zclFreePadApp_Rejoin(void) {
+    LREP("Recieved rejoin command\n\r");
+
+    if (bdb_isDeviceNonFactoryNew()) {
+        LREP("Device is on network, sending NLME_LeaveReq first\n\r");
+        NLME_LeaveReq_t leaveReq;
+        osal_memset(&leaveReq, 0, sizeof(NLME_LeaveReq_t));
+        bdb_setNodeIsOnANetwork(FALSE);
+        ZStatus_t leaverReqStatus = NLME_LeaveReq(&leaveReq);
+        LREP("NLME_LeaveReq %d\n\r", leaverReqStatus);
+    }
+
+    bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_STEERING);
+}
 
 static void zclFreePadApp_SendButtonPress(uint8 endPoint, uint8 clicksCount) {
 
