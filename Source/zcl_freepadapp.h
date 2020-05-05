@@ -84,8 +84,8 @@ extern "C" {
 #define FREEPADAPP_SLEEP_DELAY 60 * 1000             // 60 seconds
 #define FREEPADAPP_REPORT_DELAY 15 * 1000            // 15 seconds
 
-#define FREEPADAPP_LEVEL_STEP_SIZE 1
-#define FREEPADAPP_LEVEL_TRANSITION_TIME 2
+#define FREEPADAPP_LEVEL_STEP_SIZE 255 >> 2
+#define FREEPADAPP_LEVEL_TRANSITION_TIME 10
 
 /*********************************************************************
  * MACROS
