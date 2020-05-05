@@ -163,18 +163,18 @@ static void zclFreePadApp_SendKeys(byte keyCode, byte pressCount, bool isRelease
         uint8 endPoint = zclFreePadApp_SimpleDescs[button - 1].EndPoint;
         switch (pressCount) {
         case 1:
-            zclGeneral_SendOnOff_CmdToggle(endPoint, &inderect_DstAddr, FALSE, bdb_getZCLFrameCounter());
+            zclGeneral_SendOnOff_CmdToggle(endPoint, &inderect_DstAddr, TRUE, bdb_getZCLFrameCounter());
 
             if (button % 2 == 0) {
                 // even numbers (2 4, send up to lower odd number)
                 zclGeneral_SendLevelControlStepWithOnOff(endPoint - 1, &inderect_DstAddr, LEVEL_STEP_UP,
                                                          FREEPADAPP_LEVEL_STEP_SIZE, FREEPADAPP_LEVEL_TRANSITION_TIME,
-                                                         FALSE, bdb_getZCLFrameCounter());
+                                                         TRUE, bdb_getZCLFrameCounter());
             } else {
                 // odd number (1 3, send LEVEL_MOVE_DOWN to self)
                 zclGeneral_SendLevelControlStepWithOnOff(endPoint, &inderect_DstAddr, LEVEL_STEP_DOWN,
                                                          FREEPADAPP_LEVEL_STEP_SIZE, FREEPADAPP_LEVEL_TRANSITION_TIME,
-                                                         FALSE, bdb_getZCLFrameCounter());
+                                                         TRUE, bdb_getZCLFrameCounter());
             }
 
             break;
@@ -289,7 +289,7 @@ static void zclFreePadApp_SendButtonPress(uint8 endPoint, uint8 clicksCount) {
         pReportCmd->attrList[0].attrData = (void *)(&clicksCount);
 
         zcl_SendReportCmd(endPoint, &Coordinator_DstAddr, ZCL_CLUSTER_ID_GEN_MULTISTATE_INPUT_BASIC, pReportCmd,
-                          ZCL_FRAME_CLIENT_SERVER_DIR, false, bdb_getZCLFrameCounter());
+                          ZCL_FRAME_CLIENT_SERVER_DIR, TRUE, bdb_getZCLFrameCounter());
     }
     osal_mem_free(pReportCmd);
 }
@@ -372,7 +372,7 @@ static void zclFreePadApp_ReportBattery(void) {
         pReportCmd->attrList[1].attrData = (void *)(&zclFreePadApp_BatteryPercentageRemainig);
 
         zcl_SendReportCmd(1, &Coordinator_DstAddr, ZCL_CLUSTER_ID_GEN_POWER_CFG, pReportCmd,
-                          ZCL_FRAME_CLIENT_SERVER_DIR, false, bdb_getZCLFrameCounter());
+                          ZCL_FRAME_CLIENT_SERVER_DIR, TRUE, bdb_getZCLFrameCounter());
     }
 
     osal_mem_free(pReportCmd);
