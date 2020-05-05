@@ -285,7 +285,7 @@ static void zclFreePadApp_Rejoin(void) {
         LREP("NLME_LeaveReq %d\n\r", leaverReqStatus);
     }
 
-    bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_STEERING);
+    bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_STEERING | BDB_COMMISSIONING_MODE_FINDING_BINDING);
 }
 
 static void zclFreePadApp_SendButtonPress(uint8 endPoint, uint8 clicksCount) {
