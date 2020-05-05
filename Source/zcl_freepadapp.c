@@ -72,7 +72,6 @@ afAddrType_t inderect_DstAddr = {.addrMode = (afAddrMode_t)AddrNotPresent, .endP
 static void zclFreePadApp_HandleKeys(byte shift, byte keys);
 static void zclFreePadApp_BindNotification(bdbBindNotificationData_t *data);
 static void zclFreePadApp_ReportBattery(void);
-static void zclFreePadApp_ReportBuildDate(void);
 static void zclFreePadApp_Rejoin(void);
 static void zclFreePadApp_SendButtonPress(uint8 endPoint, byte clicksCount);
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
@@ -127,7 +126,6 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
             HalLedSet(HAL_LED_1, HAL_LED_MODE_OFF);
             osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_END_DEVICE_REJOIN_EVT);
             LREPMaster("BDB_COMMISSIONING_SUCCESS\n\r");
-            zclFreePadApp_ReportBuildDate();
             zclFreePadApp_ReportBattery();
             break;
 
@@ -373,23 +371,6 @@ static void zclFreePadApp_ReportBattery(void) {
 
         zcl_SendReportCmd(1, &Coordinator_DstAddr, ZCL_CLUSTER_ID_GEN_POWER_CFG, pReportCmd,
                           ZCL_FRAME_CLIENT_SERVER_DIR, TRUE, bdb_getZCLFrameCounter());
-    }
-
-    osal_mem_free(pReportCmd);
-}
-
-static void zclFreePadApp_ReportBuildDate(void) {
-    zclReportCmd_t *pReportCmd;
-    pReportCmd = osal_mem_alloc(sizeof(zclReportCmd_t) + (sizeof(zclReport_t)));
-    if (pReportCmd != NULL) {
-        pReportCmd->numAttr = 1;
-
-        pReportCmd->attrList[0].attrID = ATTRID_BASIC_DATE_CODE;
-        pReportCmd->attrList[0].dataType = ZCL_DATATYPE_CHAR_STR;
-        pReportCmd->attrList[0].attrData = (void *)(&zclFreePadApp_DateCode);
-
-        zcl_SendReportCmd(1, &Coordinator_DstAddr, ZCL_CLUSTER_ID_GEN_BASIC, pReportCmd, ZCL_FRAME_CLIENT_SERVER_DIR,
-                          false, bdb_getZCLFrameCounter());
     }
 
     osal_mem_free(pReportCmd);
