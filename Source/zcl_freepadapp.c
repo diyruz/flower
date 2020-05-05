@@ -319,10 +319,11 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
         osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_REPORT_EVT, FREEPADAPP_REPORT_DELAY);
 
         if (bdb_isDeviceNonFactoryNew()) {
+            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT, FREEPADAPP_RESET_DELAY);
+
+        } else {
             osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT,
                                FREEPADAPP_RESET_DELAY >> 1); // twice less hold time
-        } else {
-            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT, FREEPADAPP_RESET_DELAY);
         }
 
         osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_SEND_KEYS_EVT);
