@@ -107,8 +107,7 @@ void zclFreePadApp_Init(byte task_id) {
 
     bdb_RegisterBindNotificationCB(zclFreePadApp_BindNotification);
     bdb_RegisterCommissioningStatusCB(zclFreePadApp_ProcessCommissioningStatus);
-    bdb_StartCommissioning(BDB_COMMISSIONING_REJOIN_EXISTING_NETWORK_ON_STARTUP |
-                           BDB_COMMISSIONING_MODE_FINDING_BINDING);
+    bdb_StartCommissioning(BDB_COMMISSIONING_REJOIN_EXISTING_NETWORK_ON_STARTUP);
 
     DebugInit();
     HalLedSet(HAL_LED_1, HAL_LED_MODE_FLASH);
