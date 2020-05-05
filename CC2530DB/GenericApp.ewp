@@ -752,7 +752,7 @@
             <name>BUILDACTION</name>
             <archiveVersion>1</archiveVersion>
             <data>
-                <prebuild></prebuild>
+                <prebuild>Python.exe "$PROJ_DIR$\..\ver.py"</prebuild>
                 <postbuild></postbuild>
             </data>
         </settings>
@@ -1891,7 +1891,7 @@
             <name>BUILDACTION</name>
             <archiveVersion>1</archiveVersion>
             <data>
-                <prebuild></prebuild>
+                <prebuild>Python.exe "$PROJ_DIR$\..\ver.py"</prebuild>
                 <postbuild></postbuild>
             </data>
         </settings>
@@ -3030,7 +3030,7 @@
             <name>BUILDACTION</name>
             <archiveVersion>1</archiveVersion>
             <data>
-                <prebuild></prebuild>
+                <prebuild>Python.exe "$PROJ_DIR$\..\ver.py"</prebuild>
                 <postbuild></postbuild>
             </data>
         </settings>
@@ -4169,7 +4169,7 @@
             <name>BUILDACTION</name>
             <archiveVersion>1</archiveVersion>
             <data>
-                <prebuild></prebuild>
+                <prebuild>Python.exe "$PROJ_DIR$\..\ver.py"</prebuild>
                 <postbuild></postbuild>
             </data>
         </settings>
@@ -4576,6 +4576,9 @@
         </file>
         <file>
             <name>$PROJ_DIR$\..\Source\preinclude.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\Source\version.h</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\Source\zcl_freepadapp.c</name>

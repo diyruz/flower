@@ -8,6 +8,7 @@
 #include "zcl_ha.h"
 
 #include "zcl_freepadapp.h"
+#include "version.h"
 
 /*********************************************************************
  * CONSTANTS
@@ -86,6 +87,16 @@ CONST zclAttrRec_t zclFreePadApp_Attrs[] = {
     {ZCL_CLUSTER_ID_GEN_BASIC,
      {// Attribute record
       ATTRID_CLUSTER_REVISION, ZCL_DATATYPE_UINT16, ACCESS_CONTROL_READ, (void *)&zclFreePadApp_clusterRevision_all}},
+
+        {
+    ZCL_CLUSTER_ID_GEN_BASIC,
+    { // Attribute record
+      ATTRID_BASIC_DATE_CODE,
+      ZCL_DATATYPE_CHAR_STR,
+      ACCESS_CONTROL_READ,
+      (void *)zclFreePadApp_DateCode
+    }
+  },
 
     {ZCL_CLUSTER_ID_GEN_POWER_CFG,
      {// Attribute record
