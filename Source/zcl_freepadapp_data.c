@@ -45,8 +45,6 @@ const uint8 zclFreePadApp_ManufacturerName[] = {9, 'm', 'o', 'd', 'k', 'a', 'm',
 const uint8 zclFreePadApp_ModelId[] = {14, 'D', 'I', 'Y', 'R', 'u', 'Z', '_', 'F', 'r', 'e', 'e', 'P', 'a', 'd'};
 const uint8 zclFreePadApp_PowerSource = POWER_SOURCE_BATTERY;
 
-// Identify Cluster
-uint16 zclFreePadApp_IdentifyTime = 60;
 
 /*********************************************************************
  * ATTRIBUTE DEFINITIONS - Uses REAL cluster IDs
@@ -78,11 +76,6 @@ CONST zclAttrRec_t zclFreePadApp_Attrs[] = {
      {// Attribute record
       ATTRID_BASIC_POWER_SOURCE, ZCL_DATATYPE_ENUM8, ACCESS_CONTROL_READ, (void *)&zclFreePadApp_PowerSource}},
 
-    // *** Identify Cluster Attribute ***
-    {ZCL_CLUSTER_ID_GEN_IDENTIFY,
-     {// Attribute record
-      ATTRID_IDENTIFY_TIME, ZCL_DATATYPE_UINT16, (ACCESS_CONTROL_READ | ACCESS_CONTROL_WRITE),
-      (void *)&zclFreePadApp_IdentifyTime}},
 
     {ZCL_CLUSTER_ID_GEN_BASIC,
      {// Attribute record
@@ -106,16 +99,12 @@ CONST zclAttrRec_t zclFreePadApp_Attrs[] = {
     {ZCL_CLUSTER_ID_GEN_POWER_CFG,
      {// Attribute record
       ATTRID_POWER_CFG_BATTERY_PERCENTAGE_REMAINING, ZCL_DATATYPE_UINT8, ACCESS_CONTROL_READ,
-      (void *)&zclFreePadApp_BatteryPercentageRemainig}},
-
-    {ZCL_CLUSTER_ID_GEN_IDENTIFY,
-     {// Attribute record
-      ATTRID_CLUSTER_REVISION, ZCL_DATATYPE_UINT16, ACCESS_CONTROL_READ, (void *)&zclFreePadApp_clusterRevision_all}},
+      (void *)&zclFreePadApp_BatteryPercentageRemainig}}
 };
 
 uint8 CONST zclFreePadApp_NumAttributes = (sizeof(zclFreePadApp_Attrs) / sizeof(zclFreePadApp_Attrs[0]));
 
-const cId_t zclSampleSw_InClusterList[] = {ZCL_CLUSTER_ID_GEN_BASIC, ZCL_CLUSTER_ID_GEN_IDENTIFY};
+const cId_t zclSampleSw_InClusterList[] = {ZCL_CLUSTER_ID_GEN_BASIC};
 
 #define ZCLSAMPLESW_MAX_INCLUSTERS (sizeof(zclSampleSw_InClusterList) / sizeof(zclSampleSw_InClusterList[0]))
 

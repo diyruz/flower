@@ -109,10 +109,6 @@ extern CONST uint8 zclCmdsArraySize;
 extern CONST zclAttrRec_t zclFreePadApp_Attrs[];
 extern CONST uint8 zclFreePadApp_NumAttributes;
 
-// Identify attributes
-extern uint16 zclFreePadApp_IdentifyTime;
-extern uint8 zclFreePadApp_IdentifyCommissionState;
-
 // FREEPADAPP_TODO: Declare application specific attributes here
 
 /*********************************************************************
