@@ -181,7 +181,7 @@ uint8 HalKeyRead(void) {
 
         key = (((row << 2) | col >> 1)) >> 1;
     }
-    // LREP("row %d col %d key 0x%X %d \n\r", row, col, key, key);
+    // LREP("row %d col %d key 0x%X %d \r\n", row, col, key, key);
 #elif defined(HAL_BOARD_CHDTECH_DEV)
 
     if (ACTIVE_LOW(P0 & HAL_KEY_P0_INPUT_PINS)) {

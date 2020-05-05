@@ -17,7 +17,9 @@ with open(join(cwd, './Source/version.c'), 'w') as f:
     """
     )
     f.write('#include "version.h"\n')
-    code = """const uint8 zclFreePadApp_DateCode[] = {{ {0}, {1} }};""".format(len(chars), ', '.join(chars))
+    code = """const uint8 zclFreePadApp_DateCode[] = {{ {0}, {1} }};\n""".format(len(chars), ', '.join(chars))
+    f.write(code)
+    code = """const char zclFreePadApp_DateCodeNullTerminated[] = \"{0}\";\n""".format(dt_string)
     f.write(code)
     f.write("""
     #ifdef __cplusplus

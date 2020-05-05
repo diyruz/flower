@@ -19,7 +19,7 @@ bool DebugInit() {
     halUARTConfig.callBackFunc = HalUARTCback;
     HalUARTInit();
     if (HalUARTOpen(UART_PORT, &halUARTConfig) == HAL_UART_SUCCESS) {
-        LREPMaster("Initialized debug module \n\r");
+        LREPMaster("Initialized debug module \r\n");
         return true;
     }
     return false;
