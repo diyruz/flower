@@ -77,6 +77,7 @@ static void zclFreePadApp_SendButtonPress(uint8 endPoint, byte clicksCount);
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
 static void zclFreePadApp_SendKeys(byte keyCode, byte pressCount, byte pressTime);
 static void zclFreePadApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg);
+static void zclFreePadApp_ReportBasicCluster(void);
 
 /*********************************************************************
  * ZCL General Profile Callback table
@@ -115,7 +116,7 @@ void zclFreePadApp_Init(byte task_id) {
 
     osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_SLEEP_EVT, (uint32)FREEPADAPP_SLEEP_DELAY);
 
-    LREP("Started build %s \r\n", zclFreePadApp_DateCodeNullTerminated);
+    LREP("Started build %s \r\n", zclFreePadApp_DateCodeNT);
 }
 
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
@@ -138,7 +139,8 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
         case BDB_COMMISSIONING_SUCCESS:
             HalLedSet(HAL_LED_1, HAL_LED_MODE_OFF);
             LREPMaster("BDB_COMMISSIONING_SUCCESS\r\n");
-            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_REPORT_EVT, FREEPADAPP_REPORT_DELAY);
+            zclFreePadApp_ReportBasicCluster();
+            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_REPORT_EVT, 1000);
             break;
 
         default:
@@ -223,7 +225,7 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
                 break;
             case ZDO_STATE_CHANGE:
                 zclFreePadApp_NwkState = (devStates_t)(MSGpkt->hdr.status);
-                // Теперь мы в сети
+                LREP("ZDO_STATE_CHANGE zclFreePadApp_NwkState=%d\r\n", zclFreePadApp_NwkState);
                 if (zclFreePadApp_NwkState == DEV_END_DEVICE) {
                     HalLedSet(HAL_LED_1, HAL_LED_MODE_OFF);
                 }
@@ -268,7 +270,7 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
     if (events & FREEPADAPP_SLEEP_EVT) {
         LREPMaster("FREEPADAPP_SLEEP_EVT\r\n");
         osal_clear_event(zclFreePadApp_TaskID, FREEPADAPP_SLEEP_EVT);
-        halSleep(0); // sleep
+        // halSleep(0); // sleep
         return (events ^ FREEPADAPP_SLEEP_EVT);
     }
 
@@ -388,6 +390,29 @@ static void zclFreePadApp_ReportBattery(void) {
 
         zcl_SendReportCmd(1, &Coordinator_DstAddr, ZCL_CLUSTER_ID_GEN_POWER_CFG, pReportCmd,
                           ZCL_FRAME_CLIENT_SERVER_DIR, TRUE, bdb_getZCLFrameCounter());
+    }
+
+    osal_mem_free(pReportCmd);
+}
+
+static void zclFreePadApp_ReportBasicCluster(void) {
+    LREPMaster("zclFreePadApp_ReportBasicCluster\r\n");
+    zclReportCmd_t *pReportCmd;
+    const byte NUM_ATTRIBUTES = 1;
+    pReportCmd = osal_mem_alloc(sizeof(zclReportCmd_t) + (NUM_ATTRIBUTES * sizeof(zclReport_t)));
+    if (pReportCmd != NULL) {
+        pReportCmd->numAttr = NUM_ATTRIBUTES;
+
+        pReportCmd->attrList[0].attrID = ATTRID_BASIC_MODEL_ID;
+        pReportCmd->attrList[0].dataType = ZCL_DATATYPE_CHAR_STR;
+        pReportCmd->attrList[0].attrData = (void *)(&zclFreePadApp_ModelIdNT);
+
+        // pReportCmd->attrList[1].attrID = ATTRID_BASIC_MANUFACTURER_NAME;
+        // pReportCmd->attrList[1].dataType = ZCL_DATATYPE_CHAR_STR;
+        // pReportCmd->attrList[1].attrData = (void *)(&zclFreePadApp_ManufacturerNameNT);
+
+        zcl_SendReportCmd(1, &Coordinator_DstAddr, ZCL_CLUSTER_ID_GEN_BASIC, pReportCmd, ZCL_FRAME_CLIENT_SERVER_DIR,
+                          TRUE, bdb_getZCLFrameCounter());
     }
 
     osal_mem_free(pReportCmd);

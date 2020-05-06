@@ -109,6 +109,11 @@ extern CONST uint8 zclCmdsArraySize;
 // attribute list
 extern CONST zclAttrRec_t zclFreePadApp_Attrs[];
 extern CONST uint8 zclFreePadApp_NumAttributes;
+extern const uint8 zclFreePadApp_ManufacturerName[];
+extern const uint8 zclFreePadApp_ManufacturerNameNT[];
+extern const uint8 zclFreePadApp_ModelId[];
+extern const uint8 zclFreePadApp_ModelIdNT[];
+extern const uint8 zclFreePadApp_PowerSource;
 
 // FREEPADAPP_TODO: Declare application specific attributes here
 
