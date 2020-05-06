@@ -123,6 +123,16 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
          bdbCommissioningModeMsg->bdbCommissioningMode, bdbCommissioningModeMsg->bdbCommissioningStatus,
          bdbCommissioningModeMsg->bdbRemainingCommissioningModes);
     switch (bdbCommissioningModeMsg->bdbCommissioningMode) {
+    case BDB_COMMISSIONING_INITIALIZATION:
+        switch (bdbCommissioningModeMsg->bdbCommissioningStatus) {
+        case BDB_COMMISSIONING_NO_NETWORK:
+            LREP("No network, starting steering\r\n");
+            bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_STEERING);
+            break;
+        default:
+            break;
+        }
+        break;
     case BDB_COMMISSIONING_NWK_STEERING:
         switch (bdbCommissioningModeMsg->bdbCommissioningStatus) {
         case BDB_COMMISSIONING_SUCCESS:
@@ -192,8 +202,8 @@ static void zclFreePadApp_SendKeys(byte keyCode, byte pressCount, bool isRelease
 }
 
 static void zclFreePadApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg) {
-    LREP("ZCL_INCOMING_MSG srcAddr=0x%X endPoint=0x%X clusterId=0x%X commandID=0x%X %d\r\n", pInMsg->srcAddr, pInMsg->endPoint, pInMsg->clusterId,
-         pInMsg->zclHdr.commandID, pInMsg->zclHdr.commandID);
+    LREP("ZCL_INCOMING_MSG srcAddr=0x%X endPoint=0x%X clusterId=0x%X commandID=0x%X %d\r\n", pInMsg->srcAddr,
+         pInMsg->endPoint, pInMsg->clusterId, pInMsg->zclHdr.commandID, pInMsg->zclHdr.commandID);
 
     if (pInMsg->attrCmd)
         osal_mem_free(pInMsg->attrCmd);
@@ -285,17 +295,7 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
 static void zclFreePadApp_Rejoin(void) {
     HalLedSet(HAL_LED_1, HAL_LED_MODE_ON);
     LREP("Recieved rejoin command\r\n");
-
-    if (bdb_isDeviceNonFactoryNew()) {
-        LREP("Device is on network, sending NLME_LeaveReq first\r\n");
-        NLME_LeaveReq_t leaveReq;
-        osal_memset(&leaveReq, 0, sizeof(NLME_LeaveReq_t));
-        bdb_setNodeIsOnANetwork(FALSE);
-        ZStatus_t leaverReqStatus = NLME_LeaveReq(&leaveReq);
-        LREP("NLME_LeaveReq %d\r\n", leaverReqStatus);
-    }
-
-    bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_STEERING);
+    bdb_resetLocalAction();
 }
 
 static void zclFreePadApp_SendButtonPress(uint8 endPoint, uint8 clicksCount) {
