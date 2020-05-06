@@ -76,6 +76,7 @@ static void zclFreePadApp_Rejoin(void);
 static void zclFreePadApp_SendButtonPress(uint8 endPoint, byte clicksCount);
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
 static void zclFreePadApp_SendKeys(byte keyCode, byte pressCount, byte pressTime);
+static void zclFreePadApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg);
 
 /*********************************************************************
  * ZCL General Profile Callback table
@@ -190,6 +191,13 @@ static void zclFreePadApp_SendKeys(byte keyCode, byte pressCount, bool isRelease
     }
 }
 
+static void zclFreePadApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg) {
+    LREP("ZCL_INCOMING_MSG srcAddr=0x%X endPoint=0x%X clusterId=0x%X commandID=0x%X %d\r\n", pInMsg->srcAddr, pInMsg->endPoint, pInMsg->clusterId,
+         pInMsg->zclHdr.commandID, pInMsg->zclHdr.commandID);
+
+    if (pInMsg->attrCmd)
+        osal_mem_free(pInMsg->attrCmd);
+}
 uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
     afIncomingMSGPacket_t *MSGpkt;
 
@@ -209,6 +217,10 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
                 if (zclFreePadApp_NwkState == DEV_END_DEVICE) {
                     HalLedSet(HAL_LED_1, HAL_LED_MODE_OFF);
                 }
+                break;
+
+            case ZCL_INCOMING_MSG:
+                zclFreePadApp_ProcessIncomingMsg((zclIncomingMsg_t *)MSGpkt);
                 break;
 
             default:
@@ -245,10 +257,8 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
 
     if (events & FREEPADAPP_SLEEP_EVT) {
         LREPMaster("FREEPADAPP_SLEEP_EVT\r\n");
-#ifdef HAL_BOARD_FREEPAD
         osal_clear_event(zclFreePadApp_TaskID, FREEPADAPP_SLEEP_EVT);
         halSleep(0); // sleep
-#endif
         return (events ^ FREEPADAPP_SLEEP_EVT);
     }
 
@@ -285,7 +295,7 @@ static void zclFreePadApp_Rejoin(void) {
         LREP("NLME_LeaveReq %d\r\n", leaverReqStatus);
     }
 
-    bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_STEERING | BDB_COMMISSIONING_MODE_FINDING_BINDING);
+    bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_STEERING);
 }
 
 static void zclFreePadApp_SendButtonPress(uint8 endPoint, uint8 clicksCount) {
