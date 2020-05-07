@@ -3,6 +3,7 @@
 #include "MT_SYS.h"
 #include "OSAL.h"
 #include "OSAL_Clock.h"
+#include "OSAL_PwrMgr.h"
 #include "ZComDef.h"
 #include "ZDApp.h"
 #include "ZDObject.h"
@@ -114,9 +115,10 @@ void zclFreePadApp_Init(byte task_id) {
     DebugInit();
     HalLedSet(HAL_LED_1, HAL_LED_MODE_FLASH);
 
-    osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_SLEEP_EVT, (uint32)FREEPADAPP_SLEEP_DELAY);
-
     LREP("Started build %s \r\n", zclFreePadApp_DateCodeNT);
+    osal_start_reload_timer(zclFreePadApp_TaskID, FREEPADAPP_REPORT_EVT, FREEPADAPP_REPORT_DELAY);
+    //this allows power saving, PM2
+    osal_pwrmgr_task_state(zclFreePadApp_TaskID, PWRMGR_CONSERVE);
 }
 
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
@@ -140,7 +142,6 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
             HalLedSet(HAL_LED_1, HAL_LED_MODE_OFF);
             LREPMaster("BDB_COMMISSIONING_SUCCESS\r\n");
             zclFreePadApp_ReportBasicCluster();
-            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_REPORT_EVT, 1000);
             break;
 
         default:
@@ -267,13 +268,6 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
         return (events ^ FREEPADAPP_RESET_EVT);
     }
 
-    if (events & FREEPADAPP_SLEEP_EVT) {
-        LREPMaster("FREEPADAPP_SLEEP_EVT\r\n");
-        osal_clear_event(zclFreePadApp_TaskID, FREEPADAPP_SLEEP_EVT);
-        // halSleep(0); // sleep
-        return (events ^ FREEPADAPP_SLEEP_EVT);
-    }
-
     if (events & FREEPADAPP_REPORT_EVT) {
         LREPMaster("FREEPADAPP_REPORT_EVT\r\n");
         zclFreePadApp_ReportBattery();
@@ -333,9 +327,6 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
             osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_HOLD_START_EVT);
         }
     } else {
-        osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_SLEEP_EVT, (uint32)FREEPADAPP_SLEEP_DELAY);
-        osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_REPORT_EVT, FREEPADAPP_REPORT_DELAY);
-
         if (bdb_isDeviceNonFactoryNew()) {
             osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT, FREEPADAPP_RESET_DELAY);
 
