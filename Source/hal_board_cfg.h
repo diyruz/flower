@@ -161,7 +161,7 @@ extern void MAC_RfFrontendSetup(void);
 
 /* ----------- LED's ---------- */
 
-#ifdef HAL_BOARD_FREEPAD
+#if defined(HAL_BOARD_FREEPAD_20) || defined(HAL_BOARD_FREEPAD_12) || defined(HAL_BOARD_FREEPAD_8)
   #define LED1_BV           BV(1)
   #define LED1_SBIT         P0_1
   #define LED1_DDR          P0DIR

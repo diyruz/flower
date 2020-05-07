@@ -60,7 +60,6 @@
 #endif
 
 #if defined(HAL_BOARD_FREEPAD_20) || defined(HAL_BOARD_FREEPAD_12) || defined(HAL_BOARD_FREEPAD_8)
-    #define HAL_BOARD_FREEPAD
     #define HAL_UART FALSE
     #define POWER_SAVING
 #elif defined(HAL_BOARD_CHDTECH_DEV)

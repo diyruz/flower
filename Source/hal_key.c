@@ -95,7 +95,7 @@ void HalKeyInit(void) {
     P1SEL &= ~HAL_KEY_P1_GPIO_PINS;
     P2SEL &= ~HAL_KEY_P2_GPIO_PINS;
 
-#ifdef HAL_BOARD_FREEPAD
+#if defined(HAL_BOARD_FREEPAD_20) || defined(HAL_BOARD_FREEPAD_12) || defined(HAL_BOARD_FREEPAD_8)
     /**
      * columns (p1)
      **/
@@ -129,7 +129,7 @@ void HalKeyConfig(bool interruptEnable, halKeyCBack_t cback) {
     P0IEN |= HAL_KEY_P0_INTERRUPT_PINS;
     P1IEN |= HAL_KEY_P1_INTERRUPT_PINS;
     P2IEN |= HAL_KEY_P2_INTERRUPT_PINS;
-#ifdef HAL_BOARD_FREEPAD
+#if defined(HAL_BOARD_FREEPAD_20) || defined(HAL_BOARD_FREEPAD_12) || defined(HAL_BOARD_FREEPAD_8)
     PICTL &= ~HAL_KEY_BIT0; // set rising edge on port 0
                             // enable intrupt on row pins
     IEN1 |= HAL_KEY_BIT5;   // enable port0 int
@@ -143,7 +143,7 @@ void HalKeyConfig(bool interruptEnable, halKeyCBack_t cback) {
 uint8 HalKeyRead(void) {
 
     uint8 key = HAL_KEY_CODE_NOKEY;
-#ifdef HAL_BOARD_FREEPAD
+#if defined(HAL_BOARD_FREEPAD_20) || defined(HAL_BOARD_FREEPAD_12) || defined(HAL_BOARD_FREEPAD_8)
     uint8 row, col;
     row = P0 & HAL_KEY_P0_INPUT_PINS;
 
