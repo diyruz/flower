@@ -161,34 +161,34 @@ byte zclFreePadApp_KeyCodeToButton(byte key) {
         return 7;
     case 0x18: // row=8 col=32
         return 8;
-#if defined(HAL_BOARD_FREEPAD_12) || defined(HAL_BOARD_FREEPAD_20)
-    case 0x21: // row=16 col=4
-        return 9;
-    case 0x22: // row=16 col=8
-        return 10;
-    case 0x24: // row=16 col=16
-        return 11;
-    case 0x28: // row=16 col=32
-        return 12;
-#endif
-#if defined(HAL_BOARD_FREEPAD_20)
-    case 0x41: // row=32 col=4
-        return 13;
-    case 0x42: // row=32 col=8
-        return 14;
-    case 0x44: // row=32 col=16
-        return 15;
-    case 0x48: // row=32 col=32
-        return 16;
-    case 0x81: // row=64 col=4
-        return 17;
-    case 0x82: // row=64 col=8
-        return 18;
-    case 0x84: // row=64 col=16
-        return 19;
-    case 0x88: // row=64 col=32
-        return 20;
-#endif
+    #if defined(HAL_BOARD_FREEPAD_12) || defined(HAL_BOARD_FREEPAD_20)
+        case 0x21: // row=16 col=4
+            return 9;
+        case 0x22: // row=16 col=8
+            return 10;
+        case 0x24: // row=16 col=16
+            return 11;
+        case 0x28: // row=16 col=32
+            return 12;
+    #endif
+    #if defined(HAL_BOARD_FREEPAD_20)
+        case 0x41: // row=32 col=4
+            return 13;
+        case 0x42: // row=32 col=8
+            return 14;
+        case 0x44: // row=32 col=16
+            return 15;
+        case 0x48: // row=32 col=32
+            return 16;
+        case 0x81: // row=64 col=4
+            return 17;
+        case 0x82: // row=64 col=8
+            return 18;
+        case 0x84: // row=64 col=16
+            return 19;
+        case 0x88: // row=64 col=32
+            return 20;
+    #endif
 #elif defined(HAL_BOARD_CHDTECH_DEV)
     case 0x1: // row=4 col=4
         return 1;
