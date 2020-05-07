@@ -13,7 +13,7 @@ bool DebugInit() {
     halUARTConfig.flowControlThreshold = 48; // this parameter indicates number of bytes left before Rx Buffer
                                              // reaches maxRxBufSize
     halUARTConfig.idleTimeout = 10;          // this parameter indicates rx timeout period in millisecond
-    halUARTConfig.rx.maxBufSize = BUFFLEN;
+    halUARTConfig.rx.maxBufSize = 0;
     halUARTConfig.tx.maxBufSize = BUFFLEN;
     halUARTConfig.intEnable = TRUE;
     halUARTConfig.callBackFunc = HalUARTCback;
@@ -26,7 +26,7 @@ bool DebugInit() {
 }
 
 void vprint(const char *fmt, va_list argp) {
-    char string[200];
+    char string[100];
     if (0 < vsprintf(string, fmt, argp)) // build string
     {
         HalUARTWrite(UART_PORT, (uint8 *)string, strlen(string));
@@ -46,9 +46,8 @@ void LREP(char *format, ...) {
     va_end(argp);
 }
 #else
-#include <stdio.h>
 bool DebugInit() {}
 void LREP(char *format, ...) {}
-void LREPMaster(const char *data) { printf(data); }
+void LREPMaster(const char *data) {}
 void vprint(const char *fmt, va_list argp) {}
 #endif
