@@ -1,0 +1,33 @@
+{
+    "configurations": [{
+        "name": "Mac",
+        "forcedInclude": ["${workspaceRoot}/Source/preinclude.h"],
+        "includePath": [
+            "${workspaceRoot}",
+            "${env:ZSTACK_PATH}/Components/mac/include/",
+            "${env:ZSTACK_PATH}/Components/mt",
+            "${env:ZSTACK_PATH}/Components/zmac",
+            "${env:ZSTACK_PATH}/Components/zmac/f8w",
+            "${env:ZSTACK_PATH}/Components/osal/include",
+            "${env:ZSTACK_PATH}/Components/stack/af",
+            "${env:ZSTACK_PATH}/Components/stack/bdb",
+            "${env:ZSTACK_PATH}/Components/stack/sec",
+            "${env:ZSTACK_PATH}/Components/stack/sys",
+            "${env:ZSTACK_PATH}/Components/stack/zdo",
+            "${env:ZSTACK_PATH}/Components/stack/GP",
+            "${env:ZSTACK_PATH}/Components/stack/nwk",
+            "${env:ZSTACK_PATH}/Components/stack/zcl",
+            "${env:ZSTACK_PATH}/Components/hal/target/CC2530EB/",
+            "${env:ZSTACK_PATH}/Components/hal/include/",
+            "${env:ZSTACK_PATH}/Components/services/saddr/",
+            "${env:ZSTACK_PATH}/Components/services/sdata/",
+            "${env:ZSTACK_PATH}/Projects/zstack/ZMain/TI2530DB",
+            "${env:ZSTACK_PATH}/Projects/zstack/HomeAutomation/Source"
+        ],
+        "intelliSenseMode": "clang-x64",
+        "compilerPath": "/usr/bin/clang",
+        "cStandard": "c99",
+        "cppStandard": "c++17"
+    }],
+    "version": 4
+}
