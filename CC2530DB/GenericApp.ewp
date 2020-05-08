@@ -4639,27 +4639,6 @@
         </file>
     </group>
     <group>
-        <name>GP</name>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\GP\cGP_stub.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\GP\dGP_stub.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\GP\gp_common.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\GP\gp_common.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\GP\gp_interface.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\GP\gp_proxyTbl.c</name>
-        </file>
-    </group>
-    <group>
         <name>HAL</name>
         <group>
             <name>Common</name>
