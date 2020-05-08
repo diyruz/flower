@@ -42,10 +42,7 @@ const uint8 zclFreePadApp_HWRevision = FREEPADAPP_HWVERSION;
 const uint8 zclFreePadApp_ZCLVersion = FREEPADAPP_ZCLVERSION;
 //{lenght, 'd', 'a', 't', 'a'}
 const uint8 zclFreePadApp_ManufacturerName[] = {9, 'm', 'o', 'd', 'k', 'a', 'm', '.', 'r', 'u'};
-const uint8 zclFreePadApp_ManufacturerNameNT[] = "modkam.ru";
-
 const uint8 zclFreePadApp_ModelId[] = {14, 'D', 'I', 'Y', 'R', 'u', 'Z', '_', 'F', 'r', 'e', 'e', 'P', 'a', 'd'};
-const uint8 zclFreePadApp_ModelIdNT[] = "DIYRuZ_FreePad";
 const uint8 zclFreePadApp_PowerSource = POWER_SOURCE_BATTERY;
 
 

@@ -30,7 +30,12 @@
         "nwk_util.h": "c",
         "version.h": "c",
         "osal_clock.h": "c",
-        "osal_pwrmgr.h": "c"
+        "osal_pwrmgr.h": "c",
+        "filesystem": "c",
+        "array": "c",
+        "iterator": "c",
+        "string_view": "c",
+        "vector": "c"
     },
 
     "files.exclude": {

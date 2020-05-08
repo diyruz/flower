@@ -62,7 +62,7 @@ extern "C" {
 #elif defined(HAL_BOARD_FREEPAD_8)
 #define FREEPAD_BUTTONS_COUNT 8
 #elif defined(HAL_BOARD_CHDTECH_DEV)
-#define FREEPAD_BUTTONS_COUNT 2
+#define FREEPAD_BUTTONS_COUNT 20
 #endif
 
 #define HAL_UNKNOWN_BUTTON HAL_KEY_CODE_NOKEY
@@ -70,11 +70,11 @@ extern "C" {
 
 #define FREEPADAPP_AWAKE_TIMEOUT 1000 * 60 // 60 seconds
 
-#define FREEPADAPP_END_DEVICE_REJOIN_EVT 0x0001
-#define FREEPADAPP_SEND_KEYS_EVT 0x0002
-#define FREEPADAPP_RESET_EVT 0x0004
-#define FREEPADAPP_REPORT_EVT 0x0010
-#define FREEPADAPP_HOLD_START_EVT 0x0020
+#define FREEPADAPP_END_DEVICE_REJOIN_EVT 0x0010
+#define FREEPADAPP_SEND_KEYS_EVT 0x0020
+#define FREEPADAPP_RESET_EVT 0x0040
+#define FREEPADAPP_REPORT_EVT 0x0200
+#define FREEPADAPP_HOLD_START_EVT 0x0400
 
 #define FREEPADAPP_SEND_KEYS_DELAY 250
 #define FREEPADAPP_HOLD_START_DELAY (FREEPADAPP_SEND_KEYS_DELAY + 750)
@@ -109,9 +109,7 @@ extern CONST uint8 zclCmdsArraySize;
 extern CONST zclAttrRec_t zclFreePadApp_Attrs[];
 extern CONST uint8 zclFreePadApp_NumAttributes;
 extern const uint8 zclFreePadApp_ManufacturerName[];
-extern const uint8 zclFreePadApp_ManufacturerNameNT[];
 extern const uint8 zclFreePadApp_ModelId[];
-extern const uint8 zclFreePadApp_ModelIdNT[];
 extern const uint8 zclFreePadApp_PowerSource;
 
 // FREEPADAPP_TODO: Declare application specific attributes here

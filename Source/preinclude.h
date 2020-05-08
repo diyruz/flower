@@ -2,7 +2,7 @@
 #define TC_LINKKEY_JOIN
 #define NV_INIT
 #define NV_RESTORE
-
+#define INT_HEAP_LEN 2688
 
 #define NWK_AUTO_POLL
 

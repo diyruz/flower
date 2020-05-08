@@ -97,11 +97,10 @@ static zclGeneral_AppCallbacks_t zclFreePadApp_CmdCallbacks = {
 void zclFreePadApp_Init(byte task_id) {
     zclFreePadApp_TaskID = task_id;
     zclFreePadApp_InitClusters();
-
+    zcl_registerAttrList(1, zclFreePadApp_NumAttributes, zclFreePadApp_Attrs);
+    zclGeneral_RegisterCmdCallbacks(1, &zclFreePadApp_CmdCallbacks);
     for (int i = 0; i < zclFreePadApp_SimpleDescsCount; i++) {
         bdb_RegisterSimpleDescriptor(&zclFreePadApp_SimpleDescs[i]);
-        zclGeneral_RegisterCmdCallbacks(zclFreePadApp_SimpleDescs[i].EndPoint, &zclFreePadApp_CmdCallbacks);
-        zcl_registerAttrList(zclFreePadApp_SimpleDescs[i].EndPoint, zclFreePadApp_NumAttributes, zclFreePadApp_Attrs);
     }
     zcl_registerForMsg(zclFreePadApp_TaskID);
 
@@ -117,7 +116,7 @@ void zclFreePadApp_Init(byte task_id) {
 
     LREP("Started build %s \r\n", zclFreePadApp_DateCodeNT);
     osal_start_reload_timer(zclFreePadApp_TaskID, FREEPADAPP_REPORT_EVT, FREEPADAPP_REPORT_DELAY);
-    //this allows power saving, PM2
+    // this allows power saving, PM2
     osal_pwrmgr_task_state(zclFreePadApp_TaskID, PWRMGR_CONSERVE);
 }
 
@@ -247,7 +246,7 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
         // return unprocessed events
         return (events ^ SYS_EVENT_MSG);
     }
-
+    LREP("events 0x%X\r\n", events);
     if (events & FREEPADAPP_END_DEVICE_REJOIN_EVT) {
         LREPMaster("FREEPADAPP_END_DEVICE_REJOIN_EVT\r\n");
         bdb_ZedAttemptRecoverNwk();
@@ -348,6 +347,9 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
 static void zclFreePadApp_BindNotification(bdbBindNotificationData_t *data) {
     HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
     LREP("Recieved bind request clusterId=0x%X dstAddr=0x%X \r\n", data->clusterId, data->dstAddr);
+    uint16 maxEntries = 0, usedEntries = 0;
+    bindCapacity(&maxEntries, &usedEntries);
+    LREP("bindCapacity %d %usedEntries %d \r\n", maxEntries, usedEntries);
 }
 
 /* (( 3 * 1,15 ) / (( 2^12 / 2 ) - 1 )) * 10  */
@@ -396,12 +398,7 @@ static void zclFreePadApp_ReportBasicCluster(void) {
 
         pReportCmd->attrList[0].attrID = ATTRID_BASIC_MODEL_ID;
         pReportCmd->attrList[0].dataType = ZCL_DATATYPE_CHAR_STR;
-        pReportCmd->attrList[0].attrData = (void *)(&zclFreePadApp_ModelIdNT);
-
-        // pReportCmd->attrList[1].attrID = ATTRID_BASIC_MANUFACTURER_NAME;
-        // pReportCmd->attrList[1].dataType = ZCL_DATATYPE_CHAR_STR;
-        // pReportCmd->attrList[1].attrData = (void *)(&zclFreePadApp_ManufacturerNameNT);
-
+        pReportCmd->attrList[0].attrData = (void *)(&zclFreePadApp_ModelId);
         zcl_SendReportCmd(1, &Coordinator_DstAddr, ZCL_CLUSTER_ID_GEN_BASIC, pReportCmd, ZCL_FRAME_CLIENT_SERVER_DIR,
                           TRUE, bdb_getZCLFrameCounter());
     }

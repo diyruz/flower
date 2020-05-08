@@ -15,7 +15,7 @@
         <Placement>_ 1238 679 2122 1219</Placement>
     </BreakpointUsageDialog>
     <DebugChecksum>
-        <Checksum>1125290442</Checksum>
+        <Checksum>2876672325</Checksum>
     </DebugChecksum>
     <CallStack>
         <ShowArgs>0</ShowArgs>
@@ -60,15 +60,15 @@
         <Freq>50000000</Freq>
         <FreqHi>0</FreqHi>
     </Simulator>
-    <TermIOLog>
-        <LoggingEnabled>_ 0</LoggingEnabled>
-        <LogFile>_ ""</LogFile>
-    </TermIOLog>
     <LogFile>
         <LoggingEnabled>_ 0</LoggingEnabled>
         <LogFile>_ ""</LogFile>
         <Category>_ 0</Category>
     </LogFile>
+    <TermIOLog>
+        <LoggingEnabled>_ 0</LoggingEnabled>
+        <LogFile>_ ""</LogFile>
+    </TermIOLog>
     <Breakpoints>
         <Count>0</Count>
     </Breakpoints>
