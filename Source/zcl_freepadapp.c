@@ -76,7 +76,6 @@ static void zclFreePadApp_SendButtonPress(uint8 endPoint, byte clicksCount);
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
 static void zclFreePadApp_SendKeys(byte keyCode, byte pressCount, byte pressTime);
 static void zclFreePadApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg);
-static void zclFreePadApp_ReportBasicCluster(void);
 
 /*********************************************************************
  * ZCL General Profile Callback table
@@ -136,7 +135,6 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
         case BDB_COMMISSIONING_SUCCESS:
             HalLedBlink(HAL_LED_1, 5, 50, 500);
             LREPMaster("BDB_COMMISSIONING_SUCCESS\r\n");
-            zclFreePadApp_ReportBasicCluster();
             break;
 
         default:
@@ -147,6 +145,7 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
         break;
 
     case BDB_COMMISSIONING_PARENT_LOST:
+        LREPMaster("BDB_COMMISSIONING_PARENT_LOST\r\n");
         if (bdbCommissioningModeMsg->bdbCommissioningStatus != BDB_COMMISSIONING_NETWORK_RESTORED) {
             HalLedSet(HAL_LED_1, HAL_LED_MODE_FLASH);
             // Parent not found, attempt to rejoin again after a fixed delay
@@ -233,6 +232,7 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
                 break;
 
             default:
+                LREP("SysEvent 0x%X status 0x%X\r\n", MSGpkt->hdr.event, MSGpkt->hdr.status);
                 break;
             }
 
@@ -375,11 +375,11 @@ static void zclFreePadApp_ReportBattery(void) {
 
         pReportCmd->attrList[0].attrID = ATTRID_POWER_CFG_BATTERY_VOLTAGE;
         pReportCmd->attrList[0].dataType = ZCL_DATATYPE_UINT8;
-        pReportCmd->attrList[0].attrData = (void *)(&zclFreePadApp_BatteryVoltage);
+        pReportCmd->attrList[0].attrData = (void *)&zclFreePadApp_BatteryVoltage;
 
         pReportCmd->attrList[1].attrID = ATTRID_POWER_CFG_BATTERY_PERCENTAGE_REMAINING;
         pReportCmd->attrList[1].dataType = ZCL_DATATYPE_UINT8;
-        pReportCmd->attrList[1].attrData = (void *)(&zclFreePadApp_BatteryPercentageRemainig);
+        pReportCmd->attrList[1].attrData = (void *)&zclFreePadApp_BatteryPercentageRemainig;
 
         zcl_SendReportCmd(1, &Coordinator_DstAddr, ZCL_CLUSTER_ID_GEN_POWER_CFG, pReportCmd,
                           ZCL_FRAME_CLIENT_SERVER_DIR, TRUE, bdb_getZCLFrameCounter());
@@ -388,22 +388,5 @@ static void zclFreePadApp_ReportBattery(void) {
     osal_mem_free(pReportCmd);
 }
 
-static void zclFreePadApp_ReportBasicCluster(void) {
-    LREPMaster("zclFreePadApp_ReportBasicCluster\r\n");
-    zclReportCmd_t *pReportCmd;
-    const byte NUM_ATTRIBUTES = 1;
-    pReportCmd = osal_mem_alloc(sizeof(zclReportCmd_t) + (NUM_ATTRIBUTES * sizeof(zclReport_t)));
-    if (pReportCmd != NULL) {
-        pReportCmd->numAttr = NUM_ATTRIBUTES;
-
-        pReportCmd->attrList[0].attrID = ATTRID_BASIC_MODEL_ID;
-        pReportCmd->attrList[0].dataType = ZCL_DATATYPE_CHAR_STR;
-        pReportCmd->attrList[0].attrData = (void *)(&zclFreePadApp_ModelId);
-        zcl_SendReportCmd(1, &Coordinator_DstAddr, ZCL_CLUSTER_ID_GEN_BASIC, pReportCmd, ZCL_FRAME_CLIENT_SERVER_DIR,
-                          TRUE, bdb_getZCLFrameCounter());
-    }
-
-    osal_mem_free(pReportCmd);
-}
 /****************************************************************************
 ****************************************************************************/

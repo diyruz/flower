@@ -1,20 +1,18 @@
-#define SECURE 1
 #define TC_LINKKEY_JOIN
 #define NV_INIT
 #define NV_RESTORE
 #define INT_HEAP_LEN 2688
 
 #define NWK_AUTO_POLL
-
 #define MULTICAST_ENABLED FALSE
-#define ZCL_READ
 
+#define ZCL_READ
 #define ZCL_BASIC
 #define ZCL_IDENTIFY
 #define ZCL_ON_OFF
 #define ZCL_LEVEL_CTRL
-
 #define ZCL_REPORTING_DEVICE
+
 #define ZSTACK_DEVICE_BUILD (DEVICE_BUILD_ENDDEVICE)
 
 #define DISABLE_GREENPOWER_BASIC_PROXY
@@ -23,10 +21,8 @@
 
 #ifdef DEFAULT_CHANLIST
 #undef DEFAULT_CHANLIST
-#define DEFAULT_CHANLIST 0x07FFF800
-#else
-#define DEFAULT_CHANLIST 0x07FFF800
 #endif
+#define DEFAULT_CHANLIST 0x07FFF800
 
 /* ----------- Minimum safe bus voltage ---------- */
 

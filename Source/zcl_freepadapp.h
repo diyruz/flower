@@ -48,8 +48,9 @@ extern "C" {
 /*********************************************************************
  * INCLUDES
  */
-#include "zcl.h"
 #include "version.h"
+#include "zcl.h"
+
 
 /*********************************************************************
  * CONSTANTS
@@ -62,7 +63,7 @@ extern "C" {
 #elif defined(HAL_BOARD_FREEPAD_8)
 #define FREEPAD_BUTTONS_COUNT 8
 #elif defined(HAL_BOARD_CHDTECH_DEV)
-#define FREEPAD_BUTTONS_COUNT 20
+#define FREEPAD_BUTTONS_COUNT 2
 #endif
 
 #define HAL_UNKNOWN_BUTTON HAL_KEY_CODE_NOKEY
@@ -70,18 +71,18 @@ extern "C" {
 
 #define FREEPADAPP_AWAKE_TIMEOUT 1000 * 60 // 60 seconds
 
-#define FREEPADAPP_END_DEVICE_REJOIN_EVT 0x0010
-#define FREEPADAPP_SEND_KEYS_EVT 0x0020
-#define FREEPADAPP_RESET_EVT 0x0040
-#define FREEPADAPP_REPORT_EVT 0x0200
-#define FREEPADAPP_HOLD_START_EVT 0x0400
+#define FREEPADAPP_END_DEVICE_REJOIN_EVT ((uint16)0x0010)
+#define FREEPADAPP_SEND_KEYS_EVT ((uint16)0x0020)
+#define FREEPADAPP_RESET_EVT ((uint16)0x0040)
+#define FREEPADAPP_REPORT_EVT ((uint16)0x0200)
+#define FREEPADAPP_HOLD_START_EVT ((uint16)0x0400)
 
 #define FREEPADAPP_SEND_KEYS_DELAY 250
 #define FREEPADAPP_HOLD_START_DELAY (FREEPADAPP_SEND_KEYS_DELAY + 750)
 #define FREEPADAPP_RESET_DELAY 10 * 1000
 #define FREEPADAPP_END_DEVICE_REJOIN_DELAY 10 * 1000 // 10 seconds
 
-#define FREEPADAPP_REPORT_DELAY ((uint32) 1800000) // 30 minutes 30 * 60 * 1000
+#define FREEPADAPP_REPORT_DELAY ((uint32)1800000) // 30 minutes 30 * 60 * 1000
 
 #define FREEPADAPP_LEVEL_STEP_SIZE 255 >> 2
 #define FREEPADAPP_LEVEL_TRANSITION_TIME 10
@@ -96,8 +97,7 @@ extern "C" {
 /*********************************************************************
  * VARIABLES
  */
-
-extern SimpleDescriptionFormat_t zclFreePadApp_SimpleDescs[];
+extern SimpleDescriptionFormat_t *zclFreePadApp_SimpleDescs;
 extern uint8 zclFreePadApp_SimpleDescsCount;
 extern uint8 zclFreePadApp_BatteryVoltage;
 extern uint8 zclFreePadApp_BatteryPercentageRemainig;
