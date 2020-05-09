@@ -29,7 +29,6 @@
 #include "hal_key.h"
 #include "hal_led.h"
 
-
 #include "battery.h"
 #include "version.h"
 /*********************************************************************
@@ -234,8 +233,13 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
                 zclFreePadApp_ProcessIncomingMsg((zclIncomingMsg_t *)MSGpkt);
                 break;
 
+            case AF_DATA_CONFIRM_CMD:
+                // This message is received as a confirmation of a data packet sent.
+                break;
+
             default:
-                LREP("SysEvent 0x%X status 0x%X\r\n", MSGpkt->hdr.event, MSGpkt->hdr.status);
+                LREP("SysEvent 0x%X status 0x%X macSrcAddr 0x%X endPoint=0x%X\r\n", MSGpkt->hdr.event,
+                     MSGpkt->hdr.status, MSGpkt->macSrcAddr, MSGpkt->endPoint);
                 break;
             }
 
@@ -354,7 +358,6 @@ static void zclFreePadApp_BindNotification(bdbBindNotificationData_t *data) {
     bindCapacity(&maxEntries, &usedEntries);
     LREP("bindCapacity %d %usedEntries %d \r\n", maxEntries, usedEntries);
 }
-
 
 static void zclFreePadApp_ReportBattery(void) {
     zclFreePadApp_BatteryVoltage = getBatteryVoltage();
