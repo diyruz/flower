@@ -150,7 +150,7 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
         LREPMaster("BDB_COMMISSIONING_PARENT_LOST\r\n");
         if (bdbCommissioningModeMsg->bdbCommissioningStatus != BDB_COMMISSIONING_NETWORK_RESTORED) {
             HalLedSet(HAL_LED_1, HAL_LED_MODE_FLASH);
-            // Parent not found, attempt to rejoin again after a fixed delay
+            // // Parent not found, attempt to rejoin again after a fixed delay
             osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_END_DEVICE_REJOIN_EVT,
                                FREEPADAPP_END_DEVICE_REJOIN_DELAY);
         }
@@ -334,7 +334,12 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
             osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_HOLD_START_EVT);
         }
     } else {
+
         if (bdb_isDeviceNonFactoryNew()) {
+            if (bdbAttributes.bdbCommissioningStatus != BDB_COMMISSIONING_SUCCESS && bdbAttributes.bdbCommissioningStatus != BDB_COMMISSIONING_NETWORK_RESTORED) {
+                LREP("!bdbCommissioningStatus=%d try to restore network\r\n", bdbAttributes.bdbCommissioningStatus);
+                bdb_ZedAttemptRecoverNwk();
+            }
             osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT, FREEPADAPP_RESET_DELAY);
         } else {
             osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT,
