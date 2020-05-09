@@ -24,16 +24,6 @@
 #endif
 #define DEFAULT_CHANLIST 0x07FFF800
 
-/* ----------- Minimum safe bus voltage ---------- */
-
-// Vdd/3 / Internal Reference X ENOB --> (Vdd / 3) / 1.15 X 127
-#define VDD_2_0  74   // 2.0 V required to safely read/write internal flash.
-#define VDD_2_7  100  // 2.7 V required for the Numonyx device.
-
-#define VDD_MIN_NV   (VDD_2_0+4)  // 5% margin over minimum to survive a page erase and compaction.
-#define VDD_MIN_GOOD (VDD_2_0+8)  // 10% margin over minimum to survive a page erase and compaction.
-#define VDD_MIN_XNV  (VDD_2_7+5)  // 5% margin over minimum to survive a page erase and compaction.
-
 #define ISR_KEYINTERRUPT
 #define HAL_BUZZER FALSE
 

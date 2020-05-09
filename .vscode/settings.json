@@ -36,7 +36,8 @@
         "iterator": "c",
         "string_view": "c",
         "vector": "c",
-        "zdobject.h": "c"
+        "zdobject.h": "c",
+        "battery.h": "c"
     },
 
     "files.exclude": {

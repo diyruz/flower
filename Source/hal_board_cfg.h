@@ -202,6 +202,7 @@ extern void MAC_RfFrontendSetup(void);
 
 #define VDD_MIN_RUN   VDD_2_0
 #define VDD_MIN_NV   (VDD_2_0+4)  // 5% margin over minimum to survive a page erase and compaction.
+#define VDD_MIN_GOOD (VDD_2_0+8)  // 10% margin over minimum to survive a page erase and compaction.
 #define VDD_MIN_XNV  (VDD_2_7+5)  // 5% margin over minimum to survive a page erase and compaction.
 
 /* ----------- Delay macro ---------- */

@@ -9,6 +9,7 @@
 
 #include "zcl_freepadapp.h"
 
+#include "battery.h"
 #include "version.h"
 /*********************************************************************
  * CONSTANTS

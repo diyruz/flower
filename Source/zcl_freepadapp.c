@@ -25,11 +25,12 @@
 #include "onboard.h"
 
 /* HAL */
-#include "hal_adc.h"
 #include "hal_drivers.h"
 #include "hal_key.h"
 #include "hal_led.h"
 
+
+#include "battery.h"
 #include "version.h"
 /*********************************************************************
  * MACROS
@@ -113,6 +114,8 @@ void zclFreePadApp_Init(byte task_id) {
     osal_start_reload_timer(zclFreePadApp_TaskID, FREEPADAPP_REPORT_EVT, FREEPADAPP_REPORT_DELAY);
     // this allows power saving, PM2
     osal_pwrmgr_task_state(zclFreePadApp_TaskID, PWRMGR_CONSERVE);
+
+    LREP("Battery voltage=%d prc=%d \r\n", getBatteryVoltage(), getBatteryRemainingPercentage());
 }
 
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
@@ -352,21 +355,10 @@ static void zclFreePadApp_BindNotification(bdbBindNotificationData_t *data) {
     LREP("bindCapacity %d %usedEntries %d \r\n", maxEntries, usedEntries);
 }
 
-/* (( 3 * 1,15 ) / (( 2^12 / 2 ) - 1 )) * 10  */
-#define MULTI 0.0168539326
-
-static uint8 readVoltage(void) {
-    uint16 value;
-
-    HalAdcSetReference(HAL_ADC_REF_125V);
-    value = HalAdcRead(HAL_ADC_CHANNEL_VDD, HAL_ADC_RESOLUTION_12);
-    HalAdcSetReference(HAL_ADC_REF_AVDD);
-    return (uint8)(value * MULTI);
-}
 
 static void zclFreePadApp_ReportBattery(void) {
-    zclFreePadApp_BatteryVoltage = readVoltage();
-    zclFreePadApp_BatteryPercentageRemainig = (uint8)MIN(100, ceil(100.0 / 33.0 * zclFreePadApp_BatteryVoltage));
+    zclFreePadApp_BatteryVoltage = getBatteryVoltage();
+    zclFreePadApp_BatteryPercentageRemainig = getBatteryRemainingPercentage();
     const uint8 NUM_ATTRIBUTES = 2;
     zclReportCmd_t *pReportCmd;
     pReportCmd = osal_mem_alloc(sizeof(zclReportCmd_t) + (NUM_ATTRIBUTES * sizeof(zclReport_t)));
