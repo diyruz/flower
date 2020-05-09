@@ -363,9 +363,8 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
     } else {
 
         if (bdb_isDeviceNonFactoryNew()) {
-            if (bdbAttributes.bdbCommissioningStatus != BDB_COMMISSIONING_SUCCESS &&
-                bdbAttributes.bdbCommissioningStatus != BDB_COMMISSIONING_NETWORK_RESTORED) {
-                LREP("!bdbCommissioningStatus=%d try to restore network\r\n", bdbAttributes.bdbCommissioningStatus);
+            if (devState != DEV_END_DEVICE) {
+                LREP("devState=%d try to restore network\r\n", devState);
                 bdb_ZedAttemptRecoverNwk();
             }
             osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT, FREEPADAPP_RESET_DELAY);
