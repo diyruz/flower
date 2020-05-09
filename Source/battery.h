@@ -2,5 +2,5 @@
 #define _BATTERY_H
 
 extern uint8 getBatteryVoltage(void);
-extern uint8 getBatteryRemainingPercentage(void);
+extern uint8 getBatteryRemainingPercentageZCL(void);
 #endif

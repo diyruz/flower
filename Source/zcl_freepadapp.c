@@ -114,8 +114,8 @@ void zclFreePadApp_Init(byte task_id) {
     // this allows power saving, PM2
     osal_pwrmgr_task_state(zclFreePadApp_TaskID, PWRMGR_CONSERVE);
 
-    LREP("Battery voltage=%d prc=%d \r\n", getBatteryVoltage(), getBatteryRemainingPercentage());
-    ZMacSetTransmitPower(TX_PWR_PLUS_4); //set 4dBm
+    LREP("Battery voltage=%d prc=%d \r\n", getBatteryVoltage(), getBatteryRemainingPercentageZCL());
+    ZMacSetTransmitPower(TX_PWR_PLUS_4); // set 4dBm
 }
 
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
@@ -128,6 +128,9 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
         case BDB_COMMISSIONING_NO_NETWORK:
             LREP("No network\r\n");
             HalLedBlink(HAL_LED_1, 3, 50, 500);
+            break;
+        case BDB_COMMISSIONING_NETWORK_RESTORED:
+            zclFreePadApp_ReportBattery();
             break;
         default:
             break;
@@ -337,7 +340,8 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keys) {
     } else {
 
         if (bdb_isDeviceNonFactoryNew()) {
-            if (bdbAttributes.bdbCommissioningStatus != BDB_COMMISSIONING_SUCCESS && bdbAttributes.bdbCommissioningStatus != BDB_COMMISSIONING_NETWORK_RESTORED) {
+            if (bdbAttributes.bdbCommissioningStatus != BDB_COMMISSIONING_SUCCESS &&
+                bdbAttributes.bdbCommissioningStatus != BDB_COMMISSIONING_NETWORK_RESTORED) {
                 LREP("!bdbCommissioningStatus=%d try to restore network\r\n", bdbAttributes.bdbCommissioningStatus);
                 bdb_ZedAttemptRecoverNwk();
             }
@@ -367,7 +371,7 @@ static void zclFreePadApp_BindNotification(bdbBindNotificationData_t *data) {
 
 static void zclFreePadApp_ReportBattery(void) {
     zclFreePadApp_BatteryVoltage = getBatteryVoltage();
-    zclFreePadApp_BatteryPercentageRemainig = getBatteryRemainingPercentage();
+    zclFreePadApp_BatteryPercentageRemainig = getBatteryRemainingPercentageZCL();
     const uint8 NUM_ATTRIBUTES = 2;
     zclReportCmd_t *pReportCmd;
     pReportCmd = osal_mem_alloc(sizeof(zclReportCmd_t) + (NUM_ATTRIBUTES * sizeof(zclReport_t)));

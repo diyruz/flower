@@ -14,6 +14,10 @@ uint8 getBatteryVoltage(void) {
     return (uint8)(value * MULTI);
 }
 
-uint8 getBatteryRemainingPercentage(void) {
-    return ((getBatteryVoltage() - MIN_VOLTAGE) * 100) / (MAX_VOLTAGE - MIN_VOLTAGE);
+/***
+Specifies the remaining battery life as a half integer percentage of the full battery capacity (e.g., 34.5%, 45%, 68.5%, 90%) 
+with a range between zero and 100%, with 0x00 = 0%, 0x64 = 50%, and 0xC8 = 100%.
+***/
+uint8 getBatteryRemainingPercentageZCL(void) {
+    return ((getBatteryVoltage() - MIN_VOLTAGE) * 200) / (MAX_VOLTAGE - MIN_VOLTAGE);
 }
