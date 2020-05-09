@@ -61,6 +61,9 @@ bool holdSend = false;
 byte currentKey = 0;
 byte clicksCount = 0;
 
+byte rejoinsLeft = FREEPADAPP_END_DEVICE_REJOIN_TRIES;
+uint32 rejoinDelay = FREEPADAPP_END_DEVICE_REJOIN_START_DELAY;
+
 afAddrType_t Coordinator_DstAddr = {.addrMode = (afAddrMode_t)Addr16Bit, .addr.shortAddr = 0, .endPoint = 1};
 
 afAddrType_t inderect_DstAddr = {.addrMode = (afAddrMode_t)AddrNotPresent, .endPoint = 0, .addr.shortAddr = 0};
@@ -76,6 +79,7 @@ static void zclFreePadApp_SendButtonPress(uint8 endPoint, byte clicksCount);
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
 static void zclFreePadApp_SendKeys(byte keyCode, byte pressCount, byte pressTime);
 static void zclFreePadApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg);
+static void zclFreePadApp_ResetBackoffRetry(void);
 
 /*********************************************************************
  * ZCL General Profile Callback table
@@ -118,6 +122,11 @@ void zclFreePadApp_Init(byte task_id) {
     ZMacSetTransmitPower(TX_PWR_PLUS_4); // set 4dBm
 }
 
+static void zclFreePadApp_ResetBackoffRetry(void) {
+    rejoinsLeft = FREEPADAPP_END_DEVICE_REJOIN_TRIES;
+    rejoinDelay = FREEPADAPP_END_DEVICE_REJOIN_START_DELAY;
+}
+
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
     LREP("bdbCommissioningMode=%d bdbCommissioningStatus=%d bdbRemainingCommissioningModes=0x%X\r\n",
          bdbCommissioningModeMsg->bdbCommissioningMode, bdbCommissioningModeMsg->bdbCommissioningStatus,
@@ -131,6 +140,7 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
             break;
         case BDB_COMMISSIONING_NETWORK_RESTORED:
             zclFreePadApp_ReportBattery();
+            zclFreePadApp_ResetBackoffRetry();
             break;
         default:
             break;
@@ -141,6 +151,7 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
         case BDB_COMMISSIONING_SUCCESS:
             HalLedBlink(HAL_LED_1, 5, 50, 500);
             LREPMaster("BDB_COMMISSIONING_SUCCESS\r\n");
+            zclFreePadApp_ResetBackoffRetry();
             break;
 
         default:
@@ -152,11 +163,23 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
 
     case BDB_COMMISSIONING_PARENT_LOST:
         LREPMaster("BDB_COMMISSIONING_PARENT_LOST\r\n");
-        if (bdbCommissioningModeMsg->bdbCommissioningStatus != BDB_COMMISSIONING_NETWORK_RESTORED) {
+        switch (bdbCommissioningModeMsg->bdbCommissioningStatus) {
+        case BDB_COMMISSIONING_NETWORK_RESTORED:
+            zclFreePadApp_ResetBackoffRetry();
+            break;
+
+        default:
             HalLedSet(HAL_LED_1, HAL_LED_MODE_FLASH);
-            // // Parent not found, attempt to rejoin again after a fixed delay
-            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_END_DEVICE_REJOIN_EVT,
-                               FREEPADAPP_END_DEVICE_REJOIN_DELAY);
+            // // Parent not found, attempt to rejoin again after a exponential backoff delay
+            LREP("rejoinsLeft %d rejoinDelay=%ld\r\n", rejoinsLeft, rejoinDelay);
+            if (rejoinsLeft > 0) {
+                rejoinDelay *= FREEPADAPP_END_DEVICE_REJOIN_BACKOFF;
+                rejoinsLeft -= 1;
+            } else {
+                rejoinDelay = FREEPADAPP_END_DEVICE_REJOIN_MAX_DELAY;
+            }
+            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_END_DEVICE_REJOIN_EVT, rejoinDelay);
+            break;
         }
         break;
     default:
