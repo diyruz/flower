@@ -115,6 +115,7 @@ void zclFreePadApp_Init(byte task_id) {
     osal_pwrmgr_task_state(zclFreePadApp_TaskID, PWRMGR_CONSERVE);
 
     LREP("Battery voltage=%d prc=%d \r\n", getBatteryVoltage(), getBatteryRemainingPercentage());
+    ZMacSetTransmitPower(TX_PWR_PLUS_4); //set 4dBm
 }
 
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
