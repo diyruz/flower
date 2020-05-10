@@ -30,10 +30,6 @@
 #define HAL_LED TRUE
 #define BLINK_LEDS TRUE
 
-#ifdef NWK_MAX_BINDING_ENTRIES
-    #undef NWK_MAX_BINDING_ENTRIES
-#endif
-#define NWK_MAX_BINDING_ENTRIES 20
 
 //one of this boards
 // #define HAL_BOARD_FREEPAD_20
@@ -44,6 +40,23 @@
 #if !defined(HAL_BOARD_FREEPAD_20) && !defined(HAL_BOARD_FREEPAD_12) && !defined(HAL_BOARD_FREEPAD_8) && !defined(HAL_BOARD_CHDTECH_DEV)
 #error "Board type must be defined"
 #endif
+
+
+
+#ifdef HAL_BOARD_FREEPAD_20
+#define FREEPAD_BUTTONS_COUNT 20
+#elif defined(HAL_BOARD_FREEPAD_12)
+#define FREEPAD_BUTTONS_COUNT 12
+#elif defined(HAL_BOARD_FREEPAD_8)
+#define FREEPAD_BUTTONS_COUNT 8
+#elif defined(HAL_BOARD_CHDTECH_DEV)
+#define FREEPAD_BUTTONS_COUNT 20
+#endif
+
+#ifdef NWK_MAX_BINDING_ENTRIES
+    #undef NWK_MAX_BINDING_ENTRIES
+#endif
+#define NWK_MAX_BINDING_ENTRIES (20 + FREEPAD_BUTTONS_COUNT)
 
 #if defined(HAL_BOARD_FREEPAD_20) || defined(HAL_BOARD_FREEPAD_12) || defined(HAL_BOARD_FREEPAD_8)
     #define HAL_UART FALSE

@@ -53,59 +53,25 @@ const uint8 zclFreePadApp_PowerSource = POWER_SOURCE_BATTERY;
  * ATTRIBUTE DEFINITIONS - Uses REAL cluster IDs
  */
 CONST zclAttrRec_t zclFreePadApp_Attrs[] = {
-
     {ZCL_CLUSTER_ID_GEN_BASIC,
-     {// Attribute record
-      ATTRID_BASIC_APPL_VERSION, ZCL_DATATYPE_UINT8, ACCESS_CONTROL_READ, (void *)&zclFreePadApp_ApplicationVersion}},
+     {ATTRID_BASIC_APPL_VERSION, ZCL_DATATYPE_UINT8, ACCESS_CONTROL_READ, (void *)&zclFreePadApp_ApplicationVersion}},
+    {ZCL_CLUSTER_ID_GEN_BASIC, {ATTRID_BASIC_STACK_VERSION, ZCL_DATATYPE_UINT8, ACCESS_CONTROL_READ, (void *)&zclFreePadApp_StackVersion}},
+    {ZCL_CLUSTER_ID_GEN_BASIC, {ATTRID_BASIC_HW_VERSION, ZCL_DATATYPE_UINT8, ACCESS_CONTROL_READ, (void *)&zclFreePadApp_HWRevision}},
+    {ZCL_CLUSTER_ID_GEN_BASIC, {ATTRID_BASIC_ZCL_VERSION, ZCL_DATATYPE_UINT8, ACCESS_CONTROL_READ, (void *)&zclFreePadApp_ZCLVersion}},
     {ZCL_CLUSTER_ID_GEN_BASIC,
-     {// Attribute record
-      ATTRID_BASIC_STACK_VERSION, ZCL_DATATYPE_UINT8, ACCESS_CONTROL_READ, (void *)&zclFreePadApp_StackVersion}},
-
-    {ZCL_CLUSTER_ID_GEN_BASIC, // Cluster IDs - defined in the foundation (ie.
-                               // zcl.h)
-     {
-         // Attribute record
-         ATTRID_BASIC_HW_VERSION,          // Attribute ID - Found in Cluster Library
-                                           // header (ie. zcl_general.h)
-         ZCL_DATATYPE_UINT8,               // Data Type - found in zcl.h
-         ACCESS_CONTROL_READ,              // Variable access control - found in zcl.h
-         (void *)&zclFreePadApp_HWRevision // Pointer to attribute variable
-     }},
+     {ATTRID_BASIC_MANUFACTURER_NAME, ZCL_DATATYPE_CHAR_STR, ACCESS_CONTROL_READ, (void *)zclFreePadApp_ManufacturerName}},
+    {ZCL_CLUSTER_ID_GEN_BASIC, {ATTRID_BASIC_MODEL_ID, ZCL_DATATYPE_CHAR_STR, ACCESS_CONTROL_READ, (void *)zclFreePadApp_ModelId}},
+    {ZCL_CLUSTER_ID_GEN_BASIC, {ATTRID_BASIC_POWER_SOURCE, ZCL_DATATYPE_ENUM8, ACCESS_CONTROL_READ, (void *)&zclFreePadApp_PowerSource}},
     {ZCL_CLUSTER_ID_GEN_BASIC,
-     {// Attribute record
-      ATTRID_BASIC_ZCL_VERSION, ZCL_DATATYPE_UINT8, ACCESS_CONTROL_READ, (void *)&zclFreePadApp_ZCLVersion}},
+     {ATTRID_CLUSTER_REVISION, ZCL_DATATYPE_UINT16, ACCESS_CONTROL_READ, (void *)&zclFreePadApp_clusterRevision_all}},
+    {ZCL_CLUSTER_ID_GEN_BASIC, {ATTRID_BASIC_DATE_CODE, ZCL_DATATYPE_CHAR_STR, ACCESS_CONTROL_READ, (void *)zclFreePadApp_DateCode}},
     {ZCL_CLUSTER_ID_GEN_BASIC,
-     {// Attribute record
-      ATTRID_BASIC_MANUFACTURER_NAME, ZCL_DATATYPE_CHAR_STR, ACCESS_CONTROL_READ,
-      (void *)zclFreePadApp_ManufacturerName}},
-    {ZCL_CLUSTER_ID_GEN_BASIC,
-     {// Attribute record
-      ATTRID_BASIC_MODEL_ID, ZCL_DATATYPE_CHAR_STR, ACCESS_CONTROL_READ, (void *)zclFreePadApp_ModelId}},
-
-    {ZCL_CLUSTER_ID_GEN_BASIC,
-     {// Attribute record
-      ATTRID_BASIC_POWER_SOURCE, ZCL_DATATYPE_ENUM8, ACCESS_CONTROL_READ, (void *)&zclFreePadApp_PowerSource}},
-
-    {ZCL_CLUSTER_ID_GEN_BASIC,
-     {// Attribute record
-      ATTRID_CLUSTER_REVISION, ZCL_DATATYPE_UINT16, ACCESS_CONTROL_READ, (void *)&zclFreePadApp_clusterRevision_all}},
-
-    {ZCL_CLUSTER_ID_GEN_BASIC,
-     {// Attribute record
-      ATTRID_BASIC_DATE_CODE, ZCL_DATATYPE_CHAR_STR, ACCESS_CONTROL_READ, (void *)zclFreePadApp_DateCode}},
-
-    {ZCL_CLUSTER_ID_GEN_BASIC,
-     {// Attribute record
-      ATTRID_BASIC_SW_BUILD_ID, ZCL_DATATYPE_UINT8, ACCESS_CONTROL_READ, (void *)&zclFreePadApp_ApplicationVersion}},
-
+     {ATTRID_BASIC_SW_BUILD_ID, ZCL_DATATYPE_UINT8, ACCESS_CONTROL_READ, (void *)&zclFreePadApp_ApplicationVersion}},
     {ZCL_CLUSTER_ID_GEN_POWER_CFG,
-     {// Attribute record
-      ATTRID_POWER_CFG_BATTERY_VOLTAGE, ZCL_DATATYPE_UINT8, ACCESS_CONTROL_READ,
+     {ATTRID_POWER_CFG_BATTERY_VOLTAGE, ZCL_DATATYPE_UINT8, ACCESS_CONTROL_READ | ACCESS_REPORTABLE,
       (void *)&zclFreePadApp_BatteryVoltage}},
-
     {ZCL_CLUSTER_ID_GEN_POWER_CFG,
-     {// Attribute record
-      ATTRID_POWER_CFG_BATTERY_PERCENTAGE_REMAINING, ZCL_DATATYPE_UINT8, ACCESS_CONTROL_READ,
+     {ATTRID_POWER_CFG_BATTERY_PERCENTAGE_REMAINING, ZCL_DATATYPE_UINT8, ACCESS_CONTROL_READ | ACCESS_REPORTABLE,
       (void *)&zclFreePadApp_BatteryPercentageRemainig}}};
 
 uint8 CONST zclFreePadApp_NumAttributes = (sizeof(zclFreePadApp_Attrs) / sizeof(zclFreePadApp_Attrs[0]));
@@ -117,15 +83,12 @@ const cId_t zclSampleSw_InClusterList[] = {ZCL_CLUSTER_ID_GEN_BASIC};
 const cId_t zclSampleSw_OutClusterListOdd[] = {ZCL_CLUSTER_ID_GEN_ON_OFF, ZCL_CLUSTER_ID_GEN_LEVEL_CONTROL};
 const cId_t zclSampleSw_OutClusterListEven[] = {ZCL_CLUSTER_ID_GEN_ON_OFF};
 
-#define ZCLSAMPLESW_MAX_OUTCLUSTERS_EVEN                                                                               \
-    (sizeof(zclSampleSw_OutClusterListEven) / sizeof(zclSampleSw_OutClusterListEven[0]))
-#define ZCLSAMPLESW_MAX_OUTCLUSTERS_ODD                                                                                \
-    (sizeof(zclSampleSw_OutClusterListOdd) / sizeof(zclSampleSw_OutClusterListOdd[0]))
+#define ZCLSAMPLESW_MAX_OUTCLUSTERS_EVEN (sizeof(zclSampleSw_OutClusterListEven) / sizeof(zclSampleSw_OutClusterListEven[0]))
+#define ZCLSAMPLESW_MAX_OUTCLUSTERS_ODD (sizeof(zclSampleSw_OutClusterListOdd) / sizeof(zclSampleSw_OutClusterListOdd[0]))
 
 SimpleDescriptionFormat_t *zclFreePadApp_SimpleDescs;
 void zclFreePadApp_InitClusters(void) {
-    zclFreePadApp_SimpleDescs =
-        (SimpleDescriptionFormat_t *)osal_mem_alloc(sizeof(SimpleDescriptionFormat_t) * FREEPAD_BUTTONS_COUNT);
+    zclFreePadApp_SimpleDescs = (SimpleDescriptionFormat_t *)osal_mem_alloc(sizeof(SimpleDescriptionFormat_t) * FREEPAD_BUTTONS_COUNT);
     for (int i = 0; i < (int)FREEPAD_BUTTONS_COUNT; i++) {
         uint8 endPoint = i + 1;
         zclFreePadApp_SimpleDescs[i].EndPoint = endPoint;
