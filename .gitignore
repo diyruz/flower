@@ -54,3 +54,4 @@ CC2530DB/CHDTECH_DEV
 CC2530DB/FREEPAD*
 Source/version.c
 !.vscode/
+.vscode/settings.json
