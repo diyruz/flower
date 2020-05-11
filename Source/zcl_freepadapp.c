@@ -80,6 +80,7 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
 static void zclFreePadApp_SendKeys(byte keyCode, byte pressCount, byte pressTime);
 static void zclFreePadApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg);
 static void zclFreePadApp_ResetBackoffRetry(void);
+static void zclFreePadApp_OnConnect(void);
 
 /*********************************************************************
  * ZCL General Profile Callback table
@@ -127,6 +128,11 @@ static void zclFreePadApp_ResetBackoffRetry(void) {
     rejoinDelay = FREEPADAPP_END_DEVICE_REJOIN_START_DELAY;
 }
 
+static void zclFreePadApp_OnConnect(void) {
+    zclFreePadApp_ResetBackoffRetry();
+    osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_REPORT_EVT, 60 * 1000); // 1 minute
+}
+
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
     LREP("bdbCommissioningMode=%d bdbCommissioningStatus=%d bdbRemainingCommissioningModes=0x%X\r\n",
          bdbCommissioningModeMsg->bdbCommissioningMode, bdbCommissioningModeMsg->bdbCommissioningStatus,
@@ -139,8 +145,7 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
             HalLedBlink(HAL_LED_1, 3, 50, 500);
             break;
         case BDB_COMMISSIONING_NETWORK_RESTORED:
-            zclFreePadApp_ReportBattery();
-            zclFreePadApp_ResetBackoffRetry();
+            zclFreePadApp_OnConnect();
             break;
         default:
             break;
@@ -151,7 +156,7 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
         case BDB_COMMISSIONING_SUCCESS:
             HalLedBlink(HAL_LED_1, 5, 50, 500);
             LREPMaster("BDB_COMMISSIONING_SUCCESS\r\n");
-            zclFreePadApp_ResetBackoffRetry();
+            zclFreePadApp_OnConnect();
             break;
 
         default:
