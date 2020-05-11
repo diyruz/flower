@@ -80,8 +80,8 @@ const cId_t zclSampleSw_InClusterList[] = {ZCL_CLUSTER_ID_GEN_BASIC};
 
 #define ZCLSAMPLESW_MAX_INCLUSTERS (sizeof(zclSampleSw_InClusterList) / sizeof(zclSampleSw_InClusterList[0]))
 
-const cId_t zclSampleSw_OutClusterListOdd[] = {ZCL_CLUSTER_ID_GEN_ON_OFF, ZCL_CLUSTER_ID_GEN_LEVEL_CONTROL};
-const cId_t zclSampleSw_OutClusterListEven[] = {ZCL_CLUSTER_ID_GEN_ON_OFF};
+const cId_t zclSampleSw_OutClusterListOdd[] = {ZCL_CLUSTER_ID_GEN_ON_OFF, ZCL_CLUSTER_ID_GEN_LEVEL_CONTROL, ZCL_CLUSTER_ID_GEN_MULTISTATE_INPUT_BASIC};
+const cId_t zclSampleSw_OutClusterListEven[] = {ZCL_CLUSTER_ID_GEN_ON_OFF, ZCL_CLUSTER_ID_GEN_MULTISTATE_INPUT_BASIC};
 
 #define ZCLSAMPLESW_MAX_OUTCLUSTERS_EVEN (sizeof(zclSampleSw_OutClusterListEven) / sizeof(zclSampleSw_OutClusterListEven[0]))
 #define ZCLSAMPLESW_MAX_OUTCLUSTERS_ODD (sizeof(zclSampleSw_OutClusterListOdd) / sizeof(zclSampleSw_OutClusterListOdd[0]))
