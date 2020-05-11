@@ -69,7 +69,7 @@ extern "C" {
 #define HAL_UNKNOWN_BUTTON HAL_KEY_CODE_NOKEY
 // Application Events
 
-#define FREEPADAPP_AWAKE_TIMEOUT 1000 * 60 // 60 seconds
+#define FREEPADAPP_CONST_ONE_MINUTE_IN_MS ((uint32) 60 * (uint32) 1000)
 
 #define FREEPADAPP_END_DEVICE_REJOIN_EVT ((uint16)0x0010)
 #define FREEPADAPP_SEND_KEYS_EVT ((uint16)0x0020)

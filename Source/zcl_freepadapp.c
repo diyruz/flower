@@ -130,7 +130,7 @@ static void zclFreePadApp_ResetBackoffRetry(void) {
 
 static void zclFreePadApp_OnConnect(void) {
     zclFreePadApp_ResetBackoffRetry();
-    osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_REPORT_EVT, 60 * 1000); // 1 minute
+    osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_REPORT_EVT, FREEPADAPP_CONST_ONE_MINUTE_IN_MS); // 1 minute
 }
 
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
