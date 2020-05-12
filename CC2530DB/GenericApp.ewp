@@ -321,7 +321,7 @@
                 </option>
                 <option>
                     <name>CCListCFile</name>
-                    <state>1</state>
+                    <state>0</state>
                 </option>
                 <option>
                     <name>CCListCMnemonics</name>
@@ -333,7 +333,7 @@
                 </option>
                 <option>
                     <name>CCListAssFile</name>
-                    <state>1</state>
+                    <state>0</state>
                 </option>
                 <option>
                     <name>CCListAssSource</name>
@@ -4629,7 +4629,7 @@
             <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\bdb\bdb_touchlink.c</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\bdb\bdb_touchLink.h</name>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\bdb\bdb_touchlink.h</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\bdb\bdb_touchlink_initiator.c</name>
