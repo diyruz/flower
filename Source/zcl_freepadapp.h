@@ -16,6 +16,8 @@ extern "C" {
  * CONSTANTS
  */
 
+#define FREEPAD_NW_SWITCH_ACTIONS 0x1000
+#define FREEPAD_NW_SWITCH_TYPES 0x2000
 
 #define HAL_UNKNOWN_BUTTON HAL_KEY_CODE_NOKEY
 // Application Events

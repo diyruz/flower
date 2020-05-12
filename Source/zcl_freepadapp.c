@@ -82,6 +82,7 @@ static void zclFreePadApp_OnConnect(void);
 static void zclFreePadApp_BasicResetCB(void);
 static ZStatus_t zclFreePadApp_ReadWriteAuthCB(afAddrType_t *srcAddr, zclAttrRec_t *pAttr, uint8 oper);
 static void zclFreePadApp_SaveAttributesToNV(void);
+static void zclFreePadApp_RestoreAttributesFromNV(void);
 
 /*********************************************************************
  * ZCL General Profile Callback table
@@ -111,8 +112,10 @@ static ZStatus_t zclFreePadApp_ReadWriteAuthCB(afAddrType_t *srcAddr, zclAttrRec
     return ZSuccess;
 }
 void zclFreePadApp_Init(byte task_id) {
+    DebugInit();
     zclFreePadApp_TaskID = task_id;
     zclFreePadApp_ResetAttributesToDefaultValues();
+    zclFreePadApp_RestoreAttributesFromNV();
     zclFreePadApp_InitClusters();
 
     zclGeneral_RegisterCmdCallbacks(1, &zclFreePadApp_CmdCallbacks);
@@ -138,7 +141,6 @@ void zclFreePadApp_Init(byte task_id) {
     bdb_RegisterCommissioningStatusCB(zclFreePadApp_ProcessCommissioningStatus);
     bdb_StartCommissioning(BDB_COMMISSIONING_REJOIN_EXISTING_NETWORK_ON_STARTUP);
 
-    DebugInit();
     LREP("Started build %s \r\n", zclFreePadApp_DateCodeNT);
     osal_start_reload_timer(zclFreePadApp_TaskID, FREEPADAPP_REPORT_EVT, FREEPADAPP_REPORT_DELAY);
     // this allows power saving, PM2
@@ -470,12 +472,29 @@ static void zclFreePadApp_ReportBattery(void) {
     zclFreePadApp_BatteryPercentageRemainig = getBatteryRemainingPercentageZCL();
     bdb_RepChangedAttrValue(1, ZCL_CLUSTER_ID_GEN_POWER_CFG, ATTRID_POWER_CFG_BATTERY_PERCENTAGE_REMAINING);
 }
-#define SwitchActions_NW_ID 1
-#define SwitchTypes_NW_ID 2
+
+static void zclFreePadApp_RestoreAttributesFromNV(void) {
+    LREPMaster("Restoring attributes to NV size=%d \r\n");
+
+    if (osal_nv_item_init(FREEPAD_NW_SWITCH_ACTIONS, FREEPAD_BUTTONS_COUNT, &zclFreePadApp_SwitchActions) == ZSuccess) {
+        if (osal_nv_read(FREEPAD_NW_SWITCH_ACTIONS, 0, FREEPAD_BUTTONS_COUNT, &zclFreePadApp_SwitchActions) != ZSuccess) {
+            LREPMaster("fail FREEPAD_NW_SWITCH_ACTIONS\r\n");
+        }
+    }
+    if (osal_nv_item_init(FREEPAD_NW_SWITCH_TYPES, FREEPAD_BUTTONS_COUNT, &zclFreePadApp_SwitchTypes) == ZSuccess) {
+        if (osal_nv_read(FREEPAD_NW_SWITCH_TYPES, 0, FREEPAD_BUTTONS_COUNT, &zclFreePadApp_SwitchTypes) != ZSuccess) {
+            LREPMaster("fail FREEPAD_NW_SWITCH_TYPES\r\n");
+        }
+    }
+}
 static void zclFreePadApp_SaveAttributesToNV(void) {
     LREPMaster("Saving attributes to NV\r\n");
-    // osal_nv_write(SwitchActions_NW_ID, 0, sizeof(zclFreePadApp_SwitchActions), zclFreePadApp_SwitchActions);
-    // osal_nv_write(SwitchTypes_NW_ID, 0, sizeof(zclFreePadApp_SwitchTypes), zclFreePadApp_SwitchTypes);
+    if (osal_nv_item_init(FREEPAD_NW_SWITCH_ACTIONS, FREEPAD_BUTTONS_COUNT, &zclFreePadApp_SwitchActions) == ZSuccess) {
+        osal_nv_write(FREEPAD_NW_SWITCH_ACTIONS, 0, FREEPAD_BUTTONS_COUNT, &zclFreePadApp_SwitchActions);
+    }
+    if (osal_nv_item_init(FREEPAD_NW_SWITCH_TYPES, FREEPAD_BUTTONS_COUNT, &zclFreePadApp_SwitchTypes) == ZSuccess) {
+        osal_nv_write(FREEPAD_NW_SWITCH_TYPES, 0, FREEPAD_BUTTONS_COUNT, &zclFreePadApp_SwitchTypes);
+    }
 }
 
 /****************************************************************************
