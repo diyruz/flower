@@ -971,7 +971,7 @@
                 </option>
                 <option>
                     <name>ExtraOutputFile</name>
-                    <state>FreePad_CHDTECH.hex</state>
+                    <state>$PROJ_DIR$\..\firmwares\FreePad_CHDTECH.hex</state>
                 </option>
                 <option>
                     <name>ExtraOutputFormat</name>
