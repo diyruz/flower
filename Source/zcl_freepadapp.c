@@ -80,6 +80,8 @@ static void zclFreePadApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg);
 static void zclFreePadApp_ResetBackoffRetry(void);
 static void zclFreePadApp_OnConnect(void);
 static void zclFreePadApp_BasicResetCB(void);
+static ZStatus_t zclFreePadApp_ReadWriteAuthCB(afAddrType_t *srcAddr, zclAttrRec_t *pAttr, uint8 oper);
+static void zclFreePadApp_SaveAttributesToNV(void);
 
 /*********************************************************************
  * ZCL General Profile Callback table
@@ -98,6 +100,16 @@ static zclGeneral_AppCallbacks_t zclFreePadApp_CmdCallbacks = {
 
 static void zclFreePadApp_BasicResetCB(void) { zclFreePadApp_ResetAttributesToDefaultValues(); }
 
+/*
+this is workaround, since we don't have CB after attribute write, we will hack into write auth CB
+and save attributes few secons later
+*/
+static ZStatus_t zclFreePadApp_ReadWriteAuthCB(afAddrType_t *srcAddr, zclAttrRec_t *pAttr, uint8 oper) {
+    LREP("AUTH CB called %x %x %x\r\n", srcAddr->addr, pAttr->attr, pAttr->clusterID);
+
+    osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_SAVE_ATTRS_EVT, 2000);
+    return ZSuccess;
+}
 void zclFreePadApp_Init(byte task_id) {
     zclFreePadApp_TaskID = task_id;
     zclFreePadApp_ResetAttributesToDefaultValues();
@@ -109,10 +121,13 @@ void zclFreePadApp_Init(byte task_id) {
         if (i == 0) {
             zcl_registerAttrList(descriptor.EndPoint, zclFreePadApp_AttrsFirstEPCount, zclFreePadApp_AttrsFirstEP);
         } else {
-            zcl_registerAttrList(descriptor.EndPoint, FREEPAD_ATTRS_COUNT, zclFreePadApp_Attrs[i]);
+            // take one lower [i-1], since first ep  handled by zclFreePadApp_AttrsFirstEP
+            zcl_registerAttrList(descriptor.EndPoint, FREEPAD_ATTRS_COUNT, zclFreePadApp_Attrs[i - 1]);
         }
 
         bdb_RegisterSimpleDescriptor(&zclFreePadApp_SimpleDescs[i]);
+
+        zcl_registerReadWriteCB(descriptor.EndPoint, NULL, zclFreePadApp_ReadWriteAuthCB);
     }
     zcl_registerForMsg(zclFreePadApp_TaskID);
 
@@ -209,7 +224,6 @@ static void zclFreePadApp_SendKeys(byte keyCode, byte pressCount, bool isRelease
     uint8 endPoint = zclFreePadApp_SimpleDescs[button - 1].EndPoint;
     uint8 switchAction = zclFreePadApp_SwitchActions[button - 1];
     LREP("button %d clicks %d isRelease %d action %d\r\n", button, pressCount, isRelease, switchAction);
-    osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT);
 
     switch (pressCount) {
     case 1:
@@ -339,6 +353,12 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
         return (events ^ FREEPADAPP_HOLD_START_EVT);
     }
 
+    if (events & FREEPADAPP_SAVE_ATTRS_EVT) {
+        LREPMaster("FREEPADAPP_SAVE_ATTRS_EVT\r\n");
+        zclFreePadApp_SaveAttributesToNV();
+        return (events ^ FREEPADAPP_SAVE_ATTRS_EVT);
+    }
+
     // Discard unknown events
     return 0;
 }
@@ -379,13 +399,14 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keyCode) {
     prevKeyCode = keyCode;
 
     if (keyCode == HAL_KEY_CODE_RELEASE_KEY) {
+        osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT);
         byte prevButton = zclFreePadApp_KeyCodeToButton(currentKeyCode);
         uint8 prevSwitchType = zclFreePadApp_SwitchTypes[prevButton - 1];
-        osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT);
 
         switch (prevSwitchType) {
         case ON_OFF_SWITCH_TYPE_TOGGLE:
         case ON_OFF_SWITCH_TYPE_MOMENTARY:
+            LREPMaster("Rlease \r\n");
             break;
 
         case ON_OFF_SWITCH_TYPE_MULTIFUNCTION:
@@ -448,6 +469,13 @@ static void zclFreePadApp_ReportBattery(void) {
     zclFreePadApp_BatteryVoltage = getBatteryVoltage();
     zclFreePadApp_BatteryPercentageRemainig = getBatteryRemainingPercentageZCL();
     bdb_RepChangedAttrValue(1, ZCL_CLUSTER_ID_GEN_POWER_CFG, ATTRID_POWER_CFG_BATTERY_PERCENTAGE_REMAINING);
+}
+#define SwitchActions_NW_ID 1
+#define SwitchTypes_NW_ID 2
+static void zclFreePadApp_SaveAttributesToNV(void) {
+    LREPMaster("Saving attributes to NV\r\n");
+    // osal_nv_write(SwitchActions_NW_ID, 0, sizeof(zclFreePadApp_SwitchActions), zclFreePadApp_SwitchActions);
+    // osal_nv_write(SwitchTypes_NW_ID, 0, sizeof(zclFreePadApp_SwitchTypes), zclFreePadApp_SwitchTypes);
 }
 
 /****************************************************************************
