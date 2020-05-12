@@ -439,18 +439,20 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keyCode) {
 
         HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
         pressTime = osal_getClock();
-        clicksCount++;
+
         currentKeyCode = keyCode;
 
         switch (switchType) {
         case ON_OFF_SWITCH_TYPE_TOGGLE:
         case ON_OFF_SWITCH_TYPE_MOMENTARY:
+            clicksCount = 0;
             zclFreePadApp_SendKeys(keyCode, 1, false);
             LREPMaster("ON_OFF_SWITCH_TYPE_TOGGLE or ON_OFF_SWITCH_TYPE_MOMENTARY\r\n");
             break;
 
         case ON_OFF_SWITCH_TYPE_MULTIFUNCTION:
         default:
+            clicksCount++;
             LREPMaster("ON_OFF_SWITCH_TYPE_MULTIFUNCTION or default\r\n");
             osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_SEND_KEYS_EVT);
             osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_HOLD_START_EVT, FREEPADAPP_HOLD_START_DELAY);
