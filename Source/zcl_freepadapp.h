@@ -38,6 +38,7 @@ extern "C" {
 #define FREEPADAPP_END_DEVICE_REJOIN_TRIES 20
 
 
+#define FREEPAD_ATTRS_COUNT 2
 
 #define FREEPADAPP_REPORT_DELAY ((uint32)1800000) // 30 minutes 30 * 60 * 1000
 
@@ -54,7 +55,11 @@ extern "C" {
 /*********************************************************************
  * VARIABLES
  */
-extern SimpleDescriptionFormat_t *zclFreePadApp_SimpleDescs;
+extern uint8 zclFreePadApp_SwitchActions[];
+extern uint8 zclFreePadApp_SwitchTypes[];
+
+
+extern SimpleDescriptionFormat_t zclFreePadApp_SimpleDescs[];
 extern uint8 zclFreePadApp_SimpleDescsCount;
 extern uint8 zclFreePadApp_BatteryVoltage;
 extern uint8 zclFreePadApp_BatteryPercentageRemainig;
@@ -63,8 +68,10 @@ extern CONST zclCommandRec_t zclFreePadApp_Cmds[];
 extern CONST uint8 zclCmdsArraySize;
 
 // attribute list
-extern CONST zclAttrRec_t zclFreePadApp_Attrs[];
-extern CONST uint8 zclFreePadApp_NumAttributes;
+extern CONST zclAttrRec_t zclFreePadApp_Attrs[][FREEPAD_ATTRS_COUNT];
+extern CONST zclAttrRec_t zclFreePadApp_AttrsFirstEP[];
+extern CONST uint8 zclFreePadApp_AttrsFirstEPCount;
+
 extern const uint8 zclFreePadApp_ManufacturerName[];
 extern const uint8 zclFreePadApp_ModelId[];
 extern const uint8 zclFreePadApp_PowerSource;
@@ -89,6 +96,9 @@ extern UINT16 zclFreePadApp_event_loop(byte task_id, UINT16 events);
 
 /*********************************************************************
  *********************************************************************/
+
+
+extern void zclFreePadApp_ResetAttributesToDefaultValues(void);
 
 #ifdef __cplusplus
 }
