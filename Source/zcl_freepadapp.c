@@ -99,7 +99,11 @@ static zclGeneral_AppCallbacks_t zclFreePadApp_CmdCallbacks = {
 };
 // static CONST zclAttrRec_t attrs[FREEPAD_BUTTONS_COUNT];
 
-static void zclFreePadApp_BasicResetCB(void) { zclFreePadApp_ResetAttributesToDefaultValues(); }
+static void zclFreePadApp_BasicResetCB(void) {
+    LREP("zclFreePadApp_BasicResetCB\r\n");
+    zclFreePadApp_ResetAttributesToDefaultValues();
+    zclFreePadApp_SaveAttributesToNV();
+}
 
 /*
 this is workaround, since we don't have CB after attribute write, we will hack into write auth CB
