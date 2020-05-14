@@ -15,6 +15,7 @@
 #include "zcl_diagnostic.h"
 #include "zcl_freepadapp.h"
 #include "zcl_general.h"
+#include "zcl_lighting.h"
 
 #include "bdb.h"
 #include "bdb_interface.h"
@@ -247,14 +248,45 @@ static void zclFreePadApp_SendKeys(byte keyCode, byte pressCount, bool isRelease
             break;
         }
 
+
+
         if (button % 2 == 0) {
             // even numbers (2 4, send up to lower odd number)
             zclGeneral_SendLevelControlStepWithOnOff(endPoint - 1, &inderect_DstAddr, LEVEL_STEP_UP, FREEPADAPP_LEVEL_STEP_SIZE,
                                                      FREEPADAPP_LEVEL_TRANSITION_TIME, TRUE, bdb_getZCLFrameCounter());
+
+            zclLighting_ColorControl_Send_StepColorCmd(endPoint - 1, &inderect_DstAddr, 1000, 0, 0, true, bdb_getZCLFrameCounter());
+            // works zclLighting_ColorControl_Send_MoveToColorCmd( endPoint - 1, &inderect_DstAddr, 45914, 19615, 0, TRUE,
+            // bdb_getZCLFrameCounter());
+
+            // zclLighting_ColorControl_Send_StepColorCmd( endPoint - 1, &inderect_DstAddr, 1000, 1000, 0, TRUE, bdb_getZCLFrameCounter());
+            // zclLighting_ColorControl_Send_StepHueCmd(endPoint - 1, &inderect_DstAddr, LIGHTING_STEP_HUE_UP, 100, 0, TRUE,
+            // bdb_getZCLFrameCounter());
+
         } else {
             // odd number (1 3, send LEVEL_MOVE_DOWN to self)
             zclGeneral_SendLevelControlStepWithOnOff(endPoint, &inderect_DstAddr, LEVEL_STEP_DOWN, FREEPADAPP_LEVEL_STEP_SIZE,
                                                      FREEPADAPP_LEVEL_TRANSITION_TIME, TRUE, bdb_getZCLFrameCounter());
+
+            zclLighting_ColorControl_Send_StepColorCmd(endPoint - 1, &inderect_DstAddr, -1000, 0, 0, true, bdb_getZCLFrameCounter());
+            // zclLighting_ColorControl_Send_StepSaturationCmd(endPoint, &inderect_DstAddr, LIGHTING_STEP_SATURATION_UP, 100, 0, TRUE,
+            // bdb_getZCLFrameCounter());
+            // works zclLighting_ColorControl_Send_MoveToColorCmd( endPoint, &inderect_DstAddr, 11298, 48942, 0, TRUE,
+            // bdb_getZCLFrameCounter());
+        }
+
+        if (button % 4 == 1) {
+            zclLighting_ColorControl_Send_StepColorCmd(endPoint, &inderect_DstAddr, FREEPADAPP_COLOR_LEVEL_STEP_X_SIZE, FREEPADAPP_COLOR_LEVEL_STEP_Y_SIZE, FREEPADAPP_COLOR_LEVEL_TRANSITION_TIME, true, bdb_getZCLFrameCounter());
+        } else if (button % 4 == 2)
+        {
+            zclLighting_ColorControl_Send_StepColorCmd(endPoint - 1, &inderect_DstAddr, -FREEPADAPP_COLOR_LEVEL_STEP_X_SIZE, FREEPADAPP_COLOR_LEVEL_STEP_Y_SIZE, FREEPADAPP_COLOR_LEVEL_TRANSITION_TIME, true, bdb_getZCLFrameCounter());
+        } else if (button % 4 == 3)
+        {
+            zclLighting_ColorControl_Send_StepColorCmd(endPoint - 2, &inderect_DstAddr, FREEPADAPP_COLOR_LEVEL_STEP_X_SIZE, FREEPADAPP_COLOR_LEVEL_STEP_Y_SIZE, FREEPADAPP_COLOR_LEVEL_TRANSITION_TIME, true, bdb_getZCLFrameCounter());
+        }
+        else if (button % 4 == 0)
+        {
+            zclLighting_ColorControl_Send_StepColorCmd(endPoint - 3, &inderect_DstAddr, -FREEPADAPP_COLOR_LEVEL_STEP_X_SIZE, FREEPADAPP_COLOR_LEVEL_STEP_Y_SIZE, FREEPADAPP_COLOR_LEVEL_TRANSITION_TIME, true, bdb_getZCLFrameCounter());
         }
 
         break;
@@ -372,6 +404,7 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
 static void zclFreePadApp_Rejoin(void) {
     LREP("Recieved rejoin command\r\n");
     if (bdb_isDeviceNonFactoryNew()) {
+        zgWriteStartupOptions(ZG_STARTUP_SET, ZCD_STARTOPT_DEFAULT_NETWORK_STATE | ZCD_STARTOPT_DEFAULT_CONFIG_STATE);
         bdb_resetLocalAction();
     } else {
         HalLedSet(HAL_LED_1, HAL_LED_MODE_FLASH);

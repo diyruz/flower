@@ -5027,6 +5027,12 @@
         <file>
             <name>$PROJ_DIR$\..\..\Source\zcl_ha.h</name>
         </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zcl\zcl_lighting.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zcl\zcl_lighting.h</name>
+        </file>
     </group>
     <group>
         <name>Security</name>

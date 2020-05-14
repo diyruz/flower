@@ -44,9 +44,13 @@ extern "C" {
 #define FREEPAD_ATTRS_COUNT 2
 
 #define FREEPADAPP_REPORT_DELAY ((uint32)1800000) // 30 minutes 30 * 60 * 1000
-
 #define FREEPADAPP_LEVEL_STEP_SIZE 255 >> 2
 #define FREEPADAPP_LEVEL_TRANSITION_TIME 10
+
+#define FREEPADAPP_COLOR_LEVEL_STEP_X_SIZE 1000
+#define FREEPADAPP_COLOR_LEVEL_STEP_Y_SIZE 1000
+#define FREEPADAPP_COLOR_LEVEL_TRANSITION_TIME 0
+
 
 /*********************************************************************
  * MACROS

@@ -155,10 +155,13 @@ const cId_t zclSampleSw_InClusterList[] = {ZCL_CLUSTER_ID_GEN_BASIC};
 
 #define ZCLSAMPLESW_MAX_INCLUSTERS (sizeof(zclSampleSw_InClusterList) / sizeof(zclSampleSw_InClusterList[0]))
 
-const cId_t zclSampleSw_OutClusterListOdd[] = {ZCL_CLUSTER_ID_GEN_ON_OFF, ZCL_CLUSTER_ID_GEN_LEVEL_CONTROL,
+const cId_t zclSampleSw_OutClusterListOdd[] = {ZCL_CLUSTER_ID_GEN_ON_OFF,
+                                               ZCL_CLUSTER_ID_GEN_MULTISTATE_INPUT_BASIC};
+const cId_t zclSampleSw_OutClusterListNth14[] = {ZCL_CLUSTER_ID_GEN_ON_OFF, ZCL_CLUSTER_ID_GEN_LEVEL_CONTROL, ZCL_CLUSTER_ID_LIGHTING_COLOR_CONTROL,
                                                ZCL_CLUSTER_ID_GEN_MULTISTATE_INPUT_BASIC};
 const cId_t zclSampleSw_OutClusterListEven[] = {ZCL_CLUSTER_ID_GEN_ON_OFF, ZCL_CLUSTER_ID_GEN_MULTISTATE_INPUT_BASIC};
 
+#define ZCLSAMPLESW_MAX_OUTCLUSTERS_NTH14 (sizeof(zclSampleSw_OutClusterListNth14) / sizeof(zclSampleSw_OutClusterListNth14[0]))
 #define ZCLSAMPLESW_MAX_OUTCLUSTERS_EVEN (sizeof(zclSampleSw_OutClusterListEven) / sizeof(zclSampleSw_OutClusterListEven[0]))
 #define ZCLSAMPLESW_MAX_OUTCLUSTERS_ODD (sizeof(zclSampleSw_OutClusterListOdd) / sizeof(zclSampleSw_OutClusterListOdd[0]))
 
@@ -179,7 +182,12 @@ void zclFreePadApp_InitClusters(void) {
             zclFreePadApp_SimpleDescs[i].AppNumInClusters = 0;
             zclFreePadApp_SimpleDescs[i].pAppInClusterList = (cId_t *)NULL;
         }
-        if (endPoint % 2 == 0) {
+
+        if (endPoint % 4 == 1) { //every 1 in 4
+            zclFreePadApp_SimpleDescs[i].AppNumOutClusters = ZCLSAMPLESW_MAX_OUTCLUSTERS_NTH14;
+            zclFreePadApp_SimpleDescs[i].pAppOutClusterList = (cId_t *)zclSampleSw_OutClusterListNth14;
+        }
+        else if (endPoint % 2 == 0) {
             zclFreePadApp_SimpleDescs[i].AppNumOutClusters = ZCLSAMPLESW_MAX_OUTCLUSTERS_EVEN;
             zclFreePadApp_SimpleDescs[i].pAppOutClusterList = (cId_t *)zclSampleSw_OutClusterListEven;
         } else {
