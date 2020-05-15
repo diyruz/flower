@@ -19,6 +19,10 @@ TL funtionality can work without connecting to network
 # How to add device into zigbe2mqtt
 Lets assume you have install z2m in folder `/app/zigbee2mqtt`
 
+## What's button mapping?
+
+![Here](./images/zigbee_keypad22.png)
+
 ```bash
 cd /app/
 git clone --single-branch --branch add_freepad git@github.com:diyruz/zigbee-herdsman-converters.git
