@@ -5016,12 +5016,6 @@
             <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zcl\zcl_general.h</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zcl\zcl_green_power.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zcl\zcl_green_power.h</name>
-        </file>
-        <file>
             <name>$PROJ_DIR$\..\..\Source\zcl_ha.c</name>
         </file>
         <file>
