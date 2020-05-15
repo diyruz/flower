@@ -19,6 +19,8 @@
 
 #include "bdb.h"
 #include "bdb_interface.h"
+#include "bdb_touchlink.h"
+#include "bdb_touchlink_initiator.h"
 #include "gp_interface.h"
 
 #include "Debug.h"
@@ -84,6 +86,15 @@ static void zclFreePadApp_BasicResetCB(void);
 static ZStatus_t zclFreePadApp_ReadWriteAuthCB(afAddrType_t *srcAddr, zclAttrRec_t *pAttr, uint8 oper);
 static void zclFreePadApp_SaveAttributesToNV(void);
 static void zclFreePadApp_RestoreAttributesFromNV(void);
+static void zclFreePadApp_StartTL(void);
+
+ZStatus_t zclFreePadApp_TL_NotifyCb(epInfoRec_t *pData);
+
+
+static ZStatus_t zllSampleRemote_ProcessTL( epInfoRec_t *pRec );
+static ZStatus_t zllSampleRemote_UpdateLinkedTarget( epInfoRec_t *pRec );
+static void zllSampleRemote_InitLinkedTargets( void );
+static uint8 zllSampleRemote_addControlledGroup( uint16 groupId );
 
 /*********************************************************************
  * ZCL General Profile Callback table
@@ -144,7 +155,9 @@ void zclFreePadApp_Init(byte task_id) {
 
     bdb_RegisterBindNotificationCB(zclFreePadApp_BindNotification);
     bdb_RegisterCommissioningStatusCB(zclFreePadApp_ProcessCommissioningStatus);
-    bdb_StartCommissioning(BDB_COMMISSIONING_REJOIN_EXISTING_NETWORK_ON_STARTUP);
+    touchLinkInitiator_RegisterNotifyTLCB(zclFreePadApp_TL_NotifyCb);
+
+    bdb_StartCommissioning(BDB_COMMISSIONING_REJOIN_EXISTING_NETWORK_ON_STARTUP | BDB_COMMISSIONING_MODE_INITIATOR_TL);
 
     LREP("Started build %s \r\n", zclFreePadApp_DateCodeNT);
     osal_start_reload_timer(zclFreePadApp_TaskID, FREEPADAPP_REPORT_EVT, FREEPADAPP_REPORT_DELAY);
@@ -276,17 +289,21 @@ static void zclFreePadApp_SendKeys(byte keyCode, byte pressCount, bool isRelease
         }
 
         if (button % 4 == 1) {
-            zclLighting_ColorControl_Send_StepColorCmd(endPoint, &inderect_DstAddr, FREEPADAPP_COLOR_LEVEL_STEP_X_SIZE, FREEPADAPP_COLOR_LEVEL_STEP_Y_SIZE, FREEPADAPP_COLOR_LEVEL_TRANSITION_TIME, true, bdb_getZCLFrameCounter());
-        } else if (button % 4 == 2)
-        {
-            zclLighting_ColorControl_Send_StepColorCmd(endPoint - 1, &inderect_DstAddr, -FREEPADAPP_COLOR_LEVEL_STEP_X_SIZE, FREEPADAPP_COLOR_LEVEL_STEP_Y_SIZE, FREEPADAPP_COLOR_LEVEL_TRANSITION_TIME, true, bdb_getZCLFrameCounter());
-        } else if (button % 4 == 3)
-        {
-            zclLighting_ColorControl_Send_StepColorCmd(endPoint - 2, &inderect_DstAddr, FREEPADAPP_COLOR_LEVEL_STEP_X_SIZE, FREEPADAPP_COLOR_LEVEL_STEP_Y_SIZE, FREEPADAPP_COLOR_LEVEL_TRANSITION_TIME, true, bdb_getZCLFrameCounter());
-        }
-        else if (button % 4 == 0)
-        {
-            zclLighting_ColorControl_Send_StepColorCmd(endPoint - 3, &inderect_DstAddr, -FREEPADAPP_COLOR_LEVEL_STEP_X_SIZE, FREEPADAPP_COLOR_LEVEL_STEP_Y_SIZE, FREEPADAPP_COLOR_LEVEL_TRANSITION_TIME, true, bdb_getZCLFrameCounter());
+            zclLighting_ColorControl_Send_StepColorCmd(endPoint, &inderect_DstAddr, FREEPADAPP_COLOR_LEVEL_STEP_X_SIZE,
+                                                       FREEPADAPP_COLOR_LEVEL_STEP_Y_SIZE, FREEPADAPP_COLOR_LEVEL_TRANSITION_TIME, true,
+                                                       bdb_getZCLFrameCounter());
+        } else if (button % 4 == 2) {
+            zclLighting_ColorControl_Send_StepColorCmd(endPoint - 1, &inderect_DstAddr, -FREEPADAPP_COLOR_LEVEL_STEP_X_SIZE,
+                                                       FREEPADAPP_COLOR_LEVEL_STEP_Y_SIZE, FREEPADAPP_COLOR_LEVEL_TRANSITION_TIME, true,
+                                                       bdb_getZCLFrameCounter());
+        } else if (button % 4 == 3) {
+            zclLighting_ColorControl_Send_StepColorCmd(endPoint - 2, &inderect_DstAddr, FREEPADAPP_COLOR_LEVEL_STEP_X_SIZE,
+                                                       FREEPADAPP_COLOR_LEVEL_STEP_Y_SIZE, FREEPADAPP_COLOR_LEVEL_TRANSITION_TIME, true,
+                                                       bdb_getZCLFrameCounter());
+        } else if (button % 4 == 0) {
+            zclLighting_ColorControl_Send_StepColorCmd(endPoint - 3, &inderect_DstAddr, -FREEPADAPP_COLOR_LEVEL_STEP_X_SIZE,
+                                                       FREEPADAPP_COLOR_LEVEL_STEP_Y_SIZE, FREEPADAPP_COLOR_LEVEL_TRANSITION_TIME, true,
+                                                       bdb_getZCLFrameCounter());
         }
 
         break;
@@ -397,6 +414,13 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
         return (events ^ FREEPADAPP_SAVE_ATTRS_EVT);
     }
 
+    if (events & FREEPADAPP_TL_START_EVT) {
+        LREPMaster("FREEPADAPP_TL_START_EVT\r\n");
+        HalLedSet(HAL_LED_1, HAL_LED_MODE_FLASH);
+        zclFreePadApp_StartTL();
+        return (events ^ FREEPADAPP_TL_START_EVT);
+    }
+
     // Discard unknown events
     return 0;
 }
@@ -435,10 +459,13 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keyCode) {
     if (keyCode == prevKeyCode) {
         return;
     }
+    // osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_TL_START_EVT, 500);
+
     prevKeyCode = keyCode;
 
     if (keyCode == HAL_KEY_CODE_RELEASE_KEY) {
         osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT);
+        osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_TL_START_EVT);
         byte prevButton = zclFreePadApp_KeyCodeToButton(currentKeyCode);
         uint8 prevSwitchType = zclFreePadApp_SwitchTypes[prevButton - 1];
 
@@ -459,6 +486,7 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keyCode) {
         }
 
     } else {
+        zclFreePadApp_StartTL();
 
         if (bdb_isDeviceNonFactoryNew()) {
             if (devState != DEV_END_DEVICE) {
@@ -466,6 +494,8 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keyCode) {
                 bdb_ZedAttemptRecoverNwk();
             }
             osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT, FREEPADAPP_RESET_DELAY);
+            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_TL_START_EVT, FREEPADAPP_TL_START_DELAY);
+
         } else {
             osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT,
                                FREEPADAPP_RESET_DELAY >> 2); // 4 times less
@@ -536,5 +566,14 @@ static void zclFreePadApp_SaveAttributesToNV(void) {
     }
 }
 
+static void zclFreePadApp_StartTL(void) {
+    LREPMaster("zclFreePadApp_StartTL\r\n");
+    touchLinkInitiator_StartDevDisc();
+}
+
+ZStatus_t zclFreePadApp_TL_NotifyCb(epInfoRec_t *pData) {
+    LREPMaster("zclFreePadApp_TL_NotifyCb\r\n");
+    return touchLinkInitiator_ResetToFNSelectedTarget();
+}
 /****************************************************************************
 ****************************************************************************/
