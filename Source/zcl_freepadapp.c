@@ -150,7 +150,7 @@ void zclFreePadApp_Init(byte task_id) {
     bdb_RegisterCommissioningStatusCB(zclFreePadApp_ProcessCommissioningStatus);
     touchLinkInitiator_RegisterNotifyTLCB(zclFreePadApp_TL_NotifyCb);
 
-    bdb_StartCommissioning(BDB_COMMISSIONING_REJOIN_EXISTING_NETWORK_ON_STARTUP | BDB_COMMISSIONING_MODE_INITIATOR_TL);
+    bdb_StartCommissioning(BDB_COMMISSIONING_REJOIN_EXISTING_NETWORK_ON_STARTUP);
 
     LREP("Started build %s \r\n", zclFreePadApp_DateCodeNT);
     osal_start_reload_timer(zclFreePadApp_TaskID, FREEPADAPP_REPORT_EVT, FREEPADAPP_REPORT_DELAY);
