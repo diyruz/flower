@@ -87,14 +87,7 @@ static ZStatus_t zclFreePadApp_ReadWriteAuthCB(afAddrType_t *srcAddr, zclAttrRec
 static void zclFreePadApp_SaveAttributesToNV(void);
 static void zclFreePadApp_RestoreAttributesFromNV(void);
 static void zclFreePadApp_StartTL(void);
-
 ZStatus_t zclFreePadApp_TL_NotifyCb(epInfoRec_t *pData);
-
-
-static ZStatus_t zllSampleRemote_ProcessTL( epInfoRec_t *pRec );
-static ZStatus_t zllSampleRemote_UpdateLinkedTarget( epInfoRec_t *pRec );
-static void zllSampleRemote_InitLinkedTargets( void );
-static uint8 zllSampleRemote_addControlledGroup( uint16 groupId );
 
 /*********************************************************************
  * ZCL General Profile Callback table
@@ -260,8 +253,6 @@ static void zclFreePadApp_SendKeys(byte keyCode, byte pressCount, bool isRelease
             zclGeneral_SendOnOff_CmdToggle(endPoint, &inderect_DstAddr, TRUE, bdb_getZCLFrameCounter());
             break;
         }
-
-
 
         if (button % 2 == 0) {
             // even numbers (2 4, send up to lower odd number)
@@ -459,7 +450,6 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keyCode) {
     if (keyCode == prevKeyCode) {
         return;
     }
-    // osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_TL_START_EVT, 500);
 
     prevKeyCode = keyCode;
 
@@ -486,22 +476,31 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keyCode) {
         }
 
     } else {
-        zclFreePadApp_StartTL();
-
+        byte button = zclFreePadApp_KeyCodeToButton(keyCode);
+        uint32 resetHoldTime = FREEPADAPP_RESET_DELAY;
+        uint32 TLHoldTime = FREEPADAPP_TL_START_DELAY;
         if (bdb_isDeviceNonFactoryNew()) {
             if (devState != DEV_END_DEVICE) {
                 LREP("devState=%d try to restore network\r\n", devState);
                 bdb_ZedAttemptRecoverNwk();
             }
-            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT, FREEPADAPP_RESET_DELAY);
-            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_TL_START_EVT, FREEPADAPP_TL_START_DELAY);
-
-        } else {
-            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT,
-                               FREEPADAPP_RESET_DELAY >> 2); // 4 times less
+            resetHoldTime = resetHoldTime >> 2;
+            TLHoldTime = TLHoldTime >> 2;
         }
 
-        byte button = zclFreePadApp_KeyCodeToButton(keyCode);
+        switch (button) {
+        case 1:
+            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT, resetHoldTime);
+            break;
+
+        case 2:
+            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_TL_START_EVT, TLHoldTime);
+            break;
+
+        default:
+            break;
+        }
+
         uint8 switchType = zclFreePadApp_SwitchTypes[button - 1];
 
         HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
