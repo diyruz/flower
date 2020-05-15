@@ -4637,12 +4637,6 @@
         <file>
             <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\bdb\bdb_touchlink_initiator.h</name>
         </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\bdb\bdb_touchlink_target.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\bdb\bdb_touchlink_target.h</name>
-        </file>
     </group>
     <group>
         <name>HAL</name>
@@ -5002,12 +4996,6 @@
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zcl\zcl.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zcl\zcl_diagnostic.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zcl\zcl_diagnostic.h</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\zcl\zcl_general.c</name>
