@@ -16,12 +16,12 @@
 
 TL funtionality can work without connecting to network
 
-# How to add device into zigbe2mqtt
-Lets assume you have install z2m in folder `/app/zigbee2mqtt`
 
 ## What's button mapping?
-
 ![Here](./images/zigbee_keypad22.png)
+
+# How to add device into zigbe2mqtt
+Lets assume you have install z2m in folder `/app/zigbee2mqtt`
 
 ```bash
 cd /app/
