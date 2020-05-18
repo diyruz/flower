@@ -1,0 +1,6 @@
+git:
+  requireCleanWorkingDir: false
+github:
+  release: true
+  assets: ["firmwares/*.hex"]
+  draft: true
