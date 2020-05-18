@@ -570,6 +570,7 @@ static void zclFreePadApp_SaveAttributesToNV(void) {
 
 static void zclFreePadApp_StartTL(void) {
     LREPMaster("zclFreePadApp_StartTL\r\n");
+    bdb_StartCommissioning(BDB_COMMISSIONING_MODE_INITIATOR_TL);
     touchLinkInitiator_StartDevDisc();
 }
 
