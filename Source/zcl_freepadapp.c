@@ -88,7 +88,6 @@ static void zclFreePadApp_SaveAttributesToNV(void);
 static void zclFreePadApp_RestoreAttributesFromNV(void);
 static void zclFreePadApp_StartTL(void);
 ZStatus_t zclFreePadApp_TL_NotifyCb(epInfoRec_t *pData);
-static void zclFreePadApp_ReportBasic(void);
 
 /*********************************************************************
  * ZCL General Profile Callback table
@@ -171,7 +170,6 @@ static void zclFreePadApp_ResetBackoffRetry(void) {
 }
 
 static void zclFreePadApp_OnConnect(void) {
-    zclFreePadApp_ReportBasic();
     zclFreePadApp_ResetBackoffRetry();
     osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_REPORT_EVT, FREEPADAPP_CONST_ONE_MINUTE_IN_MS); // 1 minute
 }
@@ -578,29 +576,6 @@ static void zclFreePadApp_StartTL(void) {
 ZStatus_t zclFreePadApp_TL_NotifyCb(epInfoRec_t *pData) {
     LREPMaster("zclFreePadApp_TL_NotifyCb\r\n");
     return touchLinkInitiator_ResetToFNSelectedTarget();
-}
-
-
-
-
-afAddrType_t Coordinator_DstAddr = {.addrMode = (afAddrMode_t)Addr16Bit, .addr.shortAddr = 0, .endPoint = 1};
-
-static void zclFreePadApp_ReportBasic(void) {
-    const uint8 NUM_ATTRIBUTES = 1;
-    zclReportCmd_t *pReportCmd;
-    pReportCmd = osal_mem_alloc(sizeof(zclReportCmd_t) + (NUM_ATTRIBUTES * sizeof(zclReport_t)));
-    if (pReportCmd != NULL) {
-        pReportCmd->numAttr = NUM_ATTRIBUTES;
-
-        pReportCmd->attrList[0].attrID = ATTRID_BASIC_MODEL_ID;
-        pReportCmd->attrList[0].dataType = ZCL_DATATYPE_CHAR_STR;
-        pReportCmd->attrList[0].attrData = (void *)zclFreePadApp_ModelId;
-
-        zcl_SendReportCmd(1, &Coordinator_DstAddr, ZCL_CLUSTER_ID_GEN_BASIC, pReportCmd,
-                          ZCL_FRAME_CLIENT_SERVER_DIR, TRUE, bdb_getZCLFrameCounter());
-    }
-
-    osal_mem_free(pReportCmd);
 }
 /****************************************************************************
 ****************************************************************************/
