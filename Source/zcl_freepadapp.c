@@ -9,7 +9,6 @@
 #include "math.h"
 
 #include "nwk_util.h"
-
 #include "zcl.h"
 #include "zcl_diagnostic.h"
 #include "zcl_freepadapp.h"
@@ -121,10 +120,11 @@ static ZStatus_t zclFreePadApp_ReadWriteAuthCB(afAddrType_t *srcAddr, zclAttrRec
     return ZSuccess;
 }
 void zclFreePadApp_Init(byte task_id) {
-    //this is important to allow connects throught routers
-    //to make this work, coordinator should be compiled with this flag #define TP2_LEGACY_ZC
-    requestNewTrustCenterLinkKey = FALSE;
     DebugInit();
+    // this is important to allow connects throught routers
+    // to make this work, coordinator should be compiled with this flag #define TP2_LEGACY_ZC
+    requestNewTrustCenterLinkKey = FALSE;
+
     zclFreePadApp_TaskID = task_id;
     zclFreePadApp_ResetAttributesToDefaultValues();
     zclFreePadApp_RestoreAttributesFromNV();
@@ -420,12 +420,13 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
 }
 
 static void zclFreePadApp_Rejoin(void) {
-    LREP("Recieved rejoin command\r\n");
-    if (bdb_isDeviceNonFactoryNew()) {
-        zgWriteStartupOptions(ZG_STARTUP_SET, ZCD_STARTOPT_DEFAULT_NETWORK_STATE | ZCD_STARTOPT_DEFAULT_CONFIG_STATE);
+    LREPMaster("Recieved rejoin command\r\n");
+    HalLedSet(HAL_LED_1, HAL_LED_MODE_FLASH);
+    if (bdbAttributes.bdbNodeIsOnANetwork) {
+        LREPMaster("Reset to FN\r\n");
         bdb_resetLocalAction();
     } else {
-        HalLedSet(HAL_LED_1, HAL_LED_MODE_FLASH);
+        LREPMaster("StartCommissioning STEEREING\r\n");
         bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_STEERING);
     }
 }
@@ -453,6 +454,7 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keyCode) {
     if (keyCode == prevKeyCode) {
         return;
     }
+    LREP("devState %d bdbNodeIsOnANetwork %d \r\n", devState, bdbAttributes.bdbNodeIsOnANetwork);
 
     prevKeyCode = keyCode;
 
@@ -482,15 +484,16 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keyCode) {
         byte button = zclFreePadApp_KeyCodeToButton(keyCode);
         uint32 resetHoldTime = FREEPADAPP_RESET_DELAY;
         uint32 TLHoldTime = FREEPADAPP_TL_START_DELAY;
-        if (bdb_isDeviceNonFactoryNew()) {
-            if (devState != DEV_END_DEVICE) {
-                LREP("devState=%d try to restore network\r\n", devState);
-                bdb_ZedAttemptRecoverNwk();
-            }
+        if (devState == DEV_NWK_ORPHAN) {
+            LREP("devState=%d try to restore network\r\n", devState);
+            bdb_ZedAttemptRecoverNwk();
+        }
+        if (!bdbAttributes.bdbNodeIsOnANetwork) {
             resetHoldTime = resetHoldTime >> 2;
             TLHoldTime = TLHoldTime >> 2;
         }
-
+    
+        LREP("resetHoldTime %ld TLHoldTime=%ld\r\n", resetHoldTime, TLHoldTime);
         switch (button) {
         case 1:
             osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT, resetHoldTime);
@@ -570,7 +573,6 @@ static void zclFreePadApp_SaveAttributesToNV(void) {
 
 static void zclFreePadApp_StartTL(void) {
     LREPMaster("zclFreePadApp_StartTL\r\n");
-    bdb_StartCommissioning(BDB_COMMISSIONING_MODE_INITIATOR_TL);
     touchLinkInitiator_StartDevDisc();
 }
 
