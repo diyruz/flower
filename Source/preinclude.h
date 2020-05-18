@@ -2,7 +2,8 @@
 #define NV_INIT
 #define NV_RESTORE
 #define INT_HEAP_LEN 2688
-
+//to make TL work
+#define TOUCHLINK_KEY_INDEX TOUCHLINK_KEY_INDEX_MASTER
 
 #define NWK_AUTO_POLL
 #define MULTICAST_ENABLED FALSE
