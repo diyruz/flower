@@ -49,6 +49,7 @@
 /*********************************************************************
  * GLOBAL VARIABLES
  */
+extern bool requestNewTrustCenterLinkKey;
 byte zclFreePadApp_TaskID;
 
 /*********************************************************************
@@ -121,6 +122,9 @@ static ZStatus_t zclFreePadApp_ReadWriteAuthCB(afAddrType_t *srcAddr, zclAttrRec
     return ZSuccess;
 }
 void zclFreePadApp_Init(byte task_id) {
+    //this is important to allow connects throught routers
+    //to make this work, coordinator should be compiled with this flag #define TP2_LEGACY_ZC
+    requestNewTrustCenterLinkKey = FALSE;
     DebugInit();
     zclFreePadApp_TaskID = task_id;
     zclFreePadApp_ResetAttributesToDefaultValues();
