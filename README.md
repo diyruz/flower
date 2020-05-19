@@ -12,7 +12,7 @@ In order to detect multiple clicks, remote sends commands with 300ms delay.
 You can change this behaviour by cost of double/tripple/etc clicks. 
 To do that you need to change
 
-`ZCL_CLUSTER_ID_GEN_ON_OFF_SWITCH_CONFIG` clusters `ATTRID_ON_OFF_SWITCH_TYPE` attribute
+`ZCL_CLUSTER_ID_GEN_ON_OFF_SWITCH_CONFIG` cluster `ATTRID_ON_OFF_SWITCH_TYPE` attribute
 
 Values are:
 
