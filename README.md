@@ -9,25 +9,35 @@
 # Work modes
 By default remote works as custom swith, with multiple clicks, this behaiviout has own drawback.
 In order to detect multiple clicks, remote sends commands with 300ms delay.
-You can change this behaviour by cost of double/tripple/etc clicks. To do that you need to change
+You can change this behaviour by cost of double/tripple/etc clicks. 
+To do that you need to change
+
 `ZCL_CLUSTER_ID_GEN_ON_OFF_SWITCH_CONFIG` clusters `ATTRID_ON_OFF_SWITCH_TYPE` attribute
+
 Values are:
 `ON_OFF_SWITCH_TYPE_MOMENTARY` (0) -> no delay, but no multiple clicks, only single
+
 `mosquitto_pub -t "zigbee2mqtt/FN/BUTTON_NUM/set/switch_type" -m '0'`
 
 `ON_OFF_SWITCH_TYPE_MULTIFUNCTION` (2) -> 300ms delay, full set of clicks
+
 `mosquitto_pub -t "zigbee2mqtt/FN/BUTTON_NUM/set/switch_type" -m '2'` (default)
 
 
 # ONOFF cluster binding
 By default command is TOGGLE, but you can change this behaviour
 Change `ZCL_CLUSTER_ID_GEN_ON_OFF_SWITCH_CONFIG` clusters attribute `ATTRID_ON_OFF_SWITCH_ACTIONS`
+
 `ON_OFF_SWITCH_ACTIONS_ON`
+
 `mosquitto_pub -t "zigbee2mqtt/FN/BUTTON_NUM/set/switch_actions" -m '0'`
+
 `ON_OFF_SWITCH_ACTIONS_OFF`
+
 `mosquitto_pub -t "zigbee2mqtt/FN/BUTTON_NUM/set/switch_actions" -m '1'`
 
 `ON_OFF_SWITCH_ACTIONS_TOGGLE` (default value)
+
 `mosquitto_pub -t "zigbee2mqtt/FN/BUTTON_NUM/set/switch_actions" -m '2'`
 
 
