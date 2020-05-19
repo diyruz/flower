@@ -15,6 +15,7 @@ To do that you need to change
 `ZCL_CLUSTER_ID_GEN_ON_OFF_SWITCH_CONFIG` clusters `ATTRID_ON_OFF_SWITCH_TYPE` attribute
 
 Values are:
+
 `ON_OFF_SWITCH_TYPE_MOMENTARY` (0) -> no delay, but no multiple clicks, only single
 
 `mosquitto_pub -t "zigbee2mqtt/FN/BUTTON_NUM/set/switch_type" -m '0'`
@@ -26,6 +27,7 @@ Values are:
 
 # ONOFF cluster binding
 By default command is TOGGLE, but you can change this behaviour
+
 Change `ZCL_CLUSTER_ID_GEN_ON_OFF_SWITCH_CONFIG` clusters attribute `ATTRID_ON_OFF_SWITCH_ACTIONS`
 
 `ON_OFF_SWITCH_ACTIONS_ON`
