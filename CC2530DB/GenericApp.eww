@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workspace>
+    <project>
+        <path>$WS_DIR$\GenericApp.ewp</path>
+    </project>
+    <batchBuild>
+        <batchDefinition>
+            <name>FREEPADS</name>
+            <member>
+                <project>GenericApp</project>
+                <configuration>FREEPAD_8</configuration>
+            </member>
+            <member>
+                <project>GenericApp</project>
+                <configuration>FREEPAD_12</configuration>
+            </member>
+            <member>
+                <project>GenericApp</project>
+                <configuration>FREEPAD_20</configuration>
+            </member>
+            <member>
+                <project>GenericApp</project>
+                <configuration>CHDTECH_DEV</configuration>
+            </member>
+        </batchDefinition>
+    </batchBuild>
+</workspace>

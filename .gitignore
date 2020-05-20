@@ -5,8 +5,6 @@
 # IAR Debugger files
 *.ewd
 
-# IAR Workspace files
-*.eww
 
 # IAR Settings
 **/settings/*.crun
