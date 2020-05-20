@@ -17,8 +17,6 @@
 
 #include "bdb.h"
 #include "bdb_interface.h"
-#include "bdb_touchlink.h"
-#include "bdb_touchlink_initiator.h"
 #include "gp_interface.h"
 
 #include "Debug.h"
@@ -85,8 +83,6 @@ static void zclFreePadApp_BasicResetCB(void);
 static ZStatus_t zclFreePadApp_ReadWriteAuthCB(afAddrType_t *srcAddr, zclAttrRec_t *pAttr, uint8 oper);
 static void zclFreePadApp_SaveAttributesToNV(void);
 static void zclFreePadApp_RestoreAttributesFromNV(void);
-static void zclFreePadApp_StartTL(void);
-ZStatus_t zclFreePadApp_TL_NotifyCb(epInfoRec_t *pData);
 
 /*********************************************************************
  * ZCL General Profile Callback table
@@ -151,7 +147,6 @@ void zclFreePadApp_Init(byte task_id) {
 
     bdb_RegisterBindNotificationCB(zclFreePadApp_BindNotification);
     bdb_RegisterCommissioningStatusCB(zclFreePadApp_ProcessCommissioningStatus);
-    touchLinkInitiator_RegisterNotifyTLCB(zclFreePadApp_TL_NotifyCb);
 
     bdb_StartCommissioning(BDB_COMMISSIONING_REJOIN_EXISTING_NETWORK_ON_STARTUP);
 
@@ -407,14 +402,6 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
         zclFreePadApp_SaveAttributesToNV();
         return (events ^ FREEPADAPP_SAVE_ATTRS_EVT);
     }
-
-    if (events & FREEPADAPP_TL_START_EVT) {
-        LREPMaster("FREEPADAPP_TL_START_EVT\r\n");
-        HalLedSet(HAL_LED_1, HAL_LED_MODE_FLASH);
-        zclFreePadApp_StartTL();
-        return (events ^ FREEPADAPP_TL_START_EVT);
-    }
-
     // Discard unknown events
     return 0;
 }
@@ -460,7 +447,7 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keyCode) {
 
     if (keyCode == HAL_KEY_CODE_RELEASE_KEY) {
         osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT);
-        osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_TL_START_EVT);
+
         byte prevButton = zclFreePadApp_KeyCodeToButton(currentKeyCode);
         uint8 prevSwitchType = zclFreePadApp_SwitchTypes[prevButton - 1];
 
@@ -483,24 +470,18 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keyCode) {
     } else {
         byte button = zclFreePadApp_KeyCodeToButton(keyCode);
         uint32 resetHoldTime = FREEPADAPP_RESET_DELAY;
-        uint32 TLHoldTime = FREEPADAPP_TL_START_DELAY;
         if (devState == DEV_NWK_ORPHAN) {
             LREP("devState=%d try to restore network\r\n", devState);
             bdb_ZedAttemptRecoverNwk();
         }
         if (!bdbAttributes.bdbNodeIsOnANetwork) {
             resetHoldTime = resetHoldTime >> 2;
-            TLHoldTime = TLHoldTime >> 2;
         }
     
-        LREP("resetHoldTime %ld TLHoldTime=%ld\r\n", resetHoldTime, TLHoldTime);
+        LREP("resetHoldTime %ld\r\n", resetHoldTime);
         switch (button) {
         case 1:
             osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT, resetHoldTime);
-            break;
-
-        case 2:
-            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_TL_START_EVT, TLHoldTime);
             break;
 
         default:
@@ -571,14 +552,5 @@ static void zclFreePadApp_SaveAttributesToNV(void) {
     }
 }
 
-static void zclFreePadApp_StartTL(void) {
-    LREPMaster("zclFreePadApp_StartTL\r\n");
-    touchLinkInitiator_StartDevDisc();
-}
-
-ZStatus_t zclFreePadApp_TL_NotifyCb(epInfoRec_t *pData) {
-    LREPMaster("zclFreePadApp_TL_NotifyCb\r\n");
-    return touchLinkInitiator_ResetToFNSelectedTarget();
-}
 /****************************************************************************
 ****************************************************************************/

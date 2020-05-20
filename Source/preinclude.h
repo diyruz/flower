@@ -2,9 +2,6 @@
 #define NV_INIT
 #define NV_RESTORE
 #define INT_HEAP_LEN 2688
-// to make TL work, need patch this macroses in SDK
-// #define TOUCHLINK_KEY_INDEX TOUCHLINK_KEY_INDEX_MASTER
-// #define TOUCHLINK_INTERNAL_ENDPOINT 42
 
 #define TP2_LEGACY_ZC
 //patch sdk
@@ -20,8 +17,7 @@
 #define ZCL_ON_OFF
 #define ZCL_LEVEL_CTRL
 #define ZCL_REPORTING_DEVICE
-#define INTER_PAN
-#define BDB_TL_INITIATOR
+
 
 #define ZSTACK_DEVICE_BUILD (DEVICE_BUILD_ENDDEVICE)
 
