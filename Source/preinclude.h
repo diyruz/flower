@@ -11,13 +11,9 @@
 #define MULTICAST_ENABLED FALSE
 
 #define ZCL_READ
-#define ZCL_WRITE
 #define ZCL_BASIC
 #define ZCL_IDENTIFY
-#define ZCL_ON_OFF
-#define ZCL_LEVEL_CTRL
 #define ZCL_REPORTING_DEVICE
-
 
 #define ZSTACK_DEVICE_BUILD (DEVICE_BUILD_ENDDEVICE)
 
@@ -38,36 +34,14 @@
 
 
 //one of this boards
-// #define HAL_BOARD_FREEPAD_20
-// #define HAL_BOARD_FREEPAD_12
-// #define HAL_BOARD_FREEPAD_8
+// #define HAL_BOARD_FLOWER
 // #define HAL_BOARD_CHDTECH_DEV
 
-#if !defined(HAL_BOARD_FREEPAD_20) && !defined(HAL_BOARD_FREEPAD_12) && !defined(HAL_BOARD_FREEPAD_8) && !defined(HAL_BOARD_CHDTECH_DEV)
+#if !defined(HAL_BOARD_FLOWER) && !defined(HAL_BOARD_CHDTECH_DEV)
 #error "Board type must be defined"
 #endif
 
-
-
-#ifdef HAL_BOARD_FREEPAD_20
-#define FREEPAD_BUTTONS_COUNT 20
-#elif defined(HAL_BOARD_FREEPAD_12)
-#define FREEPAD_BUTTONS_COUNT 12
-#elif defined(HAL_BOARD_FREEPAD_8)
-#define FREEPAD_BUTTONS_COUNT 8
-#elif defined(HAL_BOARD_CHDTECH_DEV)
-#define FREEPAD_BUTTONS_COUNT 2
-#endif
-
-
-
-
-#ifdef NWK_MAX_BINDING_ENTRIES
-    #undef NWK_MAX_BINDING_ENTRIES
-#endif
-#define NWK_MAX_BINDING_ENTRIES (2 * FREEPAD_BUTTONS_COUNT)
-
-#if defined(HAL_BOARD_FREEPAD_20) || defined(HAL_BOARD_FREEPAD_12) || defined(HAL_BOARD_FREEPAD_8)
+#if defined(HAL_BOARD_FLOWER)
     #define HAL_UART FALSE
     #define POWER_SAVING
 #elif defined(HAL_BOARD_CHDTECH_DEV)

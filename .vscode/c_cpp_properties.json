@@ -2,7 +2,7 @@
     "configurations": [{
         "name": "Mac",
         "forcedInclude": ["${workspaceRoot}/Source/preinclude.h"],
-        "defines": ["HAL_BOARD_FREEPAD_20"],
+        "defines": ["HAL_BOARD_CHDTECH_DEV"],
         "includePath": [
             "${workspaceRoot}",
             "${env:ZSTACK_PATH}/Components/mac/include/",

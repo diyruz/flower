@@ -14,6 +14,7 @@
 #include "zcl_freepadapp.h"
 #include "zcl_general.h"
 #include "zcl_lighting.h"
+#include "zcl_ms.h"
 
 #include "bdb.h"
 #include "bdb_interface.h"
@@ -22,6 +23,7 @@
 #include "Debug.h"
 
 #include "onboard.h"
+#include "zcl_freepadapp.h"
 
 /* HAL */
 #include "hal_drivers.h"
@@ -56,11 +58,6 @@ byte zclFreePadApp_TaskID;
 /*********************************************************************
  * LOCAL VARIABLES
  */
-
-bool holdSend = false;
-byte currentKeyCode = 0;
-byte clicksCount = 0;
-
 byte rejoinsLeft = FREEPADAPP_END_DEVICE_REJOIN_TRIES;
 uint32 rejoinDelay = FREEPADAPP_END_DEVICE_REJOIN_START_DELAY;
 
@@ -71,50 +68,28 @@ afAddrType_t inderect_DstAddr = {.addrMode = (afAddrMode_t)AddrNotPresent, .endP
  */
 static void zclFreePadApp_HandleKeys(byte shift, byte keys);
 static void zclFreePadApp_BindNotification(bdbBindNotificationData_t *data);
-static void zclFreePadApp_ReportBattery(void);
+static void zclFreePadApp_Report(void);
 static void zclFreePadApp_Rejoin(void);
-static void zclFreePadApp_SendButtonPress(uint8 endPoint, byte clicksCount);
+
 static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
-static void zclFreePadApp_SendKeys(byte keyCode, byte pressCount, byte pressTime);
 static void zclFreePadApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg);
 static void zclFreePadApp_ResetBackoffRetry(void);
 static void zclFreePadApp_OnConnect(void);
-static void zclFreePadApp_BasicResetCB(void);
-static ZStatus_t zclFreePadApp_ReadWriteAuthCB(afAddrType_t *srcAddr, zclAttrRec_t *pAttr, uint8 oper);
-static void zclFreePadApp_SaveAttributesToNV(void);
-static void zclFreePadApp_RestoreAttributesFromNV(void);
 
 /*********************************************************************
  * ZCL General Profile Callback table
  */
 static zclGeneral_AppCallbacks_t zclFreePadApp_CmdCallbacks = {
-    zclFreePadApp_BasicResetCB, // Basic Cluster Reset command
-    NULL,                       // Identify Trigger Effect command
-    NULL,                       // On/Off cluster commands
-    NULL,                       // On/Off cluster enhanced command Off with Effect
-    NULL,                       // On/Off cluster enhanced command On with Recall Global Scene
-    NULL,                       // On/Off cluster enhanced command On with Timed Off
-    NULL,                       // RSSI Location command
-    NULL                        // RSSI Location Response command
+    NULL, // Basic Cluster Reset command
+    NULL, // Identify Trigger Effect command
+    NULL, // On/Off cluster commands
+    NULL, // On/Off cluster enhanced command Off with Effect
+    NULL, // On/Off cluster enhanced command On with Recall Global Scene
+    NULL, // On/Off cluster enhanced command On with Timed Off
+    NULL, // RSSI Location command
+    NULL  // RSSI Location Response command
 };
-// static CONST zclAttrRec_t attrs[FREEPAD_BUTTONS_COUNT];
 
-static void zclFreePadApp_BasicResetCB(void) {
-    LREP("zclFreePadApp_BasicResetCB\r\n");
-    zclFreePadApp_ResetAttributesToDefaultValues();
-    zclFreePadApp_SaveAttributesToNV();
-}
-
-/*
-this is workaround, since we don't have CB after attribute write, we will hack into write auth CB
-and save attributes few secons later
-*/
-static ZStatus_t zclFreePadApp_ReadWriteAuthCB(afAddrType_t *srcAddr, zclAttrRec_t *pAttr, uint8 oper) {
-    LREP("AUTH CB called %x %x %x\r\n", srcAddr->addr, pAttr->attr, pAttr->clusterID);
-
-    osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_SAVE_ATTRS_EVT, 2000);
-    return ZSuccess;
-}
 void zclFreePadApp_Init(byte task_id) {
     DebugInit();
     // this is important to allow connects throught routers
@@ -122,24 +97,14 @@ void zclFreePadApp_Init(byte task_id) {
     requestNewTrustCenterLinkKey = FALSE;
 
     zclFreePadApp_TaskID = task_id;
-    zclFreePadApp_ResetAttributesToDefaultValues();
-    zclFreePadApp_RestoreAttributesFromNV();
-    zclFreePadApp_InitClusters();
 
     zclGeneral_RegisterCmdCallbacks(1, &zclFreePadApp_CmdCallbacks);
-    for (int i = 0; i < zclFreePadApp_SimpleDescsCount; i++) {
-        SimpleDescriptionFormat_t descriptor = zclFreePadApp_SimpleDescs[i];
-        if (i == 0) {
-            zcl_registerAttrList(descriptor.EndPoint, zclFreePadApp_AttrsFirstEPCount, zclFreePadApp_AttrsFirstEP);
-        } else {
-            // take one lower [i-1], since first ep  handled by zclFreePadApp_AttrsFirstEP
-            zcl_registerAttrList(descriptor.EndPoint, FREEPAD_ATTRS_COUNT, zclFreePadApp_Attrs[i - 1]);
-        }
+    zcl_registerAttrList(zclFreePadApp_FirstEP.EndPoint, zclFreePadApp_AttrsFirstEPCount, zclFreePadApp_AttrsFirstEP);
+    bdb_RegisterSimpleDescriptor(&zclFreePadApp_FirstEP);
 
-        bdb_RegisterSimpleDescriptor(&zclFreePadApp_SimpleDescs[i]);
+    zcl_registerAttrList(zclFreePadApp_SecondEP.EndPoint, zclFreePadApp_AttrsSecondEPCount, zclFreePadApp_AttrsSecondEP);
+    bdb_RegisterSimpleDescriptor(&zclFreePadApp_SecondEP);
 
-        zcl_registerReadWriteCB(descriptor.EndPoint, NULL, zclFreePadApp_ReadWriteAuthCB);
-    }
     zcl_registerForMsg(zclFreePadApp_TaskID);
 
     // Register for all key events - This app will handle all key events
@@ -228,88 +193,6 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
     }
 }
 
-#define HOLD_CODE 0
-#define RELEASE_CODE 255
-static void zclFreePadApp_SendKeys(byte keyCode, byte pressCount, bool isRelease) {
-    byte button = zclFreePadApp_KeyCodeToButton(keyCode);
-    uint8 endPoint = zclFreePadApp_SimpleDescs[button - 1].EndPoint;
-    uint8 switchAction = zclFreePadApp_SwitchActions[button - 1];
-    LREP("button %d clicks %d isRelease %d action %d\r\n", button, pressCount, isRelease, switchAction);
-
-    switch (pressCount) {
-    case 1:
-
-        switch (switchAction) {
-        case ON_OFF_SWITCH_ACTIONS_OFF:
-            zclGeneral_SendOnOff_CmdOff(endPoint, &inderect_DstAddr, TRUE, bdb_getZCLFrameCounter());
-            break;
-        case ON_OFF_SWITCH_ACTIONS_ON:
-            zclGeneral_SendOnOff_CmdOn(endPoint, &inderect_DstAddr, TRUE, bdb_getZCLFrameCounter());
-            break;
-        case ON_OFF_SWITCH_ACTIONS_TOGGLE:
-        default:
-            zclGeneral_SendOnOff_CmdToggle(endPoint, &inderect_DstAddr, TRUE, bdb_getZCLFrameCounter());
-            break;
-        }
-
-        if (button % 2 == 0) {
-            // even numbers (2 4, send up to lower odd number)
-            zclGeneral_SendLevelControlStepWithOnOff(endPoint - 1, &inderect_DstAddr, LEVEL_STEP_UP, FREEPADAPP_LEVEL_STEP_SIZE,
-                                                     FREEPADAPP_LEVEL_TRANSITION_TIME, TRUE, bdb_getZCLFrameCounter());
-
-            zclLighting_ColorControl_Send_StepColorCmd(endPoint - 1, &inderect_DstAddr, 1000, 0, 0, true, bdb_getZCLFrameCounter());
-            // works zclLighting_ColorControl_Send_MoveToColorCmd( endPoint - 1, &inderect_DstAddr, 45914, 19615, 0, TRUE,
-            // bdb_getZCLFrameCounter());
-
-            // zclLighting_ColorControl_Send_StepColorCmd( endPoint - 1, &inderect_DstAddr, 1000, 1000, 0, TRUE, bdb_getZCLFrameCounter());
-            // zclLighting_ColorControl_Send_StepHueCmd(endPoint - 1, &inderect_DstAddr, LIGHTING_STEP_HUE_UP, 100, 0, TRUE,
-            // bdb_getZCLFrameCounter());
-
-        } else {
-            // odd number (1 3, send LEVEL_MOVE_DOWN to self)
-            zclGeneral_SendLevelControlStepWithOnOff(endPoint, &inderect_DstAddr, LEVEL_STEP_DOWN, FREEPADAPP_LEVEL_STEP_SIZE,
-                                                     FREEPADAPP_LEVEL_TRANSITION_TIME, TRUE, bdb_getZCLFrameCounter());
-
-            zclLighting_ColorControl_Send_StepColorCmd(endPoint - 1, &inderect_DstAddr, -1000, 0, 0, true, bdb_getZCLFrameCounter());
-            // zclLighting_ColorControl_Send_StepSaturationCmd(endPoint, &inderect_DstAddr, LIGHTING_STEP_SATURATION_UP, 100, 0, TRUE,
-            // bdb_getZCLFrameCounter());
-            // works zclLighting_ColorControl_Send_MoveToColorCmd( endPoint, &inderect_DstAddr, 11298, 48942, 0, TRUE,
-            // bdb_getZCLFrameCounter());
-        }
-
-        if (button % 4 == 1) {
-            zclLighting_ColorControl_Send_StepColorCmd(endPoint, &inderect_DstAddr, FREEPADAPP_COLOR_LEVEL_STEP_X_SIZE,
-                                                       FREEPADAPP_COLOR_LEVEL_STEP_Y_SIZE, FREEPADAPP_COLOR_LEVEL_TRANSITION_TIME, true,
-                                                       bdb_getZCLFrameCounter());
-        } else if (button % 4 == 2) {
-            zclLighting_ColorControl_Send_StepColorCmd(endPoint - 1, &inderect_DstAddr, -FREEPADAPP_COLOR_LEVEL_STEP_X_SIZE,
-                                                       FREEPADAPP_COLOR_LEVEL_STEP_Y_SIZE, FREEPADAPP_COLOR_LEVEL_TRANSITION_TIME, true,
-                                                       bdb_getZCLFrameCounter());
-        } else if (button % 4 == 3) {
-            zclLighting_ColorControl_Send_StepColorCmd(endPoint - 2, &inderect_DstAddr, FREEPADAPP_COLOR_LEVEL_STEP_X_SIZE,
-                                                       FREEPADAPP_COLOR_LEVEL_STEP_Y_SIZE, FREEPADAPP_COLOR_LEVEL_TRANSITION_TIME, true,
-                                                       bdb_getZCLFrameCounter());
-        } else if (button % 4 == 0) {
-            zclLighting_ColorControl_Send_StepColorCmd(endPoint - 3, &inderect_DstAddr, -FREEPADAPP_COLOR_LEVEL_STEP_X_SIZE,
-                                                       FREEPADAPP_COLOR_LEVEL_STEP_Y_SIZE, FREEPADAPP_COLOR_LEVEL_TRANSITION_TIME, true,
-                                                       bdb_getZCLFrameCounter());
-        }
-
-        break;
-    case 2:
-        break;
-
-    default:
-        break;
-    }
-
-    if (isRelease) {
-        zclFreePadApp_SendButtonPress(endPoint, RELEASE_CODE);
-    } else {
-        zclFreePadApp_SendButtonPress(endPoint, pressCount);
-    }
-}
-
 static void zclFreePadApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg) {
     LREP("ZCL_INCOMING_MSG srcAddr=0x%X endPoint=0x%X clusterId=0x%X commandID=0x%X %d\r\n", pInMsg->srcAddr, pInMsg->endPoint,
          pInMsg->clusterId, pInMsg->zclHdr.commandID, pInMsg->zclHdr.commandID);
@@ -367,14 +250,6 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
         return (events ^ FREEPADAPP_END_DEVICE_REJOIN_EVT);
     }
 
-    if (events & FREEPADAPP_SEND_KEYS_EVT) {
-        LREPMaster("FREEPADAPP_SEND_KEYS_EVT\r\n");
-        zclFreePadApp_SendKeys(currentKeyCode, clicksCount, holdSend);
-        clicksCount = 0;
-        currentKeyCode = 0;
-        holdSend = false;
-        return (events ^ FREEPADAPP_SEND_KEYS_EVT);
-    }
     if (events & FREEPADAPP_RESET_EVT) {
         LREPMaster("FREEPADAPP_RESET_EVT\r\n");
         zclFreePadApp_Rejoin();
@@ -383,25 +258,10 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
 
     if (events & FREEPADAPP_REPORT_EVT) {
         LREPMaster("FREEPADAPP_REPORT_EVT\r\n");
-        zclFreePadApp_ReportBattery();
+        zclFreePadApp_Report();
         return (events ^ FREEPADAPP_REPORT_EVT);
     }
-    if (events & FREEPADAPP_HOLD_START_EVT) {
-        LREPMaster("FREEPADAPP_HOLD_START_EVT\r\n");
-        byte button = zclFreePadApp_KeyCodeToButton(currentKeyCode);
 
-        uint8 endPoint = zclFreePadApp_SimpleDescs[button - 1].EndPoint;
-        zclFreePadApp_SendButtonPress(endPoint, HOLD_CODE);
-        holdSend = true;
-
-        return (events ^ FREEPADAPP_HOLD_START_EVT);
-    }
-
-    if (events & FREEPADAPP_SAVE_ATTRS_EVT) {
-        LREPMaster("FREEPADAPP_SAVE_ATTRS_EVT\r\n");
-        zclFreePadApp_SaveAttributesToNV();
-        return (events ^ FREEPADAPP_SAVE_ATTRS_EVT);
-    }
     // Discard unknown events
     return 0;
 }
@@ -418,25 +278,7 @@ static void zclFreePadApp_Rejoin(void) {
     }
 }
 
-static void zclFreePadApp_SendButtonPress(uint8 endPoint, uint8 clicksCount) {
-
-    const uint8 NUM_ATTRIBUTES = 1;
-    zclReportCmd_t *pReportCmd;
-    pReportCmd = osal_mem_alloc(sizeof(zclReportCmd_t) + (NUM_ATTRIBUTES * sizeof(zclReport_t)));
-    if (pReportCmd != NULL) {
-        pReportCmd->numAttr = NUM_ATTRIBUTES;
-        pReportCmd->attrList[0].attrID = ATTRID_IOV_BASIC_PRESENT_VALUE;
-        pReportCmd->attrList[0].dataType = ZCL_DATATYPE_UINT8;
-        pReportCmd->attrList[0].attrData = (void *)(&clicksCount);
-
-        zcl_SendReportCmd(endPoint, &inderect_DstAddr, ZCL_CLUSTER_ID_GEN_MULTISTATE_INPUT_BASIC, pReportCmd, ZCL_FRAME_CLIENT_SERVER_DIR,
-                          TRUE, bdb_getZCLFrameCounter());
-    }
-    osal_mem_free(pReportCmd);
-}
-
 static void zclFreePadApp_HandleKeys(byte shift, byte keyCode) {
-    static uint32 pressTime = 0;
     static byte prevKeyCode = 0;
     if (keyCode == prevKeyCode) {
         return;
@@ -447,26 +289,6 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keyCode) {
 
     if (keyCode == HAL_KEY_CODE_RELEASE_KEY) {
         osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT);
-
-        byte prevButton = zclFreePadApp_KeyCodeToButton(currentKeyCode);
-        uint8 prevSwitchType = zclFreePadApp_SwitchTypes[prevButton - 1];
-
-        switch (prevSwitchType) {
-        case ON_OFF_SWITCH_TYPE_TOGGLE:
-        case ON_OFF_SWITCH_TYPE_MOMENTARY:
-            LREPMaster("Rlease \r\n");
-            break;
-
-        case ON_OFF_SWITCH_TYPE_MULTIFUNCTION:
-        default:
-            if (pressTime > 0) {
-                pressTime = 0;
-                osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_SEND_KEYS_EVT, FREEPADAPP_SEND_KEYS_DELAY);
-                osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_HOLD_START_EVT);
-            }
-            break;
-        }
-
     } else {
         byte button = zclFreePadApp_KeyCodeToButton(keyCode);
         uint32 resetHoldTime = FREEPADAPP_RESET_DELAY;
@@ -477,40 +299,9 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keyCode) {
         if (!bdbAttributes.bdbNodeIsOnANetwork) {
             resetHoldTime = resetHoldTime >> 2;
         }
-    
+
         LREP("resetHoldTime %ld\r\n", resetHoldTime);
-        switch (button) {
-        case 1:
-            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT, resetHoldTime);
-            break;
-
-        default:
-            break;
-        }
-
-        uint8 switchType = zclFreePadApp_SwitchTypes[button - 1];
-
-        HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
-        pressTime = osal_getClock();
-
-        currentKeyCode = keyCode;
-
-        switch (switchType) {
-        case ON_OFF_SWITCH_TYPE_TOGGLE:
-        case ON_OFF_SWITCH_TYPE_MOMENTARY:
-            clicksCount = 0;
-            zclFreePadApp_SendKeys(keyCode, 1, false);
-            LREPMaster("ON_OFF_SWITCH_TYPE_TOGGLE or ON_OFF_SWITCH_TYPE_MOMENTARY\r\n");
-            break;
-
-        case ON_OFF_SWITCH_TYPE_MULTIFUNCTION:
-        default:
-            clicksCount++;
-            LREPMaster("ON_OFF_SWITCH_TYPE_MULTIFUNCTION or default\r\n");
-            osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_SEND_KEYS_EVT);
-            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_HOLD_START_EVT, FREEPADAPP_HOLD_START_DELAY);
-            break;
-        }
+        osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT, resetHoldTime);
     }
 }
 
@@ -522,34 +313,18 @@ static void zclFreePadApp_BindNotification(bdbBindNotificationData_t *data) {
     LREP("bindCapacity %d %usedEntries %d \r\n", maxEntries, usedEntries);
 }
 
-static void zclFreePadApp_ReportBattery(void) {
+static void zclFreePadApp_Report(void) {
     zclFreePadApp_BatteryVoltage = getBatteryVoltage();
     zclFreePadApp_BatteryPercentageRemainig = getBatteryRemainingPercentageZCL();
-    bdb_RepChangedAttrValue(1, ZCL_CLUSTER_ID_GEN_POWER_CFG, ATTRID_POWER_CFG_BATTERY_PERCENTAGE_REMAINING);
-}
+    // todo: update sensors
 
-static void zclFreePadApp_RestoreAttributesFromNV(void) {
-    LREPMaster("Restoring attributes to NV size=%d \r\n");
+    bdb_RepChangedAttrValue(zclFreePadApp_FirstEP.EndPoint, POWER_CFG, ATTRID_POWER_CFG_BATTERY_PERCENTAGE_REMAINING);
 
-    if (osal_nv_item_init(FREEPAD_NW_SWITCH_ACTIONS, FREEPAD_BUTTONS_COUNT, &zclFreePadApp_SwitchActions) == ZSuccess) {
-        if (osal_nv_read(FREEPAD_NW_SWITCH_ACTIONS, 0, FREEPAD_BUTTONS_COUNT, &zclFreePadApp_SwitchActions) != ZSuccess) {
-            LREPMaster("fail FREEPAD_NW_SWITCH_ACTIONS\r\n");
-        }
-    }
-    if (osal_nv_item_init(FREEPAD_NW_SWITCH_TYPES, FREEPAD_BUTTONS_COUNT, &zclFreePadApp_SwitchTypes) == ZSuccess) {
-        if (osal_nv_read(FREEPAD_NW_SWITCH_TYPES, 0, FREEPAD_BUTTONS_COUNT, &zclFreePadApp_SwitchTypes) != ZSuccess) {
-            LREPMaster("fail FREEPAD_NW_SWITCH_TYPES\r\n");
-        }
-    }
-}
-static void zclFreePadApp_SaveAttributesToNV(void) {
-    LREPMaster("Saving attributes to NV\r\n");
-    if (osal_nv_item_init(FREEPAD_NW_SWITCH_ACTIONS, FREEPAD_BUTTONS_COUNT, &zclFreePadApp_SwitchActions) == ZSuccess) {
-        osal_nv_write(FREEPAD_NW_SWITCH_ACTIONS, 0, FREEPAD_BUTTONS_COUNT, &zclFreePadApp_SwitchActions);
-    }
-    if (osal_nv_item_init(FREEPAD_NW_SWITCH_TYPES, FREEPAD_BUTTONS_COUNT, &zclFreePadApp_SwitchTypes) == ZSuccess) {
-        osal_nv_write(FREEPAD_NW_SWITCH_TYPES, 0, FREEPAD_BUTTONS_COUNT, &zclFreePadApp_SwitchTypes);
-    }
+    bdb_RepChangedAttrValue(zclFreePadApp_FirstEP.EndPoint, TEMP, ATTRID_MS_TEMPERATURE_MEASURED_VALUE);
+    bdb_RepChangedAttrValue(zclFreePadApp_FirstEP.EndPoint, PRESSURE, ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE);
+    bdb_RepChangedAttrValue(zclFreePadApp_FirstEP.EndPoint, HUMIDITY, ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE);
+    
+    bdb_RepChangedAttrValue(zclFreePadApp_SecondEP.EndPoint, TEMP, ATTRID_MS_TEMPERATURE_MEASURED_VALUE);
 }
 
 /****************************************************************************

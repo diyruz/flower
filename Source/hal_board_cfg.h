@@ -161,13 +161,12 @@ extern void MAC_RfFrontendSetup(void);
 
 /* ----------- LED's ---------- */
 
-#if defined(HAL_BOARD_FREEPAD_20) || defined(HAL_BOARD_FREEPAD_12) || defined(HAL_BOARD_FREEPAD_8)
+#if defined(HAL_BOARD_FLOWER)
   #define LED1_BV           BV(1)
   #define LED1_SBIT         P0_1
   #define LED1_DDR          P0DIR
   #define LED1_POLARITY     ACTIVE_HIGH
 #elif defined(HAL_BOARD_CHDTECH_DEV)
-/* 1 - P1_0 Зеленый */
   #define LED1_BV           BV(0)
   #define LED1_SBIT         P1_0
   #define LED1_DDR          P1DIR
