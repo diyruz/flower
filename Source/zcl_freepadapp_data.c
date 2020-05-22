@@ -117,7 +117,7 @@ const cId_t zclFreePadApp_InClusterList[] = {ZCL_CLUSTER_ID_GEN_BASIC};
 
 #define FREEPADAPP_MAX_INCLUSTERS (sizeof(zclFreePadApp_InClusterList) / sizeof(zclFreePadApp_InClusterList[0]))
 
-const cId_t zclFreePadApp_OutClusterListFirstEP[] = {TEMP, PRESSURE, HUMIDITY, ILLUMINANCE};
+const cId_t zclFreePadApp_OutClusterListFirstEP[] = {POWER_CFG, TEMP, PRESSURE, HUMIDITY, ILLUMINANCE};
 const cId_t zclFreePadApp_OutClusterListSecondEP[] = {TEMP};
 
 #define FREEPADAPP_MAX_OUTCLUSTERS_FIRST_EP (sizeof(zclFreePadApp_OutClusterListFirstEP) / sizeof(zclFreePadApp_OutClusterListFirstEP[0]))
