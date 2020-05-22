@@ -11,7 +11,7 @@
 #include "nwk_util.h"
 #include "zcl.h"
 #include "zcl_diagnostic.h"
-#include "zcl_freepadapp.h"
+#include "zcl_app.h"
 #include "zcl_general.h"
 #include "zcl_lighting.h"
 #include "zcl_ms.h"
@@ -23,7 +23,6 @@
 #include "Debug.h"
 
 #include "onboard.h"
-#include "zcl_freepadapp.h"
 
 /* HAL */
 #include "hal_drivers.h"
@@ -49,7 +48,7 @@
  * GLOBAL VARIABLES
  */
 extern bool requestNewTrustCenterLinkKey;
-byte zclFreePadApp_TaskID;
+byte zclFlowerApp_TaskID;
 
 /*********************************************************************
  * GLOBAL FUNCTIONS
@@ -58,28 +57,28 @@ byte zclFreePadApp_TaskID;
 /*********************************************************************
  * LOCAL VARIABLES
  */
-byte rejoinsLeft = FREEPADAPP_END_DEVICE_REJOIN_TRIES;
-uint32 rejoinDelay = FREEPADAPP_END_DEVICE_REJOIN_START_DELAY;
+byte rejoinsLeft = FLOWER_APP_END_DEVICE_REJOIN_TRIES;
+uint32 rejoinDelay = FLOWER_APP_END_DEVICE_REJOIN_START_DELAY;
 
 afAddrType_t inderect_DstAddr = {.addrMode = (afAddrMode_t)AddrNotPresent, .endPoint = 0, .addr.shortAddr = 0};
 
 /*********************************************************************
  * LOCAL FUNCTIONS
  */
-static void zclFreePadApp_HandleKeys(byte shift, byte keys);
-static void zclFreePadApp_BindNotification(bdbBindNotificationData_t *data);
-static void zclFreePadApp_Report(void);
-static void zclFreePadApp_Rejoin(void);
+static void zclFlowerApp_HandleKeys(byte shift, byte keys);
+static void zclFlowerApp_BindNotification(bdbBindNotificationData_t *data);
+static void zclFlowerApp_Report(void);
+static void zclFlowerApp_Rejoin(void);
 
-static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
-static void zclFreePadApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg);
-static void zclFreePadApp_ResetBackoffRetry(void);
-static void zclFreePadApp_OnConnect(void);
+static void zclFlowerApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
+static void zclFlowerApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg);
+static void zclFlowerApp_ResetBackoffRetry(void);
+static void zclFlowerApp_OnConnect(void);
 
 /*********************************************************************
  * ZCL General Profile Callback table
  */
-static zclGeneral_AppCallbacks_t zclFreePadApp_CmdCallbacks = {
+static zclGeneral_AppCallbacks_t zclFlowerApp_CmdCallbacks = {
     NULL, // Basic Cluster Reset command
     NULL, // Identify Trigger Effect command
     NULL, // On/Off cluster commands
@@ -90,51 +89,51 @@ static zclGeneral_AppCallbacks_t zclFreePadApp_CmdCallbacks = {
     NULL  // RSSI Location Response command
 };
 
-void zclFreePadApp_Init(byte task_id) {
+void zclFlowerApp_Init(byte task_id) {
     DebugInit();
     // this is important to allow connects throught routers
     // to make this work, coordinator should be compiled with this flag #define TP2_LEGACY_ZC
     requestNewTrustCenterLinkKey = FALSE;
 
-    zclFreePadApp_TaskID = task_id;
+    zclFlowerApp_TaskID = task_id;
 
-    zclGeneral_RegisterCmdCallbacks(1, &zclFreePadApp_CmdCallbacks);
-    zcl_registerAttrList(zclFreePadApp_FirstEP.EndPoint, zclFreePadApp_AttrsFirstEPCount, zclFreePadApp_AttrsFirstEP);
-    bdb_RegisterSimpleDescriptor(&zclFreePadApp_FirstEP);
+    zclGeneral_RegisterCmdCallbacks(1, &zclFlowerApp_CmdCallbacks);
+    zcl_registerAttrList(zclFlowerApp_FirstEP.EndPoint, zclFlowerApp_AttrsFirstEPCount, zclFlowerApp_AttrsFirstEP);
+    bdb_RegisterSimpleDescriptor(&zclFlowerApp_FirstEP);
 
-    zcl_registerAttrList(zclFreePadApp_SecondEP.EndPoint, zclFreePadApp_AttrsSecondEPCount, zclFreePadApp_AttrsSecondEP);
-    bdb_RegisterSimpleDescriptor(&zclFreePadApp_SecondEP);
+    zcl_registerAttrList(zclFlowerApp_SecondEP.EndPoint, zclFlowerApp_AttrsSecondEPCount, zclFlowerApp_AttrsSecondEP);
+    bdb_RegisterSimpleDescriptor(&zclFlowerApp_SecondEP);
 
-    zcl_registerForMsg(zclFreePadApp_TaskID);
+    zcl_registerForMsg(zclFlowerApp_TaskID);
 
     // Register for all key events - This app will handle all key events
-    RegisterForKeys(zclFreePadApp_TaskID);
+    RegisterForKeys(zclFlowerApp_TaskID);
 
-    bdb_RegisterBindNotificationCB(zclFreePadApp_BindNotification);
-    bdb_RegisterCommissioningStatusCB(zclFreePadApp_ProcessCommissioningStatus);
+    bdb_RegisterBindNotificationCB(zclFlowerApp_BindNotification);
+    bdb_RegisterCommissioningStatusCB(zclFlowerApp_ProcessCommissioningStatus);
 
     bdb_StartCommissioning(BDB_COMMISSIONING_REJOIN_EXISTING_NETWORK_ON_STARTUP);
 
-    LREP("Started build %s \r\n", zclFreePadApp_DateCodeNT);
-    osal_start_reload_timer(zclFreePadApp_TaskID, FREEPADAPP_REPORT_EVT, FREEPADAPP_REPORT_DELAY);
+    LREP("Started build %s \r\n", zclFlowerApp_DateCodeNT);
+    osal_start_reload_timer(zclFlowerApp_TaskID, FLOWER_APP_REPORT_EVT, FLOWER_APP_REPORT_DELAY);
     // this allows power saving, PM2
-    osal_pwrmgr_task_state(zclFreePadApp_TaskID, PWRMGR_CONSERVE);
+    osal_pwrmgr_task_state(zclFlowerApp_TaskID, PWRMGR_CONSERVE);
 
     LREP("Battery voltage=%d prc=%d \r\n", getBatteryVoltage(), getBatteryRemainingPercentageZCL());
     ZMacSetTransmitPower(TX_PWR_PLUS_4); // set 4dBm
 }
 
-static void zclFreePadApp_ResetBackoffRetry(void) {
-    rejoinsLeft = FREEPADAPP_END_DEVICE_REJOIN_TRIES;
-    rejoinDelay = FREEPADAPP_END_DEVICE_REJOIN_START_DELAY;
+static void zclFlowerApp_ResetBackoffRetry(void) {
+    rejoinsLeft = FLOWER_APP_END_DEVICE_REJOIN_TRIES;
+    rejoinDelay = FLOWER_APP_END_DEVICE_REJOIN_START_DELAY;
 }
 
-static void zclFreePadApp_OnConnect(void) {
-    zclFreePadApp_ResetBackoffRetry();
-    osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_REPORT_EVT, FREEPADAPP_CONST_ONE_MINUTE_IN_MS); // 1 minute
+static void zclFlowerApp_OnConnect(void) {
+    zclFlowerApp_ResetBackoffRetry();
+    osal_start_timerEx(zclFlowerApp_TaskID, FLOWER_APP_REPORT_EVT, FLOWER_APP_CONST_ONE_MINUTE_IN_MS); // 1 minute
 }
 
-static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
+static void zclFlowerApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
     LREP("bdbCommissioningMode=%d bdbCommissioningStatus=%d bdbRemainingCommissioningModes=0x%X\r\n",
          bdbCommissioningModeMsg->bdbCommissioningMode, bdbCommissioningModeMsg->bdbCommissioningStatus,
          bdbCommissioningModeMsg->bdbRemainingCommissioningModes);
@@ -146,7 +145,7 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
             HalLedBlink(HAL_LED_1, 3, 50, 500);
             break;
         case BDB_COMMISSIONING_NETWORK_RESTORED:
-            zclFreePadApp_OnConnect();
+            zclFlowerApp_OnConnect();
             break;
         default:
             break;
@@ -157,7 +156,7 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
         case BDB_COMMISSIONING_SUCCESS:
             HalLedBlink(HAL_LED_1, 5, 50, 500);
             LREPMaster("BDB_COMMISSIONING_SUCCESS\r\n");
-            zclFreePadApp_OnConnect();
+            zclFlowerApp_OnConnect();
             break;
 
         default:
@@ -171,7 +170,7 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
         LREPMaster("BDB_COMMISSIONING_PARENT_LOST\r\n");
         switch (bdbCommissioningModeMsg->bdbCommissioningStatus) {
         case BDB_COMMISSIONING_NETWORK_RESTORED:
-            zclFreePadApp_ResetBackoffRetry();
+            zclFlowerApp_ResetBackoffRetry();
             break;
 
         default:
@@ -179,12 +178,12 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
             // // Parent not found, attempt to rejoin again after a exponential backoff delay
             LREP("rejoinsLeft %d rejoinDelay=%ld\r\n", rejoinsLeft, rejoinDelay);
             if (rejoinsLeft > 0) {
-                rejoinDelay *= FREEPADAPP_END_DEVICE_REJOIN_BACKOFF;
+                rejoinDelay *= FLOWER_APP_END_DEVICE_REJOIN_BACKOFF;
                 rejoinsLeft -= 1;
             } else {
-                rejoinDelay = FREEPADAPP_END_DEVICE_REJOIN_MAX_DELAY;
+                rejoinDelay = FLOWER_APP_END_DEVICE_REJOIN_MAX_DELAY;
             }
-            osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_END_DEVICE_REJOIN_EVT, rejoinDelay);
+            osal_start_timerEx(zclFlowerApp_TaskID, FLOWER_APP_END_DEVICE_REJOIN_EVT, rejoinDelay);
             break;
         }
         break;
@@ -193,37 +192,37 @@ static void zclFreePadApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *
     }
 }
 
-static void zclFreePadApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg) {
+static void zclFlowerApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg) {
     LREP("ZCL_INCOMING_MSG srcAddr=0x%X endPoint=0x%X clusterId=0x%X commandID=0x%X %d\r\n", pInMsg->srcAddr, pInMsg->endPoint,
          pInMsg->clusterId, pInMsg->zclHdr.commandID, pInMsg->zclHdr.commandID);
 
     if (pInMsg->attrCmd)
         osal_mem_free(pInMsg->attrCmd);
 }
-uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
+uint16 zclFlowerApp_event_loop(uint8 task_id, uint16 events) {
     afIncomingMSGPacket_t *MSGpkt;
 
     (void)task_id; // Intentionally unreferenced parameter
-    devStates_t zclFreePadApp_NwkState;
+    devStates_t zclFlowerApp_NwkState;
     if (events & SYS_EVENT_MSG) {
-        while ((MSGpkt = (afIncomingMSGPacket_t *)osal_msg_receive(zclFreePadApp_TaskID))) {
+        while ((MSGpkt = (afIncomingMSGPacket_t *)osal_msg_receive(zclFlowerApp_TaskID))) {
 
             switch (MSGpkt->hdr.event) {
 
             case KEY_CHANGE:
-                zclFreePadApp_HandleKeys(((keyChange_t *)MSGpkt)->state, ((keyChange_t *)MSGpkt)->keys);
+                zclFlowerApp_HandleKeys(((keyChange_t *)MSGpkt)->state, ((keyChange_t *)MSGpkt)->keys);
                 break;
             case ZDO_STATE_CHANGE:
                 HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
-                zclFreePadApp_NwkState = (devStates_t)(MSGpkt->hdr.status);
-                LREP("zclFreePadApp_NwkState=%d\r\n", zclFreePadApp_NwkState);
-                if (zclFreePadApp_NwkState == DEV_END_DEVICE) {
+                zclFlowerApp_NwkState = (devStates_t)(MSGpkt->hdr.status);
+                LREP("zclFlowerApp_NwkState=%d\r\n", zclFlowerApp_NwkState);
+                if (zclFlowerApp_NwkState == DEV_END_DEVICE) {
                     HalLedSet(HAL_LED_1, HAL_LED_MODE_OFF);
                 }
                 break;
 
             case ZCL_INCOMING_MSG:
-                zclFreePadApp_ProcessIncomingMsg((zclIncomingMsg_t *)MSGpkt);
+                zclFlowerApp_ProcessIncomingMsg((zclIncomingMsg_t *)MSGpkt);
                 break;
 
             case AF_DATA_CONFIRM_CMD:
@@ -244,29 +243,29 @@ uint16 zclFreePadApp_event_loop(uint8 task_id, uint16 events) {
         return (events ^ SYS_EVENT_MSG);
     }
     LREP("events 0x%X\r\n", events);
-    if (events & FREEPADAPP_END_DEVICE_REJOIN_EVT) {
-        LREPMaster("FREEPADAPP_END_DEVICE_REJOIN_EVT\r\n");
+    if (events & FLOWER_APP_END_DEVICE_REJOIN_EVT) {
+        LREPMaster("FLOWER_APP_END_DEVICE_REJOIN_EVT\r\n");
         bdb_ZedAttemptRecoverNwk();
-        return (events ^ FREEPADAPP_END_DEVICE_REJOIN_EVT);
+        return (events ^ FLOWER_APP_END_DEVICE_REJOIN_EVT);
     }
 
-    if (events & FREEPADAPP_RESET_EVT) {
-        LREPMaster("FREEPADAPP_RESET_EVT\r\n");
-        zclFreePadApp_Rejoin();
-        return (events ^ FREEPADAPP_RESET_EVT);
+    if (events & FLOWER_APP_RESET_EVT) {
+        LREPMaster("FLOWER_APP_RESET_EVT\r\n");
+        zclFlowerApp_Rejoin();
+        return (events ^ FLOWER_APP_RESET_EVT);
     }
 
-    if (events & FREEPADAPP_REPORT_EVT) {
-        LREPMaster("FREEPADAPP_REPORT_EVT\r\n");
-        zclFreePadApp_Report();
-        return (events ^ FREEPADAPP_REPORT_EVT);
+    if (events & FLOWER_APP_REPORT_EVT) {
+        LREPMaster("FLOWER_APP_REPORT_EVT\r\n");
+        zclFlowerApp_Report();
+        return (events ^ FLOWER_APP_REPORT_EVT);
     }
 
     // Discard unknown events
     return 0;
 }
 
-static void zclFreePadApp_Rejoin(void) {
+static void zclFlowerApp_Rejoin(void) {
     LREPMaster("Recieved rejoin command\r\n");
     HalLedSet(HAL_LED_1, HAL_LED_MODE_FLASH);
     if (bdbAttributes.bdbNodeIsOnANetwork) {
@@ -278,7 +277,7 @@ static void zclFreePadApp_Rejoin(void) {
     }
 }
 
-static void zclFreePadApp_HandleKeys(byte shift, byte keyCode) {
+static void zclFlowerApp_HandleKeys(byte shift, byte keyCode) {
     static byte prevKeyCode = 0;
     if (keyCode == prevKeyCode) {
         return;
@@ -288,10 +287,10 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keyCode) {
     prevKeyCode = keyCode;
 
     if (keyCode == HAL_KEY_CODE_RELEASE_KEY) {
-        osal_stop_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT);
+        osal_stop_timerEx(zclFlowerApp_TaskID, FLOWER_APP_RESET_EVT);
     } else {
-        byte button = zclFreePadApp_KeyCodeToButton(keyCode);
-        uint32 resetHoldTime = FREEPADAPP_RESET_DELAY;
+        byte button = zclFlowerApp_KeyCodeToButton(keyCode);
+        uint32 resetHoldTime = FLOWER_APP_RESET_DELAY;
         if (devState == DEV_NWK_ORPHAN) {
             LREP("devState=%d try to restore network\r\n", devState);
             bdb_ZedAttemptRecoverNwk();
@@ -301,11 +300,11 @@ static void zclFreePadApp_HandleKeys(byte shift, byte keyCode) {
         }
 
         LREP("resetHoldTime %ld\r\n", resetHoldTime);
-        osal_start_timerEx(zclFreePadApp_TaskID, FREEPADAPP_RESET_EVT, resetHoldTime);
+        osal_start_timerEx(zclFlowerApp_TaskID, FLOWER_APP_RESET_EVT, resetHoldTime);
     }
 }
 
-static void zclFreePadApp_BindNotification(bdbBindNotificationData_t *data) {
+static void zclFlowerApp_BindNotification(bdbBindNotificationData_t *data) {
     HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
     LREP("Recieved bind request clusterId=0x%X dstAddr=0x%X \r\n", data->clusterId, data->dstAddr);
     uint16 maxEntries = 0, usedEntries = 0;
@@ -313,18 +312,18 @@ static void zclFreePadApp_BindNotification(bdbBindNotificationData_t *data) {
     LREP("bindCapacity %d %usedEntries %d \r\n", maxEntries, usedEntries);
 }
 
-static void zclFreePadApp_Report(void) {
-    zclFreePadApp_BatteryVoltage = getBatteryVoltage();
-    zclFreePadApp_BatteryPercentageRemainig = getBatteryRemainingPercentageZCL();
+static void zclFlowerApp_Report(void) {
+    zclFlowerApp_BatteryVoltage = getBatteryVoltage();
+    zclFlowerApp_BatteryPercentageRemainig = getBatteryRemainingPercentageZCL();
     // todo: update sensors
 
-    bdb_RepChangedAttrValue(zclFreePadApp_FirstEP.EndPoint, POWER_CFG, ATTRID_POWER_CFG_BATTERY_PERCENTAGE_REMAINING);
+    bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, POWER_CFG, ATTRID_POWER_CFG_BATTERY_PERCENTAGE_REMAINING);
 
-    bdb_RepChangedAttrValue(zclFreePadApp_FirstEP.EndPoint, TEMP, ATTRID_MS_TEMPERATURE_MEASURED_VALUE);
-    bdb_RepChangedAttrValue(zclFreePadApp_FirstEP.EndPoint, PRESSURE, ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE);
-    bdb_RepChangedAttrValue(zclFreePadApp_FirstEP.EndPoint, HUMIDITY, ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE);
-    
-    bdb_RepChangedAttrValue(zclFreePadApp_SecondEP.EndPoint, TEMP, ATTRID_MS_TEMPERATURE_MEASURED_VALUE);
+    bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, TEMP, ATTRID_MS_TEMPERATURE_MEASURED_VALUE);
+    bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, PRESSURE, ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE);
+    bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, HUMIDITY, ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE);
+
+    bdb_RepChangedAttrValue(zclFlowerApp_SecondEP.EndPoint, TEMP, ATTRID_MS_TEMPERATURE_MEASURED_VALUE);
 }
 
 /****************************************************************************

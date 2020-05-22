@@ -971,7 +971,7 @@
                 </option>
                 <option>
                     <name>ExtraOutputFile</name>
-                    <state>$PROJ_DIR$\..\firmwares\FreePad_CHDTECH.hex</state>
+                    <state>$PROJ_DIR$\..\firmwares\Flower_CHDTECH.hex</state>
                 </option>
                 <option>
                     <name>ExtraOutputFormat</name>
@@ -2300,7 +2300,7 @@
             <name>$PROJ_DIR$\..\Source\hal_key.h</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\Source\OSAL_FreePadApp.c</name>
+            <name>$PROJ_DIR$\..\Source\OSAL_App.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\Source\preinclude.h</name>
@@ -2312,13 +2312,13 @@
             <name>$PROJ_DIR$\..\Source\version.h</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\Source\zcl_freepadapp.c</name>
+            <name>$PROJ_DIR$\..\Source\zcl_app.c</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\Source\zcl_freepadapp.h</name>
+            <name>$PROJ_DIR$\..\Source\zcl_app.h</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\Source\zcl_freepadapp_data.c</name>
+            <name>$PROJ_DIR$\..\Source\zcl_app_data.c</name>
         </file>
     </group>
     <group>

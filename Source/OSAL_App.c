@@ -8,7 +8,7 @@
 #include "nwk.h"
 
 #include "bdb_interface.h"
-#include "zcl_freepadapp.h"
+#include "zcl_app.h"
 
 const pTaskEventHandlerFn tasksArr[] = {macEventLoop,
                                         nwk_event_loop,
@@ -17,7 +17,7 @@ const pTaskEventHandlerFn tasksArr[] = {macEventLoop,
                                         ZDApp_event_loop,
                                         zcl_event_loop,
                                         bdb_event_loop,
-                                        zclFreePadApp_event_loop};
+                                        zclFlowerApp_event_loop};
 
 const uint8 tasksCnt = sizeof(tasksArr) / sizeof(tasksArr[0]);
 uint16 *tasksEvents;
@@ -34,7 +34,7 @@ void osalInitTasks(void) {
     ZDApp_Init(taskID++);
     zcl_Init(taskID++);
     bdb_Init(taskID++);
-    zclFreePadApp_Init(taskID);
+    zclFlowerApp_Init(taskID);
 }
 
 /*********************************************************************
