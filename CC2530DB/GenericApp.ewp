@@ -142,11 +142,11 @@
                 <option>
                     <name>Input variant</name>
                     <version>2</version>
-                    <state>5</state>
+                    <state>0</state>
                 </option>
                 <option>
                     <name>Input description</name>
-                    <state>No float.</state>
+                    <state>Automatic choice of formatter.</state>
                 </option>
                 <option>
                     <name>Output variant</name>
@@ -469,6 +469,8 @@
                     <name>CCIncludePath2</name>
                     <state>$PROJ_DIR$</state>
                     <state>$PROJ_DIR$\..\Source</state>
+                    <state>$PROJ_DIR$\..\BME280_driver</state>
+                    <state>$PROJ_DIR$\..\Source\hal</state>
                     <state>$PROJ_DIR$\..\..\Source</state>
                     <state>$PROJ_DIR$\..\..\..\ZMain\TI2530DB</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\include</state>
@@ -2294,16 +2296,13 @@
             <name>$PROJ_DIR$\..\Source\Debug.h</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\Source\hal_key.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\Source\hal_key.h</name>
-        </file>
-        <file>
             <name>$PROJ_DIR$\..\Source\OSAL_App.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\Source\preinclude.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\Source\stdint.h</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\Source\version.c</name>
@@ -2365,6 +2364,9 @@
         <group>
             <name>Common</name>
             <file>
+                <name>$PROJ_DIR$\..\BME280_driver\bme280.c</name>
+            </file>
+            <file>
                 <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\common\hal_assert.c</name>
             </file>
             <file>
@@ -2373,6 +2375,9 @@
         </group>
         <group>
             <name>Include</name>
+            <file>
+                <name>$PROJ_DIR$\..\BME280_driver\bme280.h</name>
+            </file>
             <file>
                 <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_adc.h</name>
             </file>
@@ -2393,6 +2398,12 @@
             </file>
             <file>
                 <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_flash.h</name>
+            </file>
+            <file>
+                <name>$PROJ_DIR$\..\Source\hal\hal_i2c.h</name>
+            </file>
+            <file>
+                <name>$PROJ_DIR$\..\Source\hal\hal_key.h</name>
             </file>
             <file>
                 <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_lcd.h</name>
@@ -2427,6 +2438,12 @@
                     </file>
                     <file>
                         <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_flash.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Source\hal\hal_i2c.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\Source\hal\hal_key.c</name>
                     </file>
                     <file>
                         <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_lcd.c</name>

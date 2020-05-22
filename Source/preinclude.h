@@ -30,6 +30,7 @@
 #define HAL_BUZZER FALSE
 
 #define HAL_LED TRUE
+#define HAL_I2C TRUE
 #define BLINK_LEDS TRUE
 
 
@@ -40,6 +41,9 @@
 #if !defined(HAL_BOARD_FLOWER) && !defined(HAL_BOARD_CHDTECH_DEV)
 #error "Board type must be defined"
 #endif
+
+#define HAL_BOARD_POWER_PORT_NUM 1
+#define HAL_BOARD_POWER_PIN_NUM 0x02
 
 #if defined(HAL_BOARD_FLOWER)
     #define HAL_UART FALSE
@@ -52,3 +56,6 @@
 
 
 #include "hal_board_cfg.h"
+
+#include "stdint.h"
+#include "stddef.h"

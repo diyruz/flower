@@ -28,6 +28,7 @@
 #include "hal_drivers.h"
 #include "hal_key.h"
 #include "hal_led.h"
+#include "bme280.h"
 
 #include "battery.h"
 #include "version.h"
@@ -35,6 +36,10 @@
  * MACROS
  */
 #define HAL_KEY_CODE_RELEASE_KEY HAL_KEY_CODE_NOKEY
+
+//use led4 as output pin, osal will shitch it low when go to PM
+#define POWER_ON_SENSORS() HAL_TURN_ON_LED4()
+#define POWER_OFF_SENSORS() HAL_TURN_OFF_LED4()
 
 /*********************************************************************
  * CONSTANTS
@@ -47,6 +52,7 @@
 /*********************************************************************
  * GLOBAL VARIABLES
  */
+
 extern bool requestNewTrustCenterLinkKey;
 byte zclFlowerApp_TaskID;
 
@@ -69,6 +75,7 @@ static void zclFlowerApp_HandleKeys(byte shift, byte keys);
 static void zclFlowerApp_BindNotification(bdbBindNotificationData_t *data);
 static void zclFlowerApp_Report(void);
 static void zclFlowerApp_Rejoin(void);
+static void zclFlowerApp_ReadBME280(void);
 
 static void zclFlowerApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
 static void zclFlowerApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg);
@@ -312,6 +319,9 @@ static void zclFlowerApp_BindNotification(bdbBindNotificationData_t *data) {
     LREP("bindCapacity %d %usedEntries %d \r\n", maxEntries, usedEntries);
 }
 
+static void zclFlowerApp_ReadBME280(void) {
+
+}
 static void zclFlowerApp_Report(void) {
     zclFlowerApp_BatteryVoltage = getBatteryVoltage();
     zclFlowerApp_BatteryPercentageRemainig = getBatteryRemainingPercentageZCL();

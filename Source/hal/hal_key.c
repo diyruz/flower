@@ -2,7 +2,6 @@
  *                                            INCLUDES
  **************************************************************************************************/
 #include "hal_key.h"
-#include "Debug.h"
 #include "hal_adc.h"
 #include "hal_defs.h"
 #include "hal_drivers.h"
