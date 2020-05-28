@@ -42,8 +42,9 @@
 #error "Board type must be defined"
 #endif
 
-#define HAL_BOARD_POWER_PORT_NUM 1
-#define HAL_BOARD_POWER_PIN_NUM 0x02
+
+
+#define DS18B20_PIN P1_3
 
 #if defined(HAL_BOARD_FLOWER)
     #define HAL_UART FALSE

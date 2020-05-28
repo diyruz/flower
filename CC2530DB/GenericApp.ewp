@@ -2379,6 +2379,9 @@
                 <name>$PROJ_DIR$\..\BME280_driver\bme280.h</name>
             </file>
             <file>
+                <name>$PROJ_DIR$\..\Source\hal\ds18b20.h</name>
+            </file>
+            <file>
                 <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_adc.h</name>
             </file>
             <file>
@@ -2430,6 +2433,9 @@
                 </group>
                 <group>
                     <name>Drivers</name>
+                    <file>
+                        <name>$PROJ_DIR$\..\Source\hal\ds18b20.c</name>
+                    </file>
                     <file>
                         <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_adc.c</name>
                     </file>

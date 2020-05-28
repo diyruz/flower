@@ -15,16 +15,23 @@ extern "C" {
 /*********************************************************************
  * CONSTANTS
  */
-#define SAMPLETEMPERATURESENSOR_MAX_MEASURED_VALUE  2700  // 27.00C
-#define SAMPLETEMPERATURESENSOR_MIN_MEASURED_VALUE  1700  // 17.00C
+#define TEMPERATURE_SENSOR_MAX_MEASURED_VALUE  2700  // 27.00C
+#define TEMPERATURE_SENSOR_MIN_MEASURED_VALUE  1700  // 17.00C
 
-#define SAMPLE_HUMODITY_SENSOR_MAX_MEASURED_VALUE  2700  // 27.00C
-#define SAMPLE_HUMODITY_SENSOR_MIN_MEASURED_VALUE  1700  // 17.00C
+#define HUMIDITY_SENSOR_MAX_MEASURED_VALUE  2700  // 27.00C
+#define HUMIDITY_SENSOR_MIN_MEASURED_VALUE  1700  // 17.00C
 
 
-#define SAMPLE_PRESSURE_SENSOR_MAX_MEASURED_VALUE  2700  // 27.00C
-#define SAMPLE_PRESSURE_SENSOR_MIN_MEASURED_VALUE  1700  // 17.00C
+#define SOIL_HUMIDITY_SENSOR_MAX_MEASURED_VALUE  2700  // 27.00C
+#define SOIL_HUMIDITY_SENSOR_MIN_MEASURED_VALUE  1700  // 17.00C
 
+
+#define PRESSURE_SENSOR_MAX_MEASURED_VALUE  2700  // 27.00C
+#define PRESSURE_SENSOR_MIN_MEASURED_VALUE  1700  // 17.00C
+
+
+#define ILLUMINANCE_SENSOR_MAX_MEASURED_VALUE  2700  // 27.00C
+#define ILLUMINANCE_SENSOR_MIN_MEASURED_VALUE  1700  // 17.00C
 
 #define HAL_UNKNOWN_BUTTON HAL_KEY_CODE_NOKEY
 // Application Events
@@ -82,10 +89,10 @@ extern SimpleDescriptionFormat_t zclFlowerApp_SecondEP;
 
 extern uint8 zclFlowerApp_BatteryVoltage;
 extern uint8 zclFlowerApp_BatteryPercentageRemainig;
-extern uint16 zclSampleTemperatureSensor_MeasuredValue;
+extern uint16 zclSampleTEMPERATURE_SENSOR_MeasuredValue;
 extern uint16 zclSamplePressureSensor_MeasuredValue;
 extern uint16 zclSampleHumiditySensor_MeasuredValue;
-extern uint16 zclSampleTemperatureSensorDS18B20_MeasuredValue;
+extern uint16 zclSampleTEMPERATURE_SENSORDS18B20_MeasuredValue;
 
 
 // attribute list

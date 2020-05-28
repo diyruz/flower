@@ -10,8 +10,8 @@
 
 #include "nwk_util.h"
 #include "zcl.h"
-#include "zcl_diagnostic.h"
 #include "zcl_app.h"
+#include "zcl_diagnostic.h"
 #include "zcl_general.h"
 #include "zcl_lighting.h"
 #include "zcl_ms.h"
@@ -25,10 +25,11 @@
 #include "onboard.h"
 
 /* HAL */
+#include "bme280.h"
+#include "bme_user_funcs.h"
 #include "hal_drivers.h"
 #include "hal_key.h"
 #include "hal_led.h"
-#include "bme280.h"
 
 #include "battery.h"
 #include "version.h"
@@ -37,7 +38,7 @@
  */
 #define HAL_KEY_CODE_RELEASE_KEY HAL_KEY_CODE_NOKEY
 
-//use led4 as output pin, osal will shitch it low when go to PM
+// use led4 as output pin, osal will shitch it low when go to PM
 #define POWER_ON_SENSORS() HAL_TURN_ON_LED4()
 #define POWER_OFF_SENSORS() HAL_TURN_OFF_LED4()
 
@@ -75,7 +76,13 @@ static void zclFlowerApp_HandleKeys(byte shift, byte keys);
 static void zclFlowerApp_BindNotification(bdbBindNotificationData_t *data);
 static void zclFlowerApp_Report(void);
 static void zclFlowerApp_Rejoin(void);
+
+static void zclFlowerApp_ReadSensors(void);
 static void zclFlowerApp_ReadBME280(void);
+static void zclFlowerApp_ReadDS18B20(void);
+static void zclFlowerApp_ReadLumosity(void);
+static void zclFlowerApp_ReadSoilHumidity(void);
+
 
 static void zclFlowerApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
 static void zclFlowerApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg);
@@ -318,13 +325,81 @@ static void zclFlowerApp_BindNotification(bdbBindNotificationData_t *data) {
     bindCapacity(&maxEntries, &usedEntries);
     LREP("bindCapacity %d %usedEntries %d \r\n", maxEntries, usedEntries);
 }
-
-static void zclFlowerApp_ReadBME280(void) {
-
-}
-static void zclFlowerApp_Report(void) {
+static void zclFlowerApp_ReadSensors(void) {
+    osal_pwrmgr_task_state(zclFlowerApp_TaskID, PWRMGR_HOLD);
     zclFlowerApp_BatteryVoltage = getBatteryVoltage();
     zclFlowerApp_BatteryPercentageRemainig = getBatteryRemainingPercentageZCL();
+
+    POWER_ON_SENSORS();
+    zclFlowerApp_ReadBME280();
+    zclFlowerApp_ReadLumosity();
+    zclFlowerApp_ReadSoilHumidity();
+    POWER_OFF_SENSORS();
+    osal_pwrmgr_task_state(zclFlowerApp_TaskID, PWRMGR_CONSERVE);
+}
+
+
+static void zclFlowerApp_ReadSoilHumidity(void) {
+    HalAdcSetReference(HAL_ADC_REF_125V);
+    zclSampleSoilHumiditySensor_MeasuredValue = HalAdcRead(HAL_ADC_CHN_AIN4, HAL_ADC_RESOLUTION_12);
+    HalAdcSetReference(HAL_ADC_REF_AVDD);
+}
+
+
+
+
+static void zclFlowerApp_ReadDS18B20(void) {
+ 
+}
+
+static void zclFlowerApp_ReadLumosity(void) {
+    HalAdcSetReference(HAL_ADC_REF_125V);
+    zclSampleIlluminanceSensor_MeasuredValue = HalAdcRead(HAL_ADC_CHN_AIN7, HAL_ADC_RESOLUTION_12);
+    HalAdcSetReference(HAL_ADC_REF_AVDD);
+}
+
+static void zclFlowerApp_ReadBME280(void) {
+    struct bme280_dev dev;
+    int8_t rslt = BME280_OK;
+
+    dev.dev_id = BME280_I2C_ADDR_PRIM;
+    dev.intf = BME280_I2C_INTF;
+    dev.read = user_i2c_read;
+    dev.write = user_i2c_write;
+    dev.delay_ms = user_delay_ms;
+    rslt = bme280_init(&dev);
+    if (rslt == BME280_OK) {
+
+        uint8_t settings_sel;
+        struct bme280_data comp_data;
+
+        /* Recommended mode of operation: Indoor navigation */
+        dev->settings.osr_h = BME280_OVERSAMPLING_1X;
+        dev->settings.osr_p = BME280_OVERSAMPLING_16X;
+        dev->settings.osr_t = BME280_OVERSAMPLING_2X;
+        dev->settings.filter = BME280_FILTER_COEFF_16;
+        dev->settings.standby_time = BME280_STANDBY_TIME_62_5_MS;
+
+        settings_sel = BME280_OSR_PRESS_SEL;
+        settings_sel |= BME280_OSR_TEMP_SEL;
+        settings_sel |= BME280_OSR_HUM_SEL;
+        settings_sel |= BME280_STANDBY_SEL;
+        settings_sel |= BME280_FILTER_SEL;
+        rslt = bme280_set_sensor_settings(settings_sel, dev);
+        rslt = bme280_set_sensor_mode(BME280_NORMAL_MODE, dev);
+        dev->delay_ms(70);
+        rslt = bme280_get_sensor_data(BME280_ALL, &comp_data, dev);
+
+        zclSampleTEMPERATURE_SENSOR_MeasuredValue = comp_data->temperature;
+        zclSamplePressureSensor_MeasuredValue = comp_data->pressure;
+        zclSampleHumiditySensor_MeasuredValue = comp_data->humidity;
+
+        LREP("%ld, %ld, %ld\r\n", comp_data->temperature, comp_data->pressure, comp_data->humidity);
+    }
+}
+static void zclFlowerApp_Report(void) {
+
+    zclFlowerApp_ReadSensors();
     // todo: update sensors
 
     bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, POWER_CFG, ATTRID_POWER_CFG_BATTERY_PERCENTAGE_REMAINING);

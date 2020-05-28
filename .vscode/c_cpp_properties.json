@@ -6,7 +6,7 @@
         "includePath": [
             "${workspaceRoot}",
             "${workspaceRoot}/hal",
-            "${workspaceRoot}/BME280_driver"
+            "${workspaceRoot}/BME280_driver",
             "${env:ZSTACK_PATH}/Components/mac/include/",
             "${env:ZSTACK_PATH}/Components/mt",
             "${env:ZSTACK_PATH}/Components/zmac",
