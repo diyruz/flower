@@ -55,7 +55,7 @@ extern "C" {
 
 
 
-#define FLOWER_APP_REPORT_DELAY ((uint32)1800000) // 30 minutes 30 * 60 * 1000
+#define FLOWER_APP_REPORT_DELAY 1000
 
 
 /*********************************************************************
@@ -74,7 +74,8 @@ extern "C" {
 #define ILLUMINANCE ZCL_CLUSTER_ID_MS_ILLUMINANCE_MEASUREMENT
 
 #define ZCL_UINT8 ZCL_DATATYPE_UINT8
-#define ZCL_UINT16 ZCL_DATATYPE_INT16
+#define ZCL_UINT16 ZCL_DATATYPE_UINT16
+#define ZCL_INT16 ZCL_DATATYPE_INT16
 
 /*********************************************************************
  * TYPEDEFS
@@ -89,11 +90,12 @@ extern SimpleDescriptionFormat_t zclFlowerApp_SecondEP;
 
 extern uint8 zclFlowerApp_BatteryVoltage;
 extern uint8 zclFlowerApp_BatteryPercentageRemainig;
-extern uint16 zclSampleTEMPERATURE_SENSOR_MeasuredValue;
-extern uint16 zclSamplePressureSensor_MeasuredValue;
-extern uint16 zclSampleHumiditySensor_MeasuredValue;
-extern uint16 zclSampleTEMPERATURE_SENSORDS18B20_MeasuredValue;
-
+extern uint16 zclFlowerApp_Temperature_Sensor_MeasuredValue;
+extern uint16 zclFlowerApp_PressureSensor_MeasuredValue;
+extern uint16 zclFlowerApp_HumiditySensor_MeasuredValue;
+extern int16 zclFlowerApp_DS18B20_MeasuredValue;
+extern uint16 zclFlowerApp_SoilHumiditySensor_MeasuredValue;
+extern uint16 zclFlowerApp_IlluminanceSensor_MeasuredValue;
 
 // attribute list
 extern CONST zclAttrRec_t zclFlowerApp_AttrsFirstEP[];

@@ -44,7 +44,13 @@
 
 
 
-#define DS18B20_PIN P1_3
+
+
+// Конфигурация сенсора температуры
+#define TSENS_SBIT P1_3
+#define TSENS_BV BV(3)
+#define TSENS_DIR P1DIR
+
 
 #if defined(HAL_BOARD_FLOWER)
     #define HAL_UART FALSE
