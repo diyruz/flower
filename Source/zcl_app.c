@@ -342,20 +342,24 @@ static void zclFlowerApp_ReadSensors(void) {
 }
 
 static void zclFlowerApp_ReadSoilHumidity(void) {
-    HalAdcSetReference(HAL_ADC_REF_125V);
-    zclFlowerApp_SoilHumiditySensor_MeasuredValue = HalAdcRead(HAL_ADC_CHN_AIN4, HAL_ADC_RESOLUTION_12);
     HalAdcSetReference(HAL_ADC_REF_AVDD);
+    uint32 samplesSum = 0;
+    uint8 samplesCount = 10;
+    for (uint8 i = 0; i < samplesCount; i++) {
+        samplesSum += HalAdcRead(HAL_ADC_CHN_AIN4, HAL_ADC_RESOLUTION_14);
+    }
+    zclFlowerApp_SoilHumiditySensor_MeasuredValue = samplesSum / 10;
+    LREP("zclFlowerApp_ReadSoilHumidity %d\r\n", zclFlowerApp_SoilHumiditySensor_MeasuredValue);
 }
 
 static void zclFlowerApp_ReadDS18B20(void) {
     zclFlowerApp_DS18B20_MeasuredValue = readTemperature();
-    LREP("zclFlowerApp_ReadDS18B20 %d\n", zclFlowerApp_DS18B20_MeasuredValue);
+    LREP("zclFlowerApp_ReadDS18B20 %d\r\n", zclFlowerApp_DS18B20_MeasuredValue);
 }
 
 static void zclFlowerApp_ReadLumosity(void) {
     HalAdcSetReference(HAL_ADC_REF_125V);
     zclFlowerApp_IlluminanceSensor_MeasuredValue = HalAdcRead(HAL_ADC_CHN_AIN7, HAL_ADC_RESOLUTION_12);
-    HalAdcSetReference(HAL_ADC_REF_AVDD);
 }
 
 static void zclFlowerApp_ReadBME280(void) {
