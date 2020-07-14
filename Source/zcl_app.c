@@ -306,10 +306,7 @@ static void zclFlowerApp_HandleKeys(byte shift, byte keyCode) {
 
     if (keyCode == HAL_KEY_CODE_RELEASE_KEY) {
         osal_stop_timerEx(zclFlowerApp_TaskID, FLOWER_APP_RESET_EVT);
-        
     } else {
-        
-        
         uint32 resetHoldTime = FLOWER_APP_RESET_DELAY;
         if (devState == DEV_NWK_ORPHAN) {
             LREP("devState=%d try to restore network\r\n", devState);
@@ -348,7 +345,7 @@ static void zclFlowerApp_ReadSensors(void) {
     zclFlowerApp_ReadLumosity();
     zclFlowerApp_ReadSoilHumidity();
     zclFlowerApp_ReadBME280(&bme_dev);
-    zclFlowerApp_ReadDS18B20(); 
+    zclFlowerApp_ReadDS18B20();
     POWER_OFF_SENSORS();
     osal_pwrmgr_task_state(zclFlowerApp_TaskID, PWRMGR_CONSERVE);
 }
@@ -382,8 +379,8 @@ static void zclFlowerApp_ReadLumosity(void) {
     bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, ILLUMINANCE, ATTRID_MS_ILLUMINANCE_MEASURED_VALUE);
 }
 
-void user_delay_ms(uint32_t period) { 
-    MicroWait(period * 1000); 
+void user_delay_ms(uint32_t period) {
+    MicroWait(period * 1000);
 }
 
 

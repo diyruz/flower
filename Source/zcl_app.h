@@ -15,28 +15,6 @@ extern "C" {
 /*********************************************************************
  * CONSTANTS
  */
-#define TEMPERATURE_SENSOR_MAX_MEASURED_VALUE  2700  // 27.00C
-#define TEMPERATURE_SENSOR_MIN_MEASURED_VALUE  1700  // 17.00C
-
-#define HUMIDITY_SENSOR_MAX_MEASURED_VALUE  2700  // 27.00C
-#define HUMIDITY_SENSOR_MIN_MEASURED_VALUE  1700  // 17.00C
-
-
-#define SOIL_HUMIDITY_SENSOR_MAX_MEASURED_VALUE  2700  // 27.00C
-#define SOIL_HUMIDITY_SENSOR_MIN_MEASURED_VALUE  1700  // 17.00C
-
-
-#define PRESSURE_SENSOR_MIN_MEASURED_VALUE_P  (uint16) 30000
-#define PRESSURE_SENSOR_MAX_MEASURED_VALUE_P  (uint16) 110000
-
-
-#define PRESSURE_SENSOR_MIN_MEASURED_VALUE  (int16) 0x8001
-#define PRESSURE_SENSOR_MAX_MEASURED_VALUE  (int16) 0x7fff
-
-
-#define ILLUMINANCE_SENSOR_MAX_MEASURED_VALUE  2700  // 27.00C
-#define ILLUMINANCE_SENSOR_MIN_MEASURED_VALUE  1700  // 17.00C
-
 #define HAL_UNKNOWN_BUTTON HAL_KEY_CODE_NOKEY
 // Application Events
 
@@ -136,12 +114,6 @@ extern byte zclFlowerApp_KeyCodeToButton(byte key);
 extern UINT16 zclFlowerApp_event_loop(byte task_id, UINT16 events);
 
 void user_delay_ms(uint32_t period);
-
-/*********************************************************************
- *********************************************************************/
-
-
-
 
 #ifdef __cplusplus
 }
