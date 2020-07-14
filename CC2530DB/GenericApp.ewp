@@ -1610,6 +1610,7 @@
                     <name>CCIncludePath2</name>
                     <state>$PROJ_DIR$</state>
                     <state>$PROJ_DIR$\..\Source</state>
+                    <state>$PROJ_DIR$\..\BME280_driver</state>
                     <state>$PROJ_DIR$\..\..\Source</state>
                     <state>$PROJ_DIR$\..\..\..\ZMain\TI2530DB</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\include</state>
@@ -2294,6 +2295,9 @@
         </file>
         <file>
             <name>$PROJ_DIR$\..\BME280_driver\bme280.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\BME280_driver\bme280_defs.h</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\Source\Debug.c</name>
