@@ -175,7 +175,7 @@
                 </option>
                 <option>
                     <name>General Xdata Stack Size</name>
-                    <state>0x300</state>
+                    <state>0x500</state>
                 </option>
                 <option>
                     <name>General Ext Stack Size</name>
@@ -309,7 +309,7 @@
                 </option>
                 <option>
                     <name>CCPreprocFile</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>CCPreprocComments</name>
@@ -317,7 +317,7 @@
                 </option>
                 <option>
                     <name>CCPreprocLine</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>CCListCFile</name>
@@ -462,7 +462,7 @@
                 <option>
                     <name>Compiler Extra Options Edit</name>
                     <state>-f $PROJ_DIR$\..\..\..\Tools\CC2530DB\f8wEndev.cfg</state>
-                    <state>-f $PROJ_DIR$\..\..\..\Tools\CC2530DB\f8wConfig.cfg</state>
+                    <state>-f $PROJ_DIR$\..\Source\f8wConfig.cfg</state>
                     <state>-f $PROJ_DIR$\..\..\..\Tools\CC2530DB\f8wZCL.cfg</state>
                 </option>
                 <option>
@@ -523,7 +523,7 @@
                 <option>
                     <name>CCOptStrategy</name>
                     <version>0</version>
-                    <state>1</state>
+                    <state>2</state>
                 </option>
                 <option>
                     <name>CCOptLevelSlave</name>
@@ -573,12 +573,12 @@
                 <option>
                     <name>CCAllowList2</name>
                     <version>0</version>
-                    <state>1111110</state>
+                    <state>1111100</state>
                 </option>
                 <option>
                     <name>CCOptStrategySlave</name>
                     <version>0</version>
-                    <state>1</state>
+                    <state>2</state>
                 </option>
             </data>
         </settings>
@@ -1603,7 +1603,7 @@
                 <option>
                     <name>Compiler Extra Options Edit</name>
                     <state>-f $PROJ_DIR$\..\..\..\Tools\CC2530DB\f8wEndev.cfg</state>
-                    <state>-f $PROJ_DIR$\..\..\..\Tools\CC2530DB\f8wConfig.cfg</state>
+                    <state>-f $PROJ_DIR$\..\Source\f8wConfig.cfg</state>
                     <state>-f $PROJ_DIR$\..\..\..\Tools\CC2530DB\f8wZCL.cfg</state>
                 </option>
                 <option>
@@ -2112,7 +2112,7 @@
                 </option>
                 <option>
                     <name>ExtraOutputFile</name>
-                    <state>$PROJ_DIR$\..\firmwares\flower_sensboard.hex</state>
+                    <state>$PROJ_DIR$\..\firmwares\DIYRuZ_Flower.hex</state>
                 </option>
                 <option>
                     <name>ExtraOutputFormat</name>
@@ -2290,10 +2290,22 @@
             <name>$PROJ_DIR$\..\Source\bettery.c</name>
         </file>
         <file>
+            <name>$PROJ_DIR$\..\BME280_driver\bme280.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\BME280_driver\bme280.h</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\Source\Debug.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\Source\Debug.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\Source\hal\hal_i2c.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\Source\hal\hal_i2c.h</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\Source\OSAL_App.c</name>
@@ -2364,9 +2376,6 @@
         <group>
             <name>Common</name>
             <file>
-                <name>$PROJ_DIR$\..\BME280_driver\bme280.c</name>
-            </file>
-            <file>
                 <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\common\hal_assert.c</name>
             </file>
             <file>
@@ -2375,9 +2384,6 @@
         </group>
         <group>
             <name>Include</name>
-            <file>
-                <name>$PROJ_DIR$\..\BME280_driver\bme280.h</name>
-            </file>
             <file>
                 <name>$PROJ_DIR$\..\Source\hal\ds18b20.h</name>
             </file>
@@ -2443,7 +2449,7 @@
                         <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_flash.c</name>
                     </file>
                     <file>
-                        <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_key.c</name>
+                        <name>$PROJ_DIR$\..\Source\hal\hal_key.c</name>
                     </file>
                     <file>
                         <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_lcd.c</name>
@@ -2779,7 +2785,7 @@
             <name>$PROJ_DIR$\..\..\..\Tools\CC2530DB\f8w2530.xcl</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\..\..\Tools\CC2530DB\f8wConfig.cfg</name>
+            <name>$PROJ_DIR$\..\Source\f8wConfig.cfg</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\..\Tools\CC2530DB\f8wCoord.cfg</name>

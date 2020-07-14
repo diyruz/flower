@@ -39,27 +39,28 @@ const uint16 zclFlowerApp_clusterRevision_all = 0x0001;
 uint8 zclFlowerApp_BatteryVoltage = 0xff;
 uint8 zclFlowerApp_BatteryPercentageRemainig = 0xff;
 
-uint16 zclFlowerApp_Temperature_Sensor_MeasuredValue = 0x22;
+int16 zclFlowerApp_Temperature_Sensor_MeasuredValue = 0xff;
 const int16 zclFlowerApp_TEMPERATURE_SENSOR_MinMeasuredValue = TEMPERATURE_SENSOR_MIN_MEASURED_VALUE;
-const uint16 zclFlowerApp_TEMPERATURE_SENSOR_MaxMeasuredValue = TEMPERATURE_SENSOR_MAX_MEASURED_VALUE;
+const int16 zclFlowerApp_TEMPERATURE_SENSOR_MaxMeasuredValue = TEMPERATURE_SENSOR_MAX_MEASURED_VALUE;
 
 
-uint16 zclFlowerApp_PressureSensor_MeasuredValue = 0xff;
+int16 zclFlowerApp_PressureSensor_MeasuredValue = 0xff;
 const int16 zclFlowerApp_PressureSensor_MinMeasuredValue = PRESSURE_SENSOR_MIN_MEASURED_VALUE;
-const uint16 zclFlowerApp_PressureSensor_MaxMeasuredValue = PRESSURE_SENSOR_MAX_MEASURED_VALUE;
+const int16 zclFlowerApp_PressureSensor_MaxMeasuredValue = PRESSURE_SENSOR_MAX_MEASURED_VALUE;
+uint32 zclFlowerApp_PressureSensor_MeasuredValueHPA = 0xff;
 
 uint16 zclFlowerApp_HumiditySensor_MeasuredValue = 0xff;
-const int16 zclFlowerApp_HumiditySensor_MinMeasuredValue = HUMIDITY_SENSOR_MIN_MEASURED_VALUE;
+const uint16 zclFlowerApp_HumiditySensor_MinMeasuredValue = HUMIDITY_SENSOR_MIN_MEASURED_VALUE;
 const uint16 zclFlowerApp_HumiditySensor_MaxMeasuredValue = HUMIDITY_SENSOR_MAX_MEASURED_VALUE;
 
 uint16 zclFlowerApp_SoilHumiditySensor_MeasuredValue = 0xff;
-const int16 zclFlowerApp_SoilHumiditySensor_MinMeasuredValue = SOIL_HUMIDITY_SENSOR_MIN_MEASURED_VALUE;
+const uint16 zclFlowerApp_SoilHumiditySensor_MinMeasuredValue = SOIL_HUMIDITY_SENSOR_MIN_MEASURED_VALUE;
 const uint16 zclFlowerApp_SoilHumiditySensor_MaxMeasuredValue = SOIL_HUMIDITY_SENSOR_MAX_MEASURED_VALUE;
 
 
 int16 zclFlowerApp_DS18B20_MeasuredValue = 0xff;
-const int16 zclFlowerApp_TEMPERATURE_SENSORDS18B20_MinMeasuredValue = TEMPERATURE_SENSOR_MIN_MEASURED_VALUE;
-const uint16 zclFlowerApp_TEMPERATURE_SENSORDS18B20_MaxMeasuredValue = TEMPERATURE_SENSOR_MAX_MEASURED_VALUE;
+const int16 zclFlowerApp_DS18B20_MinMeasuredValue = TEMPERATURE_SENSOR_MIN_MEASURED_VALUE;
+const int16 zclFlowerApp_DS18B20_MaxMeasuredValue = TEMPERATURE_SENSOR_MAX_MEASURED_VALUE;
 
 uint16 zclFlowerApp_IlluminanceSensor_MeasuredValue = 0xff;
 const int16 zclFlowerApp_IlluminanceSensor_MinMeasuredValue = TEMPERATURE_SENSOR_MIN_MEASURED_VALUE;
@@ -81,6 +82,16 @@ const uint8 zclFlowerApp_PowerSource = POWER_SOURCE_BATTERY;
  */
 
 
+// msTemperatureMeasurement int16
+// msRelativeHumidity:  uint16
+// msPressureMeasurement   int16
+// msIlluminanceMeasurement uint16
+// #define ZCL_CLUSTER_ID_GEN_BASIC                             0x0000
+// #define ZCL_CLUSTER_ID_GEN_POWER_CFG                         0x0001
+// #define ZCL_CLUSTER_ID_MS_ILLUMINANCE_MEASUREMENT            0x0400
+// #define ZCL_CLUSTER_ID_MS_TEMPERATURE_MEASUREMENT            0x0402
+// #define ZCL_CLUSTER_ID_MS_PRESSURE_MEASUREMENT               0x0403
+// #define ZCL_CLUSTER_ID_MS_RELATIVE_HUMIDITY                  0x0405
 CONST zclAttrRec_t zclFlowerApp_AttrsFirstEP[] = {
     {BASIC, {ATTRID_BASIC_APPL_VERSION, ZCL_UINT8, R, (void *)&zclFlowerApp_ApplicationVersion}},
     {BASIC, {ATTRID_BASIC_STACK_VERSION, ZCL_UINT8, R, (void *)&zclFlowerApp_StackVersion}},
@@ -97,32 +108,16 @@ CONST zclAttrRec_t zclFlowerApp_AttrsFirstEP[] = {
 
 
     {ILLUMINANCE, {ATTRID_MS_ILLUMINANCE_MEASURED_VALUE, ZCL_UINT16, RR, (void *)&zclFlowerApp_IlluminanceSensor_MeasuredValue}},
-    {ILLUMINANCE, {ATTRID_MS_ILLUMINANCE_MIN_MEASURED_VALUE, ZCL_UINT16, R, (void *)&zclFlowerApp_IlluminanceSensor_MinMeasuredValue}},
-    {ILLUMINANCE, {ATTRID_MS_ILLUMINANCE_MAX_MEASURED_VALUE, ZCL_UINT16, R, (void *)&zclFlowerApp_IlluminanceSensor_MaxMeasuredValue}},
-
-    {TEMP, {ATTRID_MS_TEMPERATURE_MEASURED_VALUE, ZCL_UINT16, RR, (void *)&zclFlowerApp_Temperature_Sensor_MeasuredValue}},
-    {TEMP, {ATTRID_MS_TEMPERATURE_MIN_MEASURED_VALUE, ZCL_UINT16, R, (void *)&zclFlowerApp_TEMPERATURE_SENSOR_MinMeasuredValue}},
-    {TEMP, {ATTRID_MS_TEMPERATURE_MAX_MEASURED_VALUE, ZCL_UINT16, R, (void *)&zclFlowerApp_TEMPERATURE_SENSOR_MaxMeasuredValue}},
-
-    {PRESSURE, {ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE, ZCL_UINT16, RR, (void *)&zclFlowerApp_PressureSensor_MeasuredValue}},
-    {PRESSURE, {ATTRID_MS_PRESSURE_MEASUREMENT_MIN_MEASURED_VALUE, ZCL_UINT16, R, (void *)&zclFlowerApp_PressureSensor_MinMeasuredValue}},
-    {PRESSURE, {ATTRID_MS_PRESSURE_MEASUREMENT_MAX_MEASURED_VALUE, ZCL_UINT16, R, (void *)&zclFlowerApp_PressureSensor_MaxMeasuredValue}},
-
-    {HUMIDITY, {ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE, ZCL_UINT16, RR, (void *)&zclFlowerApp_HumiditySensor_MeasuredValue}},
-    {HUMIDITY, {ATTRID_MS_RELATIVE_HUMIDITY_MIN_MEASURED_VALUE, ZCL_UINT16, R, (void *)&zclFlowerApp_HumiditySensor_MinMeasuredValue}},
-    {HUMIDITY, {ATTRID_MS_RELATIVE_HUMIDITY_MAX_MEASURED_VALUE, ZCL_UINT16, R, (void *)&zclFlowerApp_HumiditySensor_MaxMeasuredValue}},
+    {TEMP, {ATTRID_MS_TEMPERATURE_MEASURED_VALUE, ZCL_INT16, RR, (void *)&zclFlowerApp_Temperature_Sensor_MeasuredValue}},
+    {PRESSURE, {ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE, ZCL_INT16, RR, (void *)&zclFlowerApp_PressureSensor_MeasuredValue}},    
+    {PRESSURE, {ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE_HPA, ZCL_UINT32, RR, (void *)&zclFlowerApp_PressureSensor_MeasuredValueHPA}},
+    {HUMIDITY, {ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE, ZCL_UINT16, RR, (void *)&zclFlowerApp_HumiditySensor_MeasuredValue}}
 };
 
 
 CONST zclAttrRec_t zclFlowerApp_AttrsSecondEP[] = {
     {TEMP, {ATTRID_MS_TEMPERATURE_MEASURED_VALUE, ZCL_INT16, RR, (void *)&zclFlowerApp_DS18B20_MeasuredValue}},
-    {TEMP, {ATTRID_MS_TEMPERATURE_MIN_MEASURED_VALUE, ZCL_UINT16, R, (void *)&zclFlowerApp_TEMPERATURE_SENSORDS18B20_MinMeasuredValue}},
-    {TEMP, {ATTRID_MS_TEMPERATURE_MAX_MEASURED_VALUE, ZCL_UINT16, R, (void *)&zclFlowerApp_TEMPERATURE_SENSORDS18B20_MaxMeasuredValue}},
-
-    {HUMIDITY, {ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE, ZCL_UINT16, RR, (void *)&zclFlowerApp_SoilHumiditySensor_MeasuredValue}},
-    {HUMIDITY, {ATTRID_MS_RELATIVE_HUMIDITY_MIN_MEASURED_VALUE, ZCL_UINT16, R, (void *)&zclFlowerApp_SoilHumiditySensor_MinMeasuredValue}},
-    {HUMIDITY, {ATTRID_MS_RELATIVE_HUMIDITY_MAX_MEASURED_VALUE, ZCL_UINT16, R, (void *)&zclFlowerApp_SoilHumiditySensor_MaxMeasuredValue}},
-
+    {HUMIDITY, {ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE, ZCL_UINT16, RR, (void *)&zclFlowerApp_SoilHumiditySensor_MeasuredValue}}
 };
 uint8 CONST zclFlowerApp_AttrsSecondEPCount = (sizeof(zclFlowerApp_AttrsSecondEP) / sizeof(zclFlowerApp_AttrsSecondEP[0]));
 uint8 CONST zclFlowerApp_AttrsFirstEPCount = (sizeof(zclFlowerApp_AttrsFirstEP) / sizeof(zclFlowerApp_AttrsFirstEP[0]));
@@ -131,7 +126,7 @@ const cId_t zclFlowerApp_InClusterList[] = {ZCL_CLUSTER_ID_GEN_BASIC};
 
 #define FLOWER_APP_MAX_INCLUSTERS (sizeof(zclFlowerApp_InClusterList) / sizeof(zclFlowerApp_InClusterList[0]))
 
-const cId_t zclFlowerApp_OutClusterListFirstEP[] = {POWER_CFG, TEMP, PRESSURE, HUMIDITY, ILLUMINANCE};
+const cId_t zclFlowerApp_OutClusterListFirstEP[] = {POWER_CFG, ILLUMINANCE, TEMP, PRESSURE, HUMIDITY };
 const cId_t zclFlowerApp_OutClusterListSecondEP[] = {TEMP, HUMIDITY};
 
 #define FLOWER_APP_MAX_OUTCLUSTERS_FIRST_EP (sizeof(zclFlowerApp_OutClusterListFirstEP) / sizeof(zclFlowerApp_OutClusterListFirstEP[0]))

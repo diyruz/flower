@@ -4,19 +4,18 @@
 #include "OSAL_Memory.h"
 #define UART_PORT HAL_UART_PORT_0
 halUARTCfg_t halUARTConfig;
-static void HalUARTCback(uint8 port, uint8 event) {}
 
 bool DebugInit() {
     halUARTConfig.configured = TRUE;
     halUARTConfig.baudRate = HAL_UART_BR_115200;
     halUARTConfig.flowControl = FALSE;
-    halUARTConfig.flowControlThreshold = 48; // this parameter indicates number of bytes left before Rx Buffer
+    halUARTConfig.flowControlThreshold = 10; // this parameter indicates number of bytes left before Rx Buffer
                                              // reaches maxRxBufSize
     halUARTConfig.idleTimeout = 10;          // this parameter indicates rx timeout period in millisecond
     halUARTConfig.rx.maxBufSize = 0;
     halUARTConfig.tx.maxBufSize = BUFFLEN;
-    halUARTConfig.intEnable = TRUE;
-    halUARTConfig.callBackFunc = HalUARTCback;
+    halUARTConfig.intEnable = FALSE;
+
     HalUARTInit();
     if (HalUARTOpen(UART_PORT, &halUARTConfig) == HAL_UART_SUCCESS) {
         LREPMaster("Initialized debug module \r\n");

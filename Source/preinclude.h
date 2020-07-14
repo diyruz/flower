@@ -1,7 +1,7 @@
 #define TC_LINKKEY_JOIN
 #define NV_INIT
 #define NV_RESTORE
-#define INT_HEAP_LEN 2688
+#define INT_HEAP_LEN (2688-0xC4-0x15-0x44-0x20)
 
 #define TP2_LEGACY_ZC
 //patch sdk
@@ -21,10 +21,6 @@
 #define BDB_FINDING_BINDING_CAPABILITY_ENABLED 1
 #define BDB_REPORTING TRUE
 
-#ifdef DEFAULT_CHANLIST
-#undef DEFAULT_CHANLIST
-#endif
-#define DEFAULT_CHANLIST 0x07FFF800
 
 #define ISR_KEYINTERRUPT
 #define HAL_BUZZER FALSE
@@ -43,7 +39,9 @@
 #endif
 
 
+#define BDB_MAX_CLUSTERENDPOINTS_REPORTING 11
 
+#define BME280_32BIT_ENABLE
 
 
 // Конфигурация сенсора температуры

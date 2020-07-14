@@ -8,7 +8,6 @@
 #include <string.h>
 
 #define BUFFLEN 128
-#define BUFFER 100
 
 #define PRINT_NUMBER_TYPE long
 

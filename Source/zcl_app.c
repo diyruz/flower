@@ -22,17 +22,16 @@
 
 #include "Debug.h"
 
-#include "onboard.h"
+#include "OnBoard.h"
 
 /* HAL */
 #include "bme280.h"
-#include "bme_user_funcs.h"
 #include "ds18b20.h"
 #include "hal_adc.h"
 #include "hal_drivers.h"
+#include "hal_i2c.h"
 #include "hal_key.h"
 #include "hal_led.h"
-
 
 #include "battery.h"
 #include "version.h"
@@ -71,7 +70,12 @@ byte rejoinsLeft = FLOWER_APP_END_DEVICE_REJOIN_TRIES;
 uint32 rejoinDelay = FLOWER_APP_END_DEVICE_REJOIN_START_DELAY;
 
 afAddrType_t inderect_DstAddr = {.addrMode = (afAddrMode_t)AddrNotPresent, .endPoint = 0, .addr.shortAddr = 0};
-
+struct bme280_data bme_results;
+struct bme280_dev bme_dev = {.dev_id = BME280_I2C_ADDR_PRIM,
+                             .intf = BME280_I2C_INTF,
+                             .read = I2C_ReadMultByte,
+                             .write = I2C_WriteMultByte,
+                             .delay_ms = user_delay_ms};
 /*********************************************************************
  * LOCAL FUNCTIONS
  */
@@ -81,7 +85,8 @@ static void zclFlowerApp_Report(void);
 static void zclFlowerApp_Rejoin(void);
 
 static void zclFlowerApp_ReadSensors(void);
-static void zclFlowerApp_ReadBME280(void);
+static void zclFlowerApp_Battery(void);
+static void zclFlowerApp_ReadBME280(struct bme280_dev *dev);
 static void zclFlowerApp_ReadDS18B20(void);
 static void zclFlowerApp_ReadLumosity(void);
 static void zclFlowerApp_ReadSoilHumidity(void);
@@ -106,6 +111,7 @@ static zclGeneral_AppCallbacks_t zclFlowerApp_CmdCallbacks = {
 };
 
 void zclFlowerApp_Init(byte task_id) {
+    HalI2CInit();
     DebugInit();
     // this is important to allow connects throught routers
     // to make this work, coordinator should be compiled with this flag #define TP2_LEGACY_ZC
@@ -128,15 +134,16 @@ void zclFlowerApp_Init(byte task_id) {
     bdb_RegisterBindNotificationCB(zclFlowerApp_BindNotification);
     bdb_RegisterCommissioningStatusCB(zclFlowerApp_ProcessCommissioningStatus);
 
-    bdb_StartCommissioning(BDB_COMMISSIONING_REJOIN_EXISTING_NETWORK_ON_STARTUP);
 
     LREP("Started build %s \r\n", zclFlowerApp_DateCodeNT);
     osal_start_reload_timer(zclFlowerApp_TaskID, FLOWER_APP_REPORT_EVT, FLOWER_APP_REPORT_DELAY);
     // this allows power saving, PM2
     osal_pwrmgr_task_state(zclFlowerApp_TaskID, PWRMGR_CONSERVE);
 
-    LREP("Battery voltage=%d prc=%d \r\n", getBatteryVoltage(), getBatteryRemainingPercentageZCL());
+    LREP("Battery voltage=%d prc=%d \r\n", getBatteryVoltageZCL(), getBatteryRemainingPercentageZCL());
     ZMacSetTransmitPower(TX_PWR_PLUS_4); // set 4dBm
+
+    bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_STEERING | BDB_COMMISSIONING_MODE_FINDING_BINDING);
 }
 
 static void zclFlowerApp_ResetBackoffRetry(void) {
@@ -258,7 +265,6 @@ uint16 zclFlowerApp_event_loop(uint8 task_id, uint16 events) {
         // return unprocessed events
         return (events ^ SYS_EVENT_MSG);
     }
-    LREP("events 0x%X\r\n", events);
     if (events & FLOWER_APP_END_DEVICE_REJOIN_EVT) {
         LREPMaster("FLOWER_APP_END_DEVICE_REJOIN_EVT\r\n");
         bdb_ZedAttemptRecoverNwk();
@@ -284,13 +290,9 @@ uint16 zclFlowerApp_event_loop(uint8 task_id, uint16 events) {
 static void zclFlowerApp_Rejoin(void) {
     LREPMaster("Recieved rejoin command\r\n");
     HalLedSet(HAL_LED_1, HAL_LED_MODE_FLASH);
-    if (bdbAttributes.bdbNodeIsOnANetwork) {
-        LREPMaster("Reset to FN\r\n");
-        bdb_resetLocalAction();
-    } else {
-        LREPMaster("StartCommissioning STEEREING\r\n");
-        bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_STEERING);
-    }
+
+    LREPMaster("Reset to FN\r\n");
+    bdb_resetLocalAction();
 }
 
 static void zclFlowerApp_HandleKeys(byte shift, byte keyCode) {
@@ -304,8 +306,10 @@ static void zclFlowerApp_HandleKeys(byte shift, byte keyCode) {
 
     if (keyCode == HAL_KEY_CODE_RELEASE_KEY) {
         osal_stop_timerEx(zclFlowerApp_TaskID, FLOWER_APP_RESET_EVT);
+        
     } else {
-        byte button = zclFlowerApp_KeyCodeToButton(keyCode);
+        
+        
         uint32 resetHoldTime = FLOWER_APP_RESET_DELAY;
         if (devState == DEV_NWK_ORPHAN) {
             LREP("devState=%d try to restore network\r\n", devState);
@@ -317,26 +321,34 @@ static void zclFlowerApp_HandleKeys(byte shift, byte keyCode) {
 
         LREP("resetHoldTime %ld\r\n", resetHoldTime);
         osal_start_timerEx(zclFlowerApp_TaskID, FLOWER_APP_RESET_EVT, resetHoldTime);
+
+        zclFlowerApp_Report();
     }
 }
 
 static void zclFlowerApp_BindNotification(bdbBindNotificationData_t *data) {
     HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
-    LREP("Recieved bind request clusterId=0x%X dstAddr=0x%X \r\n", data->clusterId, data->dstAddr);
+    LREP("Recieved bind request clusterId=0x%X dstAddr=0x%X ep=%d\r\n", data->clusterId, data->dstAddr, data->ep);
     uint16 maxEntries = 0, usedEntries = 0;
     bindCapacity(&maxEntries, &usedEntries);
     LREP("bindCapacity %d %usedEntries %d \r\n", maxEntries, usedEntries);
 }
-static void zclFlowerApp_ReadSensors(void) {
-    osal_pwrmgr_task_state(zclFlowerApp_TaskID, PWRMGR_HOLD);
-    zclFlowerApp_BatteryVoltage = getBatteryVoltage();
-    zclFlowerApp_BatteryPercentageRemainig = getBatteryRemainingPercentageZCL();
 
+static void zclFlowerApp_Battery(void) {
+    zclFlowerApp_BatteryVoltage = getBatteryVoltageZCL();
+    zclFlowerApp_BatteryPercentageRemainig = getBatteryRemainingPercentageZCL();
+    bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, POWER_CFG, ATTRID_POWER_CFG_BATTERY_PERCENTAGE_REMAINING);
+}
+
+static void zclFlowerApp_ReadSensors(void) {
+    LREP("zclFlowerApp_ReadSensors\r\n");
+    osal_pwrmgr_task_state(zclFlowerApp_TaskID, PWRMGR_HOLD);
     POWER_ON_SENSORS();
-    zclFlowerApp_ReadDS18B20();
-    zclFlowerApp_ReadBME280();
+    zclFlowerApp_Battery();
     zclFlowerApp_ReadLumosity();
     zclFlowerApp_ReadSoilHumidity();
+    zclFlowerApp_ReadBME280(&bme_dev);
+    zclFlowerApp_ReadDS18B20(); 
     POWER_OFF_SENSORS();
     osal_pwrmgr_task_state(zclFlowerApp_TaskID, PWRMGR_CONSERVE);
 }
@@ -350,69 +362,97 @@ static void zclFlowerApp_ReadSoilHumidity(void) {
     }
     zclFlowerApp_SoilHumiditySensor_MeasuredValue = samplesSum / 10;
     LREP("zclFlowerApp_ReadSoilHumidity %d\r\n", zclFlowerApp_SoilHumiditySensor_MeasuredValue);
+    bdb_RepChangedAttrValue(zclFlowerApp_SecondEP.EndPoint, HUMIDITY, ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE);
 }
 
 static void zclFlowerApp_ReadDS18B20(void) {
     zclFlowerApp_DS18B20_MeasuredValue = readTemperature();
     LREP("zclFlowerApp_ReadDS18B20 %d\r\n", zclFlowerApp_DS18B20_MeasuredValue);
+    bdb_RepChangedAttrValue(zclFlowerApp_SecondEP.EndPoint, TEMP, ATTRID_MS_TEMPERATURE_MEASURED_VALUE);
 }
 
 static void zclFlowerApp_ReadLumosity(void) {
-    HalAdcSetReference(HAL_ADC_REF_125V);
-    zclFlowerApp_IlluminanceSensor_MeasuredValue = HalAdcRead(HAL_ADC_CHN_AIN7, HAL_ADC_RESOLUTION_12);
+    uint32 samplesSum = 0;
+    uint8 samplesCount = 10;
+    for (uint8 i = 0; i < samplesCount; i++) {
+        samplesSum += HalAdcRead(HAL_ADC_CHN_AIN7, HAL_ADC_RESOLUTION_14);
+    }
+    zclFlowerApp_IlluminanceSensor_MeasuredValue = samplesSum / 10;
+    LREP("zclFlowerApp_IlluminanceSensor_MeasuredValue %d\r\n", zclFlowerApp_IlluminanceSensor_MeasuredValue);
+    bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, ILLUMINANCE, ATTRID_MS_ILLUMINANCE_MEASURED_VALUE);
 }
 
-static void zclFlowerApp_ReadBME280(void) {
-    // struct bme280_dev dev;
-    // int8_t rslt = BME280_OK;
+void user_delay_ms(uint32_t period) { 
+    MicroWait(period * 1000); 
+}
 
-    // dev.dev_id = BME280_I2C_ADDR_PRIM;
-    // dev.intf = BME280_I2C_INTF;
-    // dev.read = user_i2c_read;
-    // dev.write = user_i2c_write;
-    // dev.delay_ms = user_delay_ms;
-    // rslt = bme280_init(&dev);
-    // if (rslt == BME280_OK) {
 
-    //     uint8_t settings_sel;
-    //     struct bme280_data comp_data;
+//         (b-a)(x - min)
+// f(x) = --------------  + a
+//           max - min
 
-    //     /* Recommended mode of operation: Indoor navigation */
-    //     dev->settings.osr_h = BME280_OVERSAMPLING_1X;
-    //     dev->settings.osr_p = BME280_OVERSAMPLING_16X;
-    //     dev->settings.osr_t = BME280_OVERSAMPLING_2X;
-    //     dev->settings.filter = BME280_FILTER_COEFF_16;
-    //     dev->settings.standby_time = BME280_STANDBY_TIME_62_5_MS;
+int16 map(uint16 x, uint16 min, long max, int16 a, int16 b);
 
-    //     settings_sel = BME280_OSR_PRESS_SEL;
-    //     settings_sel |= BME280_OSR_TEMP_SEL;
-    //     settings_sel |= BME280_OSR_HUM_SEL;
-    //     settings_sel |= BME280_STANDBY_SEL;
-    //     settings_sel |= BME280_FILTER_SEL;
-    //     rslt = bme280_set_sensor_settings(settings_sel, dev);
-    //     rslt = bme280_set_sensor_mode(BME280_NORMAL_MODE, dev);
-    //     dev->delay_ms(70);
-    //     rslt = bme280_get_sensor_data(BME280_ALL, &comp_data, dev);
+//         (b-a)(x - min)
+// f(x) = --------------  + a
+//           max - min
+int16 map(uint16 x, uint16 min, long max, int16 a, int16 b)
+{ 
+    return (b - a) * (x - min) / (max - min) + a;
+}
 
-    //     zclFlowerApp_Temperature_Sensor_MeasuredValue = comp_data->temperature;
-    //     zclFlowerApp_PressureSensor_MeasuredValue = comp_data->pressure;
-    //     zclFlowerApp_HumiditySensor_MeasuredValue = comp_data->humidity;
 
-    //     LREP("%ld, %ld, %ld\r\n", comp_data->temperature, comp_data->pressure, comp_data->humidity);
-    // }
+static void zclFlowerApp_ReadBME280(struct bme280_dev *dev) {
+    LREP("zclFlowerApp_ReadBME280 \r\n");
+    int8_t rslt = bme280_init(dev);
+    LREP("bme280_init rslt= %d\r\n", rslt);
+    if (rslt == BME280_OK) {
+        uint8_t settings_sel;
+        dev->settings.osr_h = BME280_OVERSAMPLING_1X;
+        dev->settings.osr_p = BME280_OVERSAMPLING_16X;
+        dev->settings.osr_t = BME280_OVERSAMPLING_2X;
+        dev->settings.filter = BME280_FILTER_COEFF_16;
+        dev->settings.standby_time = BME280_STANDBY_TIME_62_5_MS;
+
+        settings_sel = BME280_OSR_PRESS_SEL;
+        settings_sel |= BME280_OSR_TEMP_SEL;
+        settings_sel |= BME280_OSR_HUM_SEL;
+        settings_sel |= BME280_STANDBY_SEL;
+        settings_sel |= BME280_FILTER_SEL;
+        rslt = bme280_set_sensor_settings(settings_sel, dev);
+        rslt = bme280_set_sensor_mode(BME280_NORMAL_MODE, dev);
+
+        for (uint8 i = 0; i < 35; i++) {
+            dev->delay_ms(2);
+        }
+        rslt = bme280_get_sensor_data(BME280_ALL, &bme_results, dev);
+        LREP("ORIGINAL t=%ld, p=%ld, h=%ld\r\n", bme_results.temperature, bme_results.pressure, bme_results.humidity);
+        zclFlowerApp_Temperature_Sensor_MeasuredValue = (int16)bme_results.temperature;
+        zclFlowerApp_PressureSensor_MeasuredValueHPA = bme_results.pressure;
+        zclFlowerApp_PressureSensor_MeasuredValue = bme_results.pressure / 100;
+        zclFlowerApp_HumiditySensor_MeasuredValue = (uint16)(bme_results.humidity * 100 / 1024);
+
+        LREP("t=%d, p=%d, h=%d\r\n", zclFlowerApp_Temperature_Sensor_MeasuredValue, zclFlowerApp_PressureSensor_MeasuredValue,
+             zclFlowerApp_HumiditySensor_MeasuredValue);
+        bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, TEMP, ATTRID_MS_TEMPERATURE_MEASURED_VALUE);
+        bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, PRESSURE, ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE);
+        bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, PRESSURE, ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE_HPA);
+        bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, HUMIDITY, ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE);
+    }
 }
 static void zclFlowerApp_Report(void) {
-
+    LREP("zclFlowerApp_Report\r\n");
     zclFlowerApp_ReadSensors();
-    // todo: update sensors
 
-    // bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, POWER_CFG, ATTRID_POWER_CFG_BATTERY_PERCENTAGE_REMAINING);
+    
+    
+    
 
-    // bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, TEMP, ATTRID_MS_TEMPERATURE_MEASURED_VALUE);
-    // bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, PRESSURE, ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE);
-    // bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, HUMIDITY, ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE);
+    
+    
 
-    // bdb_RepChangedAttrValue(zclFlowerApp_SecondEP.EndPoint, TEMP, ATTRID_MS_TEMPERATURE_MEASURED_VALUE);
+    
+    
 }
 
 /****************************************************************************

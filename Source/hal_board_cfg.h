@@ -11,14 +11,6 @@
 #include "hal_defs.h"
 #include "hal_types.h"
 
-//i2c
-
-#define OCM_CLK_PORT  0
-#define OCM_CLK_PIN   6
-
-#define OCM_DATA_PORT   0
-#define OCM_DATA_PIN    5
-
 
 
 
@@ -158,6 +150,7 @@ extern void MAC_RfFrontendSetup(void);
   PREFETCH_ENABLE();                                            \
   HAL_TURN_OFF_LED1();                                           \
   LED1_DDR |= LED1_BV;                                           \
+  LED4_DDR |= LED4_BV;                                           \
 }
 
 /* ----------- Debounce ---------- */
@@ -222,17 +215,6 @@ extern void MAC_RfFrontendSetup(void);
 #define VDD_MIN_NV   (VDD_2_0+4)  // 5% margin over minimum to survive a page erase and compaction.
 #define VDD_MIN_GOOD (VDD_2_0+8)  // 10% margin over minimum to survive a page erase and compaction.
 #define VDD_MIN_XNV  (VDD_2_7+5)  // 5% margin over minimum to survive a page erase and compaction.
-
-/* ----------- Delay macro ---------- */
-#define HAL_BOARD_DELAY_USEC( usec )  \
-{                                     \
-  uint16 i;                           \
-                                      \
-  for (i = 0; i < ((usec) * 8); i++)  \
-  {                                   \
-    asm("NOP");                       \
-  }                                   \
-}
 
 /* ------------------------------------------------------------------------------------------------
  *                                     Driver Configuration

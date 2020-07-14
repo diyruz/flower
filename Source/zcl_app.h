@@ -26,8 +26,12 @@ extern "C" {
 #define SOIL_HUMIDITY_SENSOR_MIN_MEASURED_VALUE  1700  // 17.00C
 
 
-#define PRESSURE_SENSOR_MAX_MEASURED_VALUE  2700  // 27.00C
-#define PRESSURE_SENSOR_MIN_MEASURED_VALUE  1700  // 17.00C
+#define PRESSURE_SENSOR_MIN_MEASURED_VALUE_P  (uint16) 30000
+#define PRESSURE_SENSOR_MAX_MEASURED_VALUE_P  (uint16) 110000
+
+
+#define PRESSURE_SENSOR_MIN_MEASURED_VALUE  (int16) 0x8001
+#define PRESSURE_SENSOR_MAX_MEASURED_VALUE  (int16) 0x7fff
 
 
 #define ILLUMINANCE_SENSOR_MAX_MEASURED_VALUE  2700  // 27.00C
@@ -55,27 +59,32 @@ extern "C" {
 
 
 
-#define FLOWER_APP_REPORT_DELAY 1000
+#define FLOWER_APP_REPORT_DELAY (5 * FLOWER_APP_CONST_ONE_MINUTE_IN_MS)
 
 
 /*********************************************************************
  * MACROS
  */
 
-#define R ACCESS_CONTROL_READ
-#define RR R | ACCESS_REPORTABLE
+#define R           ACCESS_CONTROL_READ
+#define RR          (R | ACCESS_REPORTABLE)
 
-#define BASIC ZCL_CLUSTER_ID_GEN_BASIC
-#define POWER_CFG ZCL_CLUSTER_ID_GEN_POWER_CFG
-
-#define TEMP ZCL_CLUSTER_ID_MS_TEMPERATURE_MEASUREMENT
-#define HUMIDITY ZCL_CLUSTER_ID_MS_RELATIVE_HUMIDITY
-#define PRESSURE ZCL_CLUSTER_ID_MS_PRESSURE_MEASUREMENT
+#define BASIC       ZCL_CLUSTER_ID_GEN_BASIC
+#define POWER_CFG   ZCL_CLUSTER_ID_GEN_POWER_CFG
+#define TEMP        ZCL_CLUSTER_ID_MS_TEMPERATURE_MEASUREMENT
+#define HUMIDITY    ZCL_CLUSTER_ID_MS_RELATIVE_HUMIDITY
+#define PRESSURE    ZCL_CLUSTER_ID_MS_PRESSURE_MEASUREMENT
 #define ILLUMINANCE ZCL_CLUSTER_ID_MS_ILLUMINANCE_MEASUREMENT
 
-#define ZCL_UINT8 ZCL_DATATYPE_UINT8
-#define ZCL_UINT16 ZCL_DATATYPE_UINT16
-#define ZCL_INT16 ZCL_DATATYPE_INT16
+#define ZCL_UINT8   ZCL_DATATYPE_UINT8
+#define ZCL_UINT16  ZCL_DATATYPE_UINT16
+#define ZCL_UINT32   ZCL_DATATYPE_UINT32
+#define ZCL_INT16   ZCL_DATATYPE_INT16
+
+
+#define ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE_HPA      0x0200
+
+
 
 /*********************************************************************
  * TYPEDEFS
@@ -90,8 +99,9 @@ extern SimpleDescriptionFormat_t zclFlowerApp_SecondEP;
 
 extern uint8 zclFlowerApp_BatteryVoltage;
 extern uint8 zclFlowerApp_BatteryPercentageRemainig;
-extern uint16 zclFlowerApp_Temperature_Sensor_MeasuredValue;
-extern uint16 zclFlowerApp_PressureSensor_MeasuredValue;
+extern int16 zclFlowerApp_Temperature_Sensor_MeasuredValue;
+extern int16 zclFlowerApp_PressureSensor_MeasuredValue;
+extern uint32 zclFlowerApp_PressureSensor_MeasuredValueHPA;
 extern uint16 zclFlowerApp_HumiditySensor_MeasuredValue;
 extern int16 zclFlowerApp_DS18B20_MeasuredValue;
 extern uint16 zclFlowerApp_SoilHumiditySensor_MeasuredValue;
@@ -124,6 +134,8 @@ extern byte zclFlowerApp_KeyCodeToButton(byte key);
  *  Event Process for the task
  */
 extern UINT16 zclFlowerApp_event_loop(byte task_id, UINT16 events);
+
+void user_delay_ms(uint32_t period);
 
 /*********************************************************************
  *********************************************************************/

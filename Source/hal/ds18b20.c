@@ -1,5 +1,4 @@
 #include "ds18b20.h"
-#include <stdio.h>
 
 #define MSK (BV(0) | BV(1) | BV(2))
 #define DS18B20_SKIP_ROM 0xCC
@@ -103,9 +102,10 @@ static uint8 ds18b20_RST_PULSE(void) {
 
 int16 readTemperature(void) {
     float temperature = 0;
-    uint8 temp1, temp2;
+    uint8 temp1, temp2, retrys = 5;
     if (!ds18b20_RST_PULSE()) {
-        ds18b20_send_byte(DS18B20_SKIP_ROM);
+       while (retrys) {
+            ds18b20_send_byte(DS18B20_SKIP_ROM);
         ds18b20_send_byte(DS18B20_CONVERT_T);
         _delay_ms(750);
         ds18b20_RST_PULSE();
@@ -121,15 +121,23 @@ int16 readTemperature(void) {
         }
         temperature = (uint16)temp1 | (uint16)(temp2 & MSK) << 8;
         // neg. temp
-        if (temp2 & (BV(3)))
-            temperature = temperature / 16.0 - 128.0;
+        if (temp2 & (BV(3))) {
+                temperature = temperature / 16.0 - 128.0;
+        }
         // pos. temp
-        else
+        else {
             temperature = temperature / 16.0;
-
-        return (int16)(temperature * 100);
+        }
+            
+        if (temperature == 85) { //if 85, sensor is not yet ready
+            retrys--;
+        } else {
+            return (int16)(temperature * 100);
+        }
+       }
     } else {
         // Fail
         return 1;
     }
+    return 1;
 }
