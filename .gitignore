@@ -54,3 +54,4 @@ CC2530DB/flower
 Source/version.c
 !.vscode/
 .vscode/settings.json
+firmwares/*.hex
