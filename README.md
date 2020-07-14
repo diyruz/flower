@@ -9,8 +9,10 @@
 2. Go to step 1 for FN device
 
 
+![Device](./images/device.jpg)
 
 
 # How to add device into zigbe2mqtt
-tbd
+Use [external converters](https://www.zigbee2mqtt.io/information/configuration.html#external-converters-configuration) feature
+Converter file located [here](./z2m converter/DIYRuZ_Flower.js)
 
