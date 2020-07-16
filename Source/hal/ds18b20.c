@@ -102,39 +102,39 @@ static uint8 ds18b20_RST_PULSE(void) {
 
 int16 readTemperature(void) {
     float temperature = 0;
-    uint8 temp1, temp2, retrys = 5;
+    uint8 temp1, temp2, retry_count = 5;
     if (!ds18b20_RST_PULSE()) {
-       while (retrys) {
+        while (retry_count) {
             ds18b20_send_byte(DS18B20_SKIP_ROM);
-        ds18b20_send_byte(DS18B20_CONVERT_T);
-        _delay_ms(750);
-        ds18b20_RST_PULSE();
-        ds18b20_send_byte(DS18B20_SKIP_ROM);
-        ds18b20_send_byte(DS18B20_READ_SCRATCHPAD);
-        temp1 = ds18b20_read_byte();
-        temp2 = ds18b20_read_byte();
-        ds18b20_RST_PULSE();
+            ds18b20_send_byte(DS18B20_CONVERT_T);
+            _delay_ms(750);
+            ds18b20_RST_PULSE();
+            ds18b20_send_byte(DS18B20_SKIP_ROM);
+            ds18b20_send_byte(DS18B20_READ_SCRATCHPAD);
+            temp1 = ds18b20_read_byte();
+            temp2 = ds18b20_read_byte();
+            ds18b20_RST_PULSE();
 
-        if (temp1 == 0xff && temp2 == 0xff) {
-            // No sensor found.
-            return 0;
-        }
-        temperature = (uint16)temp1 | (uint16)(temp2 & MSK) << 8;
-        // neg. temp
-        if (temp2 & (BV(3))) {
+            if (temp1 == 0xff && temp2 == 0xff) {
+                // No sensor found.
+                return 0;
+            }
+            temperature = (uint16)temp1 | (uint16)(temp2 & MSK) << 8;
+            // neg. temp
+            if (temp2 & (BV(3))) {
                 temperature = temperature / 16.0 - 128.0;
+            }
+            // pos. temp
+            else {
+                temperature = temperature / 16.0;
+            }
+
+            if (temperature == 85) { // if 85, sensor is not yet ready
+                retry_count--;
+            } else {
+                return (int16)(temperature * 100);
+            }
         }
-        // pos. temp
-        else {
-            temperature = temperature / 16.0;
-        }
-            
-        if (temperature == 85) { //if 85, sensor is not yet ready
-            retrys--;
-        } else {
-            return (int16)(temperature * 100);
-        }
-       }
     } else {
         // Fail
         return 1;

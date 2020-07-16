@@ -21,10 +21,8 @@ extern "C" {
 #define FLOWER_APP_CONST_ONE_MINUTE_IN_MS ((uint32) 60 * (uint32) 1000)
 
 #define FLOWER_APP_END_DEVICE_REJOIN_EVT 0x0001
-
-#define FLOWER_APP_RESET_EVT 0x0004
-#define FLOWER_APP_REPORT_EVT 0x0008
-#define FLOWER_APP_HOLD_START_EVT 0x0010
+#define FLOWER_APP_RESET_EVT 0x0002
+#define FLOWER_APP_REPORT_EVT 0x0004
 
 
 #define FLOWER_APP_RESET_DELAY 10 * 1000
@@ -37,7 +35,7 @@ extern "C" {
 
 
 
-#define FLOWER_APP_REPORT_DELAY (5 * FLOWER_APP_CONST_ONE_MINUTE_IN_MS)
+#define FLOWER_APP_REPORT_DELAY 10000
 
 
 /*********************************************************************

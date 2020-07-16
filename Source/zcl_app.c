@@ -110,7 +110,14 @@ static zclGeneral_AppCallbacks_t zclFlowerApp_CmdCallbacks = {
     NULL  // RSSI Location Response command
 };
 
+#define SOIL_MOISTURE_PIN 4
+#define LUMOISITY_MOISTURE_PIN 7
 void zclFlowerApp_Init(byte task_id) {
+    // // p0.4 soil sensor
+    P0SEL &= ~(BV(SOIL_MOISTURE_PIN) | BV(LUMOISITY_MOISTURE_PIN));
+    P0DIR &= ~(BV(SOIL_MOISTURE_PIN) | BV(LUMOISITY_MOISTURE_PIN));
+    P2INP |= BV(5); // pull down P0
+
     HalI2CInit();
     DebugInit();
     // this is important to allow connects throught routers
@@ -133,7 +140,6 @@ void zclFlowerApp_Init(byte task_id) {
 
     bdb_RegisterBindNotificationCB(zclFlowerApp_BindNotification);
     bdb_RegisterCommissioningStatusCB(zclFlowerApp_ProcessCommissioningStatus);
-
 
     LREP("Started build %s \r\n", zclFlowerApp_DateCodeNT);
     osal_start_reload_timer(zclFlowerApp_TaskID, FLOWER_APP_REPORT_EVT, FLOWER_APP_REPORT_DELAY);
@@ -300,6 +306,7 @@ static void zclFlowerApp_HandleKeys(byte shift, byte keyCode) {
     if (keyCode == prevKeyCode) {
         return;
     }
+    LREP("zclFlowerApp_HandleKeys 0x%X\r\n", keyCode);
     LREP("devState %d bdbNodeIsOnANetwork %d \r\n", devState, bdbAttributes.bdbNodeIsOnANetwork);
 
     prevKeyCode = keyCode;
@@ -319,7 +326,7 @@ static void zclFlowerApp_HandleKeys(byte shift, byte keyCode) {
         LREP("resetHoldTime %ld\r\n", resetHoldTime);
         osal_start_timerEx(zclFlowerApp_TaskID, FLOWER_APP_RESET_EVT, resetHoldTime);
 
-        zclFlowerApp_Report();
+        osal_start_timerEx(zclFlowerApp_TaskID, FLOWER_APP_REPORT_EVT, 200);
     }
 }
 
@@ -340,13 +347,16 @@ static void zclFlowerApp_Battery(void) {
 static void zclFlowerApp_ReadSensors(void) {
     LREP("zclFlowerApp_ReadSensors\r\n");
     osal_pwrmgr_task_state(zclFlowerApp_TaskID, PWRMGR_HOLD);
+    halIntState_t intState;
+    HAL_ENTER_CRITICAL_SECTION(intState);
     POWER_ON_SENSORS();
     zclFlowerApp_Battery();
     zclFlowerApp_ReadLumosity();
-    zclFlowerApp_ReadSoilHumidity();
     zclFlowerApp_ReadBME280(&bme_dev);
     zclFlowerApp_ReadDS18B20();
+    zclFlowerApp_ReadSoilHumidity();
     POWER_OFF_SENSORS();
+    HAL_EXIT_CRITICAL_SECTION(intState);
     osal_pwrmgr_task_state(zclFlowerApp_TaskID, PWRMGR_CONSERVE);
 }
 
@@ -369,6 +379,7 @@ static void zclFlowerApp_ReadDS18B20(void) {
 }
 
 static void zclFlowerApp_ReadLumosity(void) {
+    HalAdcSetReference(HAL_ADC_REF_125V);
     uint32 samplesSum = 0;
     uint8 samplesCount = 10;
     for (uint8 i = 0; i < samplesCount; i++) {
@@ -379,10 +390,7 @@ static void zclFlowerApp_ReadLumosity(void) {
     bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, ILLUMINANCE, ATTRID_MS_ILLUMINANCE_MEASURED_VALUE);
 }
 
-void user_delay_ms(uint32_t period) {
-    MicroWait(period * 1000);
-}
-
+void user_delay_ms(uint32_t period) { MicroWait(period * 1000); }
 
 //         (b-a)(x - min)
 // f(x) = --------------  + a
@@ -393,11 +401,7 @@ int16 map(uint16 x, uint16 min, long max, int16 a, int16 b);
 //         (b-a)(x - min)
 // f(x) = --------------  + a
 //           max - min
-int16 map(uint16 x, uint16 min, long max, int16 a, int16 b)
-{ 
-    return (b - a) * (x - min) / (max - min) + a;
-}
-
+int16 map(uint16 x, uint16 min, long max, int16 a, int16 b) { return (b - a) * (x - min) / (max - min) + a; }
 
 static void zclFlowerApp_ReadBME280(struct bme280_dev *dev) {
     LREP("zclFlowerApp_ReadBME280 \r\n");
@@ -440,16 +444,6 @@ static void zclFlowerApp_ReadBME280(struct bme280_dev *dev) {
 static void zclFlowerApp_Report(void) {
     LREP("zclFlowerApp_Report\r\n");
     zclFlowerApp_ReadSensors();
-
-    
-    
-    
-
-    
-    
-
-    
-    
 }
 
 /****************************************************************************

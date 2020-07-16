@@ -11,7 +11,6 @@
 #include "hal_types.h"
 #include "osal.h"
 
-
 /**************************************************************************************************
  *                                              MACROS
  **************************************************************************************************/
@@ -35,30 +34,16 @@
 #define HAL_KEY_DEBOUNCE_VALUE 25 // TODO: adjust this value
 
 #if defined(HAL_BOARD_FLOWER)
-#define HAL_KEY_P0_GPIO_PINS 0x00
-#define HAL_KEY_P1_GPIO_PINS 0x00
-#define HAL_KEY_P2_GPIO_PINS (HAL_KEY_BIT2)
 
 #define HAL_KEY_P0_INPUT_PINS 0x00
 #define HAL_KEY_P1_INPUT_PINS 0x00
 #define HAL_KEY_P2_INPUT_PINS (HAL_KEY_BIT2)
 
-#define HAL_KEY_P0_INTERRUPT_PINS 0x00
-#define HAL_KEY_P1_INTERRUPT_PINS 0x00
-#define HAL_KEY_P2_INTERRUPT_PINS (HAL_KEY_BIT2)
-
 #elif defined(HAL_BOARD_CHDTECH_DEV)
-#define HAL_KEY_P0_GPIO_PINS (HAL_KEY_BIT1)
-#define HAL_KEY_P1_GPIO_PINS 0x00
-#define HAL_KEY_P2_GPIO_PINS (HAL_KEY_BIT0)
-
 #define HAL_KEY_P0_INPUT_PINS (HAL_KEY_BIT1)
 #define HAL_KEY_P1_INPUT_PINS 0x00
 #define HAL_KEY_P2_INPUT_PINS (HAL_KEY_BIT0)
 
-#define HAL_KEY_P0_INTERRUPT_PINS (HAL_KEY_BIT1)
-#define HAL_KEY_P1_INTERRUPT_PINS 0x00
-#define HAL_KEY_P2_INTERRUPT_PINS (HAL_KEY_BIT0)
 #endif
 
 /**************************************************************************************************
@@ -82,14 +67,19 @@ static uint8 halKeyTimerRunning; // Set to true while polling timer is running i
 void halProcessKeyInterrupt(void);
 
 void HalKeyInit(void) {
-    P0SEL &= ~HAL_KEY_P0_GPIO_PINS;
-    P1SEL &= ~HAL_KEY_P1_GPIO_PINS;
-    P2SEL &= ~HAL_KEY_P2_GPIO_PINS;
-
-
+#if HAL_KEY_P0_INPUT_PINS
+    P0SEL &= ~HAL_KEY_P0_INPUT_PINS;
     P0DIR &= ~(HAL_KEY_P0_INPUT_PINS);
+#endif
+
+#if HAL_KEY_P1_INPUT_PINS
+    P1SEL &= ~HAL_KEY_P1_INPUT_PINS;
     P1DIR &= ~(HAL_KEY_P1_INPUT_PINS);
+#endif
+#if HAL_KEY_P2_INPUT_PINS
+    P2SEL &= ~HAL_KEY_P2_INPUT_PINS;
     P2DIR &= ~(HAL_KEY_P2_INPUT_PINS);
+#endif
 
     pHalKeyProcessFunction = NULL;
 
@@ -99,31 +89,44 @@ void HalKeyInit(void) {
 void HalKeyConfig(bool interruptEnable, halKeyCBack_t cback) {
     Hal_KeyIntEnable = true;
     pHalKeyProcessFunction = cback;
-    P0IEN |= HAL_KEY_P0_INTERRUPT_PINS;
-    P1IEN |= HAL_KEY_P1_INTERRUPT_PINS;
-    P2IEN |= HAL_KEY_P2_INTERRUPT_PINS;
+#if HAL_KEY_P0_INPUT_PINS
+    P0IEN |= HAL_KEY_P0_INPUT_PINS;
+    IEN1 |= HAL_KEY_BIT5;  // enable port0 int
+    PICTL |= HAL_KEY_BIT0; // set falling edge on port 0 and 2
+#endif
 
-    PICTL |= HAL_KEY_BIT0 | HAL_KEY_BIT3; // set falling edge on port 0 and 2
-    IEN1 |= HAL_KEY_BIT5;                 // enable port0 int
-    IEN2 |= HAL_KEY_BIT1;                 // enable port2 int
+#if HAL_KEY_P1_INPUT_PINS
+    P1IEN |= HAL_KEY_P1_INPUT_PINS;
+    IEN2 |= HAL_KEY_BIT4;                 // enable port1 int
+    PICTL |= HAL_KEY_BIT1 | HAL_KEY_BIT2; // set falling edge on port 0 and 2
+#endif
 
+#if HAL_KEY_P2_INPUT_PINS
+    if (HAL_KEY_P2_INPUT_PINS) {
+        P2IEN |= HAL_KEY_P2_INPUT_PINS;
+        IEN2 |= HAL_KEY_BIT1;  // enable port3 int
+        PICTL |= HAL_KEY_BIT3; // set falling edge on port 0 and 2
+    }
+#endif
 }
 uint8 HalKeyRead(void) {
 
     uint8 key = HAL_KEY_CODE_NOKEY;
-
-
+#if HAL_KEY_P0_INPUT_PINS
     if (ACTIVE_LOW(P0 & HAL_KEY_P0_INPUT_PINS)) {
         key = 0x00;
     }
-
+#endif
+#if HAL_KEY_P1_INPUT_PINS
     if (ACTIVE_LOW(P1 & HAL_KEY_P1_INPUT_PINS)) {
-        key = 0x01;
+       key = 0x01;
     }
+#endif
+#if HAL_KEY_P2_INPUT_PINS
     if (ACTIVE_LOW(P2 & HAL_KEY_P2_INPUT_PINS)) {
         key = 0x02;
     }
-
+#endif
     return key;
 }
 void HalKeyPoll(void) {
@@ -149,71 +152,77 @@ void halProcessKeyInterrupt(void) {
 }
 
 void HalKeyEnterSleep(void) {
-    uint8 clkcmd = CLKCONCMD;
-    uint8 clksta = CLKCONSTA;
-    // Switch to 16MHz before setting the DC/DC to bypass to reduce risk of flash corruption
-    CLKCONCMD = (CLKCONCMD_16MHZ | OSC_32KHZ);
-    // wait till clock speed stablizes
-    while (CLKCONSTA != (CLKCONCMD_16MHZ | OSC_32KHZ))
-        ;
+    // uint8 clkcmd = CLKCONCMD;
+    // uint8 clksta = CLKCONSTA;
+    // // Switch to 16MHz before setting the DC/DC to bypass to reduce risk of flash corruption
+    // CLKCONCMD = (CLKCONCMD_16MHZ | OSC_32KHZ);
+    // // wait till clock speed stablizes
+    // while (CLKCONSTA != (CLKCONCMD_16MHZ | OSC_32KHZ))
+    //     ;
 
-    CLKCONCMD = clkcmd;
-    while (CLKCONSTA != (clksta))
-        ;
+    // CLKCONCMD = clkcmd;
+    // while (CLKCONSTA != (clksta))
+    //     ;
 }
 
 uint8 HalKeyExitSleep(void) {
-    uint8 clkcmd = CLKCONCMD;
-    // Switch to 16MHz before setting the DC/DC to on to reduce risk of flash corruption
-    CLKCONCMD = (CLKCONCMD_16MHZ | OSC_32KHZ);
-    // wait till clock speed stablizes
-    while (CLKCONSTA != (CLKCONCMD_16MHZ | OSC_32KHZ))
-        ;
+    // uint8 clkcmd = CLKCONCMD;
+    // // Switch to 16MHz before setting the DC/DC to on to reduce risk of flash corruption
+    // CLKCONCMD = (CLKCONCMD_16MHZ | OSC_32KHZ);
+    // // wait till clock speed stablizes
+    // while (CLKCONSTA != (CLKCONCMD_16MHZ | OSC_32KHZ))
+    //     ;
 
-    CLKCONCMD = clkcmd;
+    // CLKCONCMD = clkcmd;
 
-    /* Wake up and read keys */
+    // /* Wake up and read keys */
     return (HalKeyRead());
 }
 
+#if HAL_KEY_P0_INPUT_PINS
 HAL_ISR_FUNCTION(halKeyPort0Isr, P0INT_VECTOR) {
     HAL_ENTER_ISR();
 
-    if (P0IFG & HAL_KEY_P0_INTERRUPT_PINS) {
+    if (P0IFG & HAL_KEY_P0_INPUT_PINS) {
         halProcessKeyInterrupt();
     }
 
-    P0IFG &= ~HAL_KEY_P0_INTERRUPT_PINS;
+    P0IFG &= ~HAL_KEY_P0_INPUT_PINS;
     P0IF = 0;
 
     CLEAR_SLEEP_MODE();
     HAL_EXIT_ISR();
 }
+#endif
 
+#if HAL_KEY_P1_INPUT_PINS
 HAL_ISR_FUNCTION(halKeyPort1Isr, P1INT_VECTOR) {
     HAL_ENTER_ISR();
 
-    if (P1IFG & HAL_KEY_P1_INTERRUPT_PINS) {
+    if (P1IFG & HAL_KEY_P1_INPUT_PINS) {
         halProcessKeyInterrupt();
     }
 
-    P1IFG &= ~HAL_KEY_P1_INTERRUPT_PINS;
+    P1IFG &= ~HAL_KEY_P1_INPUT_PINS;
     P1IF = 0;
 
     CLEAR_SLEEP_MODE();
     HAL_EXIT_ISR();
 }
+#endif
 
+#if HAL_KEY_P2_INPUT_PINS
 HAL_ISR_FUNCTION(halKeyPort2Isr, P2INT_VECTOR) {
     HAL_ENTER_ISR();
 
-    if (P2IFG & HAL_KEY_P2_INTERRUPT_PINS) {
+    if (P2IFG & HAL_KEY_P2_INPUT_PINS) {
         halProcessKeyInterrupt();
     }
 
-    P2IFG &= ~HAL_KEY_P2_INTERRUPT_PINS;
+    P2IFG &= ~HAL_KEY_P2_INPUT_PINS;
     P2IF = 0;
 
     CLEAR_SLEEP_MODE();
     HAL_EXIT_ISR();
 }
+#endif
