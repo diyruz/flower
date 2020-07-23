@@ -44,10 +44,12 @@
 #define BME280_32BIT_ENABLE
 
 
-// Конфигурация сенсора температуры
 #define TSENS_SBIT P1_3
 #define TSENS_BV BV(3)
 #define TSENS_DIR P1DIR
+
+#define SOIL_MOISTURE_PIN 4
+#define LUMOISITY_MOISTURE_PIN 7
 
 
 #if defined(HAL_BOARD_FLOWER)

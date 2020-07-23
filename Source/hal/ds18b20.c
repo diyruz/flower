@@ -21,6 +21,7 @@ static void _delay_us(uint16 microSecs) {
         asm("nop");
         asm("nop");
         asm("nop");
+        asm("nop");
     }
 }
 

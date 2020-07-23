@@ -33,9 +33,7 @@ extern "C" {
 #define FLOWER_APP_END_DEVICE_REJOIN_TRIES 20
 
 
-
-
-#define FLOWER_APP_REPORT_DELAY 10000
+#define FLOWER_APP_REPORT_DELAY (30 * FLOWER_APP_CONST_ONE_MINUTE_IN_MS)
 
 
 /*********************************************************************
