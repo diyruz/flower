@@ -1,7 +1,7 @@
 #define TC_LINKKEY_JOIN
 #define NV_INIT
 #define NV_RESTORE
-#define INT_HEAP_LEN (2688-0xC4-0x15-0x44-0x20)
+
 
 #define TP2_LEGACY_ZC
 //patch sdk
@@ -39,7 +39,6 @@
 #endif
 
 
-#define BDB_MAX_CLUSTERENDPOINTS_REPORTING 11
 
 #define BME280_32BIT_ENABLE
 
@@ -53,9 +52,13 @@
 
 
 #if defined(HAL_BOARD_FLOWER)
+    // #define HAL_UART TRUE
+    // #define HAL_UART_ISR 2
+    // #define HAL_UART_DMA 1
     #define HAL_UART FALSE
     #define POWER_SAVING
 #elif defined(HAL_BOARD_CHDTECH_DEV)
+    #define INT_HEAP_LEN (2688-0xC4-0x15-0x44-0x20-0x1E)
     #define HAL_UART TRUE
     #define HAL_UART_ISR 2
     #define HAL_UART_DMA 1

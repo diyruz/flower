@@ -1611,6 +1611,7 @@
                     <state>$PROJ_DIR$</state>
                     <state>$PROJ_DIR$\..\Source</state>
                     <state>$PROJ_DIR$\..\BME280_driver</state>
+                    <state>$PROJ_DIR$\..\Source\hal</state>
                     <state>$PROJ_DIR$\..\..\Source</state>
                     <state>$PROJ_DIR$\..\..\..\ZMain\TI2530DB</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\include</state>
@@ -2319,6 +2320,12 @@
         </file>
         <file>
             <name>$PROJ_DIR$\..\Source\stdint.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\Source\utils.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\Source\utils.h</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\Source\version.c</name>

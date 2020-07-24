@@ -37,6 +37,7 @@
 // Global attributes
 const uint16 zclFlowerApp_clusterRevision_all = 0x0001;
 uint8 zclFlowerApp_BatteryVoltage = 0xff;
+uint16 zclFlowerApp_BatteryVoltageRawAdc = 0xff;
 uint8 zclFlowerApp_BatteryPercentageRemainig = 0xff;
 
 int16 zclFlowerApp_Temperature_Sensor_MeasuredValue = 0xff;
@@ -44,8 +45,11 @@ int16 zclFlowerApp_PressureSensor_MeasuredValue = 0xff;
 uint32 zclFlowerApp_PressureSensor_MeasuredValueHPA = 0xff;
 uint16 zclFlowerApp_HumiditySensor_MeasuredValue = 0xff;
 uint16 zclFlowerApp_SoilHumiditySensor_MeasuredValue = 0xff;
+uint16 zclFlowerApp_SoilHumiditySensor_MeasuredValueRawAdc = 0xff;
 int16 zclFlowerApp_DS18B20_MeasuredValue = 0xff;
+
 uint16 zclFlowerApp_IlluminanceSensor_MeasuredValue = 0xff;
+uint16 zclFlowerApp_IlluminanceSensor_MeasuredValueRawAdc = 0xff;
 
 // Basic Cluster
 const uint8 zclFlowerApp_HWRevision = FLOWER_APP_HWVERSION;
@@ -85,7 +89,12 @@ CONST zclAttrRec_t zclFlowerApp_AttrsFirstEP[] = {
     {BASIC, {ATTRID_BASIC_DATE_CODE, ZCL_DATATYPE_CHAR_STR, R, (void *)zclFlowerApp_DateCode}},
     {BASIC, {ATTRID_BASIC_SW_BUILD_ID, ZCL_UINT8, R, (void *)&zclFlowerApp_ApplicationVersion}},
     {POWER_CFG, {ATTRID_POWER_CFG_BATTERY_VOLTAGE, ZCL_UINT8, RR, (void *)&zclFlowerApp_BatteryVoltage}},
-    {POWER_CFG, {ATTRID_POWER_CFG_BATTERY_PERCENTAGE_REMAINING, ZCL_UINT8, RR, (void *)&zclFlowerApp_BatteryPercentageRemainig}},
+/**
+ * FYI: calculating battery percentage can be tricky, since this device can be powered from 2xAA or 1xCR2032 batteries
+ * */
+    // {POWER_CFG, {ATTRID_POWER_CFG_BATTERY_PERCENTAGE_REMAINING, ZCL_UINT8, RR, (void *)&zclFlowerApp_BatteryPercentageRemainig}},
+    {POWER_CFG, {ATTRID_POWER_CFG_BATTERY_VOLTAGE_RAW_ADC, ZCL_UINT16, RR, (void *)&zclFlowerApp_BatteryVoltageRawAdc}},
+
 
     {ILLUMINANCE, {ATTRID_MS_ILLUMINANCE_MEASURED_VALUE, ZCL_UINT16, RR, (void *)&zclFlowerApp_IlluminanceSensor_MeasuredValue}},
     {TEMP, {ATTRID_MS_TEMPERATURE_MEASURED_VALUE, ZCL_INT16, RR, (void *)&zclFlowerApp_Temperature_Sensor_MeasuredValue}},
@@ -94,10 +103,15 @@ CONST zclAttrRec_t zclFlowerApp_AttrsFirstEP[] = {
     {HUMIDITY, {ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE, ZCL_UINT16, RR, (void *)&zclFlowerApp_HumiditySensor_MeasuredValue}}
 };
 
+/**
+ * FYI: ATTRID_POWER_CFG_BATTERY_VOLTAGE_RAW_ADC and ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE_RAW_ADC
+ * can be used to calculate relative humidity in converter
+*/
 
 CONST zclAttrRec_t zclFlowerApp_AttrsSecondEP[] = {
     {TEMP, {ATTRID_MS_TEMPERATURE_MEASURED_VALUE, ZCL_INT16, RR, (void *)&zclFlowerApp_DS18B20_MeasuredValue}},
-    {HUMIDITY, {ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE, ZCL_UINT16, RR, (void *)&zclFlowerApp_SoilHumiditySensor_MeasuredValue}}
+    {HUMIDITY, {ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE, ZCL_UINT16, RR, (void *)&zclFlowerApp_SoilHumiditySensor_MeasuredValue}},
+    {HUMIDITY, {ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE_RAW_ADC, ZCL_UINT16, RR, (void *)&zclFlowerApp_SoilHumiditySensor_MeasuredValueRawAdc}}
 };
 uint8 CONST zclFlowerApp_AttrsSecondEPCount = (sizeof(zclFlowerApp_AttrsSecondEP) / sizeof(zclFlowerApp_AttrsSecondEP[0]));
 uint8 CONST zclFlowerApp_AttrsFirstEPCount = (sizeof(zclFlowerApp_AttrsFirstEP) / sizeof(zclFlowerApp_AttrsFirstEP[0]));
@@ -106,7 +120,7 @@ const cId_t zclFlowerApp_InClusterList[] = {ZCL_CLUSTER_ID_GEN_BASIC};
 
 #define FLOWER_APP_MAX_INCLUSTERS (sizeof(zclFlowerApp_InClusterList) / sizeof(zclFlowerApp_InClusterList[0]))
 
-const cId_t zclFlowerApp_OutClusterListFirstEP[] = {POWER_CFG, ILLUMINANCE, TEMP, PRESSURE, HUMIDITY };
+const cId_t zclFlowerApp_OutClusterListFirstEP[] = {POWER_CFG, ILLUMINANCE, TEMP, PRESSURE, HUMIDITY};
 const cId_t zclFlowerApp_OutClusterListSecondEP[] = {TEMP, HUMIDITY};
 
 #define FLOWER_APP_MAX_OUTCLUSTERS_FIRST_EP (sizeof(zclFlowerApp_OutClusterListFirstEP) / sizeof(zclFlowerApp_OutClusterListFirstEP[0]))

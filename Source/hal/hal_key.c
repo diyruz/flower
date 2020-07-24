@@ -37,12 +37,12 @@
 
 #define HAL_KEY_P0_INPUT_PINS 0x00
 #define HAL_KEY_P1_INPUT_PINS 0x00
-#define HAL_KEY_P2_INPUT_PINS (HAL_KEY_BIT2)
+#define HAL_KEY_P2_INPUT_PINS (HAL_KEY_BIT0)
 
 #elif defined(HAL_BOARD_CHDTECH_DEV)
 #define HAL_KEY_P0_INPUT_PINS (HAL_KEY_BIT1)
 #define HAL_KEY_P1_INPUT_PINS 0x00
-#define HAL_KEY_P2_INPUT_PINS (HAL_KEY_BIT0 | HAL_KEY_BIT2)
+#define HAL_KEY_P2_INPUT_PINS (HAL_KEY_BIT0)
 
 #endif
 
@@ -98,15 +98,14 @@ void HalKeyConfig(bool interruptEnable, halKeyCBack_t cback) {
 #if HAL_KEY_P1_INPUT_PINS
     P1IEN |= HAL_KEY_P1_INPUT_PINS;
     IEN2 |= HAL_KEY_BIT4;                 // enable port1 int
-    PICTL |= HAL_KEY_BIT1 | HAL_KEY_BIT2; // set falling edge on port 0 and 2
+    PICTL |= HAL_KEY_BIT1 | HAL_KEY_BIT2; // set falling edge 
 #endif
 
 #if HAL_KEY_P2_INPUT_PINS
-    if (HAL_KEY_P2_INPUT_PINS) {
-        P2IEN |= HAL_KEY_P2_INPUT_PINS;
-        IEN2 |= HAL_KEY_BIT1;  // enable port3 int
-        PICTL |= HAL_KEY_BIT3; // set falling edge on port 0 and 2
-    }
+   
+    P2IEN |= HAL_KEY_P2_INPUT_PINS;
+    IEN2 |= HAL_KEY_BIT1;  // enable port2 int
+    PICTL |= HAL_KEY_BIT3; // set falling edge
 #endif
 }
 uint8 HalKeyRead(void) {

@@ -21,8 +21,8 @@ extern "C" {
 #define FLOWER_APP_CONST_ONE_MINUTE_IN_MS ((uint32) 60 * (uint32) 1000)
 
 #define FLOWER_APP_END_DEVICE_REJOIN_EVT 0x0001
-#define FLOWER_APP_RESET_EVT 0x0002
-#define FLOWER_APP_REPORT_EVT 0x0004
+#define FLOWER_APP_REPORT_EVT 0x0002
+#define FLOWER_APP_RESET_EVT 0x0004
 
 
 #define FLOWER_APP_RESET_DELAY 10 * 1000
@@ -56,7 +56,9 @@ extern "C" {
 #define ZCL_INT16   ZCL_DATATYPE_INT16
 
 
-#define ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE_HPA      0x0200
+#define ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE_HPA       0x0200
+#define ATTRID_POWER_CFG_BATTERY_VOLTAGE_RAW_ADC                0x0200
+#define ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE_RAW_ADC      0x0200
 
 
 
@@ -73,13 +75,16 @@ extern SimpleDescriptionFormat_t zclFlowerApp_SecondEP;
 
 extern uint8 zclFlowerApp_BatteryVoltage;
 extern uint8 zclFlowerApp_BatteryPercentageRemainig;
+extern uint16 zclFlowerApp_BatteryVoltageRawAdc;
 extern int16 zclFlowerApp_Temperature_Sensor_MeasuredValue;
 extern int16 zclFlowerApp_PressureSensor_MeasuredValue;
 extern uint32 zclFlowerApp_PressureSensor_MeasuredValueHPA;
 extern uint16 zclFlowerApp_HumiditySensor_MeasuredValue;
 extern int16 zclFlowerApp_DS18B20_MeasuredValue;
 extern uint16 zclFlowerApp_SoilHumiditySensor_MeasuredValue;
+extern uint16 zclFlowerApp_SoilHumiditySensor_MeasuredValueRawAdc;
 extern uint16 zclFlowerApp_IlluminanceSensor_MeasuredValue;
+extern uint16 zclFlowerApp_IlluminanceSensor_MeasuredValueRawAdc;
 
 // attribute list
 extern CONST zclAttrRec_t zclFlowerApp_AttrsFirstEP[];
