@@ -42,6 +42,7 @@
 #include "Debug.h"
 #include "ioCC2530.h"
 #include "zcomdef.h"
+#include "utils.h"
 
 #define STATIC static
 
@@ -67,15 +68,7 @@
 #define OCM_DATA_PIN 6
 #endif
 
-// General I/O definitions
-#define IO_GIO 0 // General purpose I/O
-#define IO_PER 1 // Peripheral function
-#define IO_IN 0  // Input pin
-#define IO_OUT 1 // Output pin
-#define IO_PUD 0 // Pullup/pulldn input
-#define IO_TRI 1 // Tri-state input
-#define IO_PUP 0 // Pull-up input pin
-#define IO_PDN 1 // Pull-down input pin
+
 
 #define OCM_ADDRESS (0xA0)
 
@@ -91,27 +84,13 @@
 // *************************   MACROS   ************************************
 #undef P
 
-/* I/O PORT CONFIGURATION */
-#define CAT1(x, y) x##y       // Concatenates 2 strings
-#define CAT2(x, y) CAT1(x, y) // Forces evaluation of CAT1
 
-// OCM port I/O defintions
-// Builds I/O port name: PNAME(1,INP) ==> P1INP
-#define PNAME(y, z) CAT2(P, CAT2(y, z))
-// Builds I/O bit name: BNAME(1,2) ==> P1_2
-#define BNAME(port, pin) CAT2(CAT2(P, port), CAT2(_, pin))
 
 // OCM port I/O defintions
 #define OCM_SCL BNAME(OCM_CLK_PORT, OCM_CLK_PIN)
 #define OCM_SDA BNAME(OCM_DATA_PORT, OCM_DATA_PIN)
 
-#define IO_DIR_PORT_PIN(port, pin, dir)                                                                                                    \
-    {                                                                                                                                      \
-        if (dir == IO_OUT)                                                                                                                 \
-            PNAME(port, DIR) |= (1 << (pin));                                                                                              \
-        else                                                                                                                               \
-            PNAME(port, DIR) &= ~(1 << (pin));                                                                                             \
-    }
+
 
 #define OCM_DATA_HIGH() { IO_DIR_PORT_PIN(OCM_DATA_PORT, OCM_DATA_PIN, IO_IN); }
 
@@ -121,36 +100,7 @@
         OCM_SDA = 0;                                                                                                                       \
     }
 
-#define IO_FUNC_PORT_PIN(port, pin, func)                                                                                                  \
-    {                                                                                                                                      \
-        if (port < 2) {                                                                                                                    \
-            if (func == IO_PER)                                                                                                            \
-                PNAME(port, SEL) |= (1 << (pin));                                                                                          \
-            else                                                                                                                           \
-                PNAME(port, SEL) &= ~(1 << (pin));                                                                                         \
-        } else {                                                                                                                           \
-            if (func == IO_PER)                                                                                                            \
-                P2SEL |= (1 << (pin >> 1));                                                                                                \
-            else                                                                                                                           \
-                P2SEL &= ~(1 << (pin >> 1));                                                                                               \
-        }                                                                                                                                  \
-    }
 
-#define IO_IMODE_PORT_PIN(port, pin, mode)                                                                                                 \
-    {                                                                                                                                      \
-        if (mode == IO_TRI)                                                                                                                \
-            PNAME(port, INP) |= (1 << (pin));                                                                                              \
-        else                                                                                                                               \
-            PNAME(port, INP) &= ~(1 << (pin));                                                                                             \
-    }
-
-#define IO_PUD_PORT(port, dir)                                                                                                             \
-    {                                                                                                                                      \
-        if (dir == IO_PDN)                                                                                                                 \
-            P2INP |= (1 << (port + 5));                                                                                                    \
-        else                                                                                                                               \
-            P2INP &= ~(1 << (port + 5));                                                                                                   \
-    }
 
 STATIC void hali2cSend(uint8 *buffer, uint16 len, uint8 sendStart, uint8 sendStop);
 STATIC _Bool hali2cSendByte(uint8 dByte);
@@ -164,6 +114,13 @@ STATIC _Bool hali2cRead(void);
 STATIC void hali2cSendDeviceAddress(uint8 address);
 
 STATIC __near_func void hali2cWait(uint8);
+
+static void hali2cGroudPins(void);
+
+void hali2cGroudPins(void) {
+    IO_DIR_PORT_PIN(OCM_DATA_PORT, OCM_DATA_PIN, IO_IN);
+    IO_DIR_PORT_PIN(OCM_CLK_PORT, OCM_CLK_PIN, IO_IN);
+}
 
 STATIC uint8 s_xmemIsInit;
 
@@ -365,6 +322,8 @@ STATIC void hali2cStop(void) {
     hali2cClock(1);
     OCM_DATA_HIGH(); // stop condition
     hali2cWait(1);
+
+    hali2cGroudPins();
 }
 
 /*********************************************************************

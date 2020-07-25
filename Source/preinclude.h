@@ -47,8 +47,12 @@
 #define TSENS_BV BV(3)
 #define TSENS_DIR P1DIR
 
+#define SOIL_MOISTURE_PORT 0
 #define SOIL_MOISTURE_PIN 4
-#define LUMOISITY_MOISTURE_PIN 7
+
+#define LUMOISITY_PORT 0
+#define LUMOISITY_PIN 7
+
 
 
 #if defined(HAL_BOARD_FLOWER)

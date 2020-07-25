@@ -85,6 +85,7 @@ static void zclFlowerApp_BindNotification(bdbBindNotificationData_t *data);
 static void zclFlowerApp_Report(void);
 static void zclFlowerApp_Rejoin(void);
 
+static void zclFlowerApp_ReadADCSensors(void);
 static void zclFlowerApp_ReadSensors(void);
 static void zclFlowerApp_Battery(void);
 static void zclFlowerApp_ReadBME280(struct bme280_dev *dev);
@@ -113,9 +114,9 @@ static zclGeneral_AppCallbacks_t zclFlowerApp_CmdCallbacks = {
 
 void zclFlowerApp_Init(byte task_id) {
     // // p0.4 soil sensor
-    P0SEL &= ~(BV(SOIL_MOISTURE_PIN) | BV(LUMOISITY_MOISTURE_PIN));
-    P0DIR &= ~(BV(SOIL_MOISTURE_PIN) | BV(LUMOISITY_MOISTURE_PIN));
-    P2INP |= BV(5); // pull down P0
+    // P0SEL &= ~(BV(SOIL_MOISTURE_PIN) | BV(LUMOISITY_PIN));
+    // P0DIR &= ~(BV(SOIL_MOISTURE_PIN) | BV(LUMOISITY_PIN));
+    // P2INP |= BV(5); // pull down P0
 
     HalI2CInit();
     DebugInit();
@@ -148,6 +149,45 @@ void zclFlowerApp_Init(byte task_id) {
     ZMacSetTransmitPower(TX_PWR_PLUS_4); // set 4dBm
 
     bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_STEERING | BDB_COMMISSIONING_MODE_FINDING_BINDING);
+
+
+    //moisture sensor
+    IO_DIR_PORT_PIN(SOIL_MOISTURE_PORT, SOIL_MOISTURE_PIN, IO_IN);
+    IO_FUNC_PORT_PIN(SOIL_MOISTURE_PORT, SOIL_MOISTURE_PIN, IO_GIO);
+    IO_IMODE_PORT_PIN(SOIL_MOISTURE_PORT, SOIL_MOISTURE_PIN, IO_PUD);
+    IO_PUD_PORT(SOIL_MOISTURE_PORT, IO_PDN);
+
+
+    IO_DIR_PORT_PIN(LUMOISITY_PORT, LUMOISITY_PIN, IO_IN);
+    IO_FUNC_PORT_PIN(LUMOISITY_PORT, LUMOISITY_PIN, IO_GIO);
+    IO_IMODE_PORT_PIN(LUMOISITY_PORT, LUMOISITY_PIN, IO_PUD);
+    IO_PUD_PORT(LUMOISITY_PORT, IO_PDN);
+
+    IO_PUD_PORT(0, IO_PDN);
+    IO_PUD_PORT(1, IO_PDN);
+    // IO_PUD_PORT(2, IO_PDN);
+    // IO_DIR_PORT_PIN(0, 7, IO_IN); //light sens
+    IO_DIR_PORT_PIN(0, 6, IO_IN);
+    IO_DIR_PORT_PIN(0, 5, IO_IN);
+    // IO_DIR_PORT_PIN(0, 4, IO_IN); //soil
+    IO_DIR_PORT_PIN(0, 3, IO_IN);
+    IO_DIR_PORT_PIN(0, 2, IO_IN);
+    // IO_DIR_PORT_PIN(0, 1, IO_IN); //led1
+    IO_DIR_PORT_PIN(0, 0, IO_IN);
+
+
+    IO_DIR_PORT_PIN(1, 7, IO_IN);
+    IO_DIR_PORT_PIN(1, 6, IO_IN);
+    IO_DIR_PORT_PIN(1, 5, IO_IN);
+    IO_DIR_PORT_PIN(1, 4, IO_IN);
+    // IO_DIR_PORT_PIN(1, 3, IO_IN); //DS18B20
+    IO_DIR_PORT_PIN(1, 2, IO_IN);
+    // IO_DIR_PORT_PIN(1, 1, IO_IN); //power pint
+    IO_DIR_PORT_PIN(1, 0, IO_IN);
+
+    IO_DIR_PORT_PIN(2, 1, IO_IN);
+    IO_DIR_PORT_PIN(2, 2, IO_IN);
+    IO_DIR_PORT_PIN(2, 3, IO_IN);
 }
 
 static void zclFlowerApp_ResetBackoffRetry(void) {
@@ -285,6 +325,14 @@ uint16 zclFlowerApp_event_loop(uint8 task_id, uint16 events) {
         zclFlowerApp_Rejoin();
         return (events ^ FLOWER_APP_RESET_EVT);
     }
+
+    if (events & FLOWER_APP_READ_SENS1_EVT) {
+        LREPMaster("FLOWER_APP_READ_SENS1_EVT\r\n");
+        zclFlowerApp_ReadADCSensors();
+        return (events ^ FLOWER_APP_READ_SENS1_EVT);
+    }
+
+    
     // Discard unknown events
     return 0;
 }
@@ -337,43 +385,51 @@ static void zclFlowerApp_Battery(void) {
     LREP("Battery raw=%d voltage(mV)=%d\r\n", zclFlowerApp_BatteryVoltageRawAdc, getBatteryVoltage());
 }
 
-static void zclFlowerApp_ReadSensors(void) {
-
-    HalLedSet(HAL_LED_1, HAL_LED_MODE_ON);
-    osal_pwrmgr_task_state(zclFlowerApp_TaskID, PWRMGR_HOLD);
-    POWER_ON_SENSORS();
-    halIntState_t intState;
-    HAL_ENTER_CRITICAL_SECTION(intState);
+static void zclFlowerApp_ReadADCSensors(void) {
     zclFlowerApp_Battery();
-    zclFlowerApp_ReadBME280(&bme_dev);
-    zclFlowerApp_ReadDS18B20();
     zclFlowerApp_ReadLumosity();
     zclFlowerApp_ReadSoilHumidity();
-    HAL_EXIT_CRITICAL_SECTION(intState);
     POWER_OFF_SENSORS();
     osal_pwrmgr_task_state(zclFlowerApp_TaskID, PWRMGR_CONSERVE);
     HalLedSet(HAL_LED_1, HAL_LED_MODE_OFF);
 }
+static void zclFlowerApp_ReadSensors(void) {
+    HalLedSet(HAL_LED_1, HAL_LED_MODE_ON);
+    osal_pwrmgr_task_state(zclFlowerApp_TaskID, PWRMGR_HOLD);
+    POWER_ON_SENSORS();
+
+    halIntState_t intState;
+    HAL_ENTER_CRITICAL_SECTION(intState);
+    zclFlowerApp_ReadBME280(&bme_dev);
+    zclFlowerApp_ReadDS18B20();
+    HAL_EXIT_CRITICAL_SECTION(intState);
+ 
+
+    osal_start_timerEx(zclFlowerApp_TaskID, FLOWER_APP_READ_SENS1_EVT, 200);
+
+}
 
 static void zclFlowerApp_ReadSoilHumidity(void) {
 
-    zclFlowerApp_SoilHumiditySensor_MeasuredValueRawAdc = adcReadSampled(HAL_ADC_CHN_AIN4, HAL_ADC_RESOLUTION_14, HAL_ADC_REF_AVDD, 10);
+    zclFlowerApp_SoilHumiditySensor_MeasuredValueRawAdc = adcReadSampled(HAL_ADC_CHN_AIN4, HAL_ADC_RESOLUTION_14, HAL_ADC_REF_AVDD, 5);
     // FYI: https://docs.google.com/spreadsheets/d/1qrFdMTo0ZrqtlGUoafeB3hplhU3GzDnVWuUK4M9OgNo/edit?usp=sharing
-    uint16 soilHumidityMinRange = 0.292 * zclFlowerApp_BatteryVoltageRawAdc + 936;
-    uint16 soilHumidityMaxRange = 0.38 * zclFlowerApp_BatteryVoltageRawAdc - 447;
+    uint16 soilHumidityMinRange = (uint16)(0.292 * (double) zclFlowerApp_BatteryVoltageRawAdc + 936.0);
+    uint16 soilHumidityMaxRange = (uint16)(0.38 * (double) zclFlowerApp_BatteryVoltageRawAdc -  447.0);
 
     LREP("soilHumidityMinRange=%d soilHumidityMaxRange=%d\r\n", soilHumidityMinRange, soilHumidityMaxRange);
 
-    zclFlowerApp_SoilHumiditySensor_MeasuredValue =
-        mapRange(soilHumidityMinRange, soilHumidityMaxRange, 0, 10000, zclFlowerApp_SoilHumiditySensor_MeasuredValueRawAdc);
-    LREP("ReadSoilHumidity raw=%d mapped=%d\r\n", zclFlowerApp_SoilHumiditySensor_MeasuredValueRawAdc,
-         zclFlowerApp_SoilHumiditySensor_MeasuredValue);
+    zclFlowerApp_SoilHumiditySensor_MeasuredValue = (uint16) mapRange(soilHumidityMinRange, soilHumidityMaxRange, 0.0, 10000.0, zclFlowerApp_SoilHumiditySensor_MeasuredValueRawAdc);
+    // LREP("ReadSoilHumidity raw=%d mapped=%d\r\n", zclFlowerApp_SoilHumiditySensor_MeasuredValueRawAdc,
+    //      zclFlowerApp_SoilHumiditySensor_MeasuredValue);
 
     // LREP("hum:volt %d %d \r\n", zclFlowerApp_BatteryVoltageRawAdc, zclFlowerApp_SoilHumiditySensor_MeasuredValueRawAdc);
     bdb_RepChangedAttrValue(zclFlowerApp_SecondEP.EndPoint, HUMIDITY, ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE);
+    //bdb_RepChangedAttrValue(zclFlowerApp_SecondEP.EndPoint, HUMIDITY, ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE_RAW_ADC);
+    LREPMaster("ReadSoilHumidity done\r\n");
 }
 
 static void zclFlowerApp_ReadDS18B20(void) {
+    LREP("ReadDS18B20\r\n");
     zclFlowerApp_DS18B20_MeasuredValue = readTemperature();
     if (zclFlowerApp_DS18B20_MeasuredValue != 1) {
         LREP("ReadDS18B20 t=%d\r\n", zclFlowerApp_DS18B20_MeasuredValue);
@@ -384,11 +440,10 @@ static void zclFlowerApp_ReadDS18B20(void) {
 }
 
 static void zclFlowerApp_ReadLumosity(void) {
-    zclFlowerApp_IlluminanceSensor_MeasuredValueRawAdc = adcReadSampled(HAL_ADC_CHN_AIN7, HAL_ADC_RESOLUTION_14, HAL_ADC_REF_AVDD, 10);
-
+    zclFlowerApp_IlluminanceSensor_MeasuredValueRawAdc = adcReadSampled(HAL_ADC_CHN_AIN7, HAL_ADC_RESOLUTION_14, HAL_ADC_REF_AVDD, 5);
     zclFlowerApp_IlluminanceSensor_MeasuredValue = zclFlowerApp_IlluminanceSensor_MeasuredValueRawAdc;
-    LREP("IlluminanceSensor_MeasuredValue value=%d\r\n", zclFlowerApp_IlluminanceSensor_MeasuredValue);
     bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, ILLUMINANCE, ATTRID_MS_ILLUMINANCE_MEASURED_VALUE);
+    LREP("IlluminanceSensor_MeasuredValue value=%d\r\n", zclFlowerApp_IlluminanceSensor_MeasuredValue);
 }
 
 void user_delay_ms(uint32_t period) { MicroWait(period * 1000); }
@@ -423,11 +478,14 @@ static void zclFlowerApp_ReadBME280(struct bme280_dev *dev) {
         bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, TEMP, ATTRID_MS_TEMPERATURE_MEASURED_VALUE);
         bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, PRESSURE, ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE);
         bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, HUMIDITY, ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE);
+        bdb_RepChangedAttrValue(zclFlowerApp_FirstEP.EndPoint, HUMIDITY, ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE_HPA);
     } else {
         LREP("ReadBME280 init error %d\r\n", rslt);
     }
 }
-static void zclFlowerApp_Report(void) { zclFlowerApp_ReadSensors(); }
+static void zclFlowerApp_Report(void) { 
+    zclFlowerApp_ReadSensors();
+}
 
 /****************************************************************************
 ****************************************************************************/

@@ -151,28 +151,28 @@ void halProcessKeyInterrupt(void) {
 }
 
 void HalKeyEnterSleep(void) {
-    // uint8 clkcmd = CLKCONCMD;
-    // uint8 clksta = CLKCONSTA;
-    // // Switch to 16MHz before setting the DC/DC to bypass to reduce risk of flash corruption
-    // CLKCONCMD = (CLKCONCMD_16MHZ | OSC_32KHZ);
-    // // wait till clock speed stablizes
-    // while (CLKCONSTA != (CLKCONCMD_16MHZ | OSC_32KHZ))
-    //     ;
+    uint8 clkcmd = CLKCONCMD;
+    uint8 clksta = CLKCONSTA;
+    // Switch to 16MHz before setting the DC/DC to bypass to reduce risk of flash corruption
+    CLKCONCMD = (CLKCONCMD_16MHZ | OSC_32KHZ);
+    // wait till clock speed stablizes
+    while (CLKCONSTA != (CLKCONCMD_16MHZ | OSC_32KHZ))
+        ;
 
-    // CLKCONCMD = clkcmd;
-    // while (CLKCONSTA != (clksta))
-    //     ;
+    CLKCONCMD = clkcmd;
+    while (CLKCONSTA != (clksta))
+        ;
 }
 
 uint8 HalKeyExitSleep(void) {
-    // uint8 clkcmd = CLKCONCMD;
-    // // Switch to 16MHz before setting the DC/DC to on to reduce risk of flash corruption
-    // CLKCONCMD = (CLKCONCMD_16MHZ | OSC_32KHZ);
-    // // wait till clock speed stablizes
-    // while (CLKCONSTA != (CLKCONCMD_16MHZ | OSC_32KHZ))
-    //     ;
+    uint8 clkcmd = CLKCONCMD;
+    // Switch to 16MHz before setting the DC/DC to on to reduce risk of flash corruption
+    CLKCONCMD = (CLKCONCMD_16MHZ | OSC_32KHZ);
+    // wait till clock speed stablizes
+    while (CLKCONSTA != (CLKCONCMD_16MHZ | OSC_32KHZ))
+        ;
 
-    // CLKCONCMD = clkcmd;
+    CLKCONCMD = clkcmd;
 
     // /* Wake up and read keys */
     return (HalKeyRead());

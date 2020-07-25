@@ -12,6 +12,7 @@ static uint8 ds18b20_read(void);
 static void ds18b20_send_byte(int8);
 static uint8 ds18b20_read_byte(void);
 static uint8 ds18b20_RST_PULSE(void);
+static void ds18b20_GroudPins(void);
 
 static void _delay_us(uint16 microSecs) {
     while (microSecs--) {
@@ -101,14 +102,19 @@ static uint8 ds18b20_RST_PULSE(void) {
     return i;
 }
 
+static void ds18b20_GroudPins(void) {
+    // TSENS_SBIT = 0;
+    TSENS_DIR &= ~TSENS_BV; // input
+}
+
 int16 readTemperature(void) {
     float temperature = 0;
-    uint8 temp1, temp2, retry_count = 5;
+    uint8 temp1, temp2, retry_count = 20;
     if (!ds18b20_RST_PULSE()) {
         while (retry_count) {
             ds18b20_send_byte(DS18B20_SKIP_ROM);
             ds18b20_send_byte(DS18B20_CONVERT_T);
-            _delay_ms(750);
+            _delay_ms(50);
             ds18b20_RST_PULSE();
             ds18b20_send_byte(DS18B20_SKIP_ROM);
             ds18b20_send_byte(DS18B20_READ_SCRATCHPAD);
@@ -118,6 +124,7 @@ int16 readTemperature(void) {
 
             if (temp1 == 0xff && temp2 == 0xff) {
                 // No sensor found.
+                ds18b20_GroudPins();
                 return 0;
             }
             temperature = (uint16)temp1 | (uint16)(temp2 & MSK) << 8;
@@ -132,13 +139,17 @@ int16 readTemperature(void) {
 
             if (temperature == 85) { // if 85, sensor is not yet ready
                 retry_count--;
+                _delay_ms(50);
             } else {
+                ds18b20_GroudPins();
                 return (int16)(temperature * 100);
             }
         }
     } else {
         // Fail
+        ds18b20_GroudPins();
         return 1;
     }
+    ds18b20_GroudPins();
     return 1;
 }
