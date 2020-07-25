@@ -12,7 +12,17 @@
 #define TEMP_11_BIT 0x5F // 11 bit
 #define TEMP_12_BIT 0x7F // 12 bit
 
+#ifndef DS18B20_RESOLUTION
+#define DS18B20_RESOLUTION TEMP_10_BIT
+#endif
+
+#ifndef DS18B20_RETRY_COUNT
+#define DS18B20_RETRY_COUNT 10
+#endif
+
 #define MAX_CONVERSION_TIME (750 * 1.2) // ms 750ms + some overhead
+
+#define DS18B20_RETRY_DELAY (MAX_CONVERSION_TIME / DS18B20_RETRY_COUNT)
 
 static void _delay_us(uint16);
 static void _delay_ms(uint16);
@@ -23,6 +33,7 @@ static uint8 ds18b20_read_byte(void);
 static uint8 ds18b20_Reset(void);
 static void ds18b20_GroudPins(void);
 static void ds18b20_setResolution(uint8_t resolution);
+static int16 ds18b20_convertTemperature(uint8 temp1, uint8 temp2, uint8 resolution);
 
 static void _delay_us(uint16 microSecs) {
     while (microSecs--) {
@@ -124,38 +135,55 @@ static void ds18b20_setResolution(uint8_t resolution) {
     // two dummy values for LOW & HIGH ALARM
     ds18b20_send_byte(0);
     ds18b20_send_byte(100);
+    ds18b20_send_byte(resolution);
+    ds18b20_Reset();
+}
+static int16 ds18b20_convertTemperature(uint8 temp1, uint8 temp2, uint8 resolution) {
+    float temperature = 0;
+    uint8 ignoreMask = 0;
     switch (resolution) {
-    case 12:
-        ds18b20_send_byte(TEMP_12_BIT);
+    case TEMP_9_BIT:
+        ignoreMask = (BV(0) | BV(1) | BV(2));
         break;
 
-    case 11:
-        ds18b20_send_byte(TEMP_11_BIT);
+    case TEMP_10_BIT:
+        ignoreMask = (BV(0) | BV(1));
         break;
 
-    case 10:
-        ds18b20_send_byte(TEMP_10_BIT);
+    case TEMP_11_BIT:
+        ignoreMask = (BV(0));
         break;
 
-    case 9:
+    case TEMP_12_BIT:
+        ignoreMask = 0;
+        break;
+
     default:
-        ds18b20_send_byte(TEMP_9_BIT);
         break;
     }
-    ds18b20_Reset();
+    temperature = (uint16)temp1 | (uint16)(ignoreMask ? temp2 & ignoreMask : temp2) << 8;
+    // neg. temp
+    if (temp2 & (BV(3))) {
+        temperature = temperature / 16.0 - 128.0;
+    }
+    // pos. temp
+    else {
+        temperature = temperature / 16.0;
+    }
+    return (int16)(temperature * 100);
 }
 
 int16 readTemperature(void) {
-    float temperature = 0;
-    uint8 temp1, temp2, retry_count = 50, delay_time = MAX_CONVERSION_TIME / retry_count;
-    ds18b20_setResolution(TEMP_12_BIT);
+
+    uint8 temp1, temp2, retry_count = DS18B20_RETRY_COUNT;
+    ds18b20_setResolution(DS18B20_RESOLUTION);
     ds18b20_Reset();
 
     ds18b20_send_byte(DS18B20_SKIP_ROM);
     ds18b20_send_byte(DS18B20_CONVERT_T);
 
     while (retry_count) {
-        _delay_ms(delay_time);
+        _delay_ms(DS18B20_RETRY_DELAY);
         ds18b20_Reset();
         ds18b20_send_byte(DS18B20_SKIP_ROM);
         ds18b20_send_byte(DS18B20_READ_SCRATCHPAD);
@@ -173,18 +201,9 @@ int16 readTemperature(void) {
             retry_count--;
             continue;
         }
-        temperature = (uint16)temp1 | (uint16)(temp2 & MSK) << 8;
-        // neg. temp
-        if (temp2 & (BV(3))) {
-            temperature = temperature / 16.0 - 128.0;
-        }
-        // pos. temp
-        else {
-            temperature = temperature / 16.0;
-        }
 
         ds18b20_GroudPins();
-        return (int16)(temperature * 100);
+        return ds18b20_convertTemperature(temp1, temp2, DS18B20_RESOLUTION);
     }
 
     ds18b20_GroudPins();
