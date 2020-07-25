@@ -80,11 +80,18 @@ const device = {
             'msRelativeHumidity',
         ]);
         const genPowerCfgPayload = [{
-            attribute: 'batteryVoltage',
-            minimumReportInterval: 0,
-            maximumReportInterval: 3600,
-            reportableChange: 0,
-        }];
+                attribute: 'batteryVoltage',
+                minimumReportInterval: 0,
+                maximumReportInterval: 3600,
+                reportableChange: 0,
+            },
+            {
+                attribute: 'batteryPercentageRemaining',
+                minimumReportInterval: 0,
+                maximumReportInterval: 3600,
+                reportableChange: 0,
+            }
+        ];
 
         const msBindPayload = [{
             attribute: 'measuredValue',
