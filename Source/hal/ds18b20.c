@@ -4,6 +4,15 @@
 #define DS18B20_SKIP_ROM 0xCC
 #define DS18B20_CONVERT_T 0x44
 #define DS18B20_READ_SCRATCHPAD 0xBE
+#define DS18B20_WRITE_SCRATCHPAD 0x4E
+
+// Device resolution
+#define TEMP_9_BIT 0x1F  //  9 bit
+#define TEMP_10_BIT 0x3F // 10 bit
+#define TEMP_11_BIT 0x5F // 11 bit
+#define TEMP_12_BIT 0x7F // 12 bit
+
+#define MAX_CONVERSION_TIME (750 * 1.2) // ms 750ms + some overhead
 
 static void _delay_us(uint16);
 static void _delay_ms(uint16);
@@ -11,8 +20,9 @@ static void ds18b20_send(uint8);
 static uint8 ds18b20_read(void);
 static void ds18b20_send_byte(int8);
 static uint8 ds18b20_read_byte(void);
-static uint8 ds18b20_RST_PULSE(void);
+static uint8 ds18b20_Reset(void);
 static void ds18b20_GroudPins(void);
+static void ds18b20_setResolution(uint8_t resolution);
 
 static void _delay_us(uint16 microSecs) {
     while (microSecs--) {
@@ -88,7 +98,7 @@ static uint8 ds18b20_read_byte(void) {
 }
 
 // Sends reset pulse
-static uint8 ds18b20_RST_PULSE(void) {
+static uint8 ds18b20_Reset(void) {
     TSENS_SBIT = 0;
     TSENS_DIR |= TSENS_BV; // output
     _delay_us(600);
@@ -107,49 +117,76 @@ static void ds18b20_GroudPins(void) {
     TSENS_DIR &= ~TSENS_BV; // input
 }
 
+static void ds18b20_setResolution(uint8_t resolution) {
+    ds18b20_Reset();
+    ds18b20_send_byte(DS18B20_SKIP_ROM);
+    ds18b20_send_byte(DS18B20_WRITE_SCRATCHPAD);
+    // two dummy values for LOW & HIGH ALARM
+    ds18b20_send_byte(0);
+    ds18b20_send_byte(100);
+    switch (resolution) {
+    case 12:
+        ds18b20_send_byte(TEMP_12_BIT);
+        break;
+
+    case 11:
+        ds18b20_send_byte(TEMP_11_BIT);
+        break;
+
+    case 10:
+        ds18b20_send_byte(TEMP_10_BIT);
+        break;
+
+    case 9:
+    default:
+        ds18b20_send_byte(TEMP_9_BIT);
+        break;
+    }
+    ds18b20_Reset();
+}
+
 int16 readTemperature(void) {
     float temperature = 0;
-    uint8 temp1, temp2, retry_count = 20;
-    if (!ds18b20_RST_PULSE()) {
-        while (retry_count) {
-            ds18b20_send_byte(DS18B20_SKIP_ROM);
-            ds18b20_send_byte(DS18B20_CONVERT_T);
-            _delay_ms(50);
-            ds18b20_RST_PULSE();
-            ds18b20_send_byte(DS18B20_SKIP_ROM);
-            ds18b20_send_byte(DS18B20_READ_SCRATCHPAD);
-            temp1 = ds18b20_read_byte();
-            temp2 = ds18b20_read_byte();
-            ds18b20_RST_PULSE();
+    uint8 temp1, temp2, retry_count = 50, delay_time = MAX_CONVERSION_TIME / retry_count;
+    ds18b20_setResolution(TEMP_12_BIT);
+    ds18b20_Reset();
 
-            if (temp1 == 0xff && temp2 == 0xff) {
-                // No sensor found.
-                ds18b20_GroudPins();
-                return 0;
-            }
-            temperature = (uint16)temp1 | (uint16)(temp2 & MSK) << 8;
-            // neg. temp
-            if (temp2 & (BV(3))) {
-                temperature = temperature / 16.0 - 128.0;
-            }
-            // pos. temp
-            else {
-                temperature = temperature / 16.0;
-            }
+    ds18b20_send_byte(DS18B20_SKIP_ROM);
+    ds18b20_send_byte(DS18B20_CONVERT_T);
 
-            if (temperature == 85) { // if 85, sensor is not yet ready
-                retry_count--;
-                _delay_ms(50);
-            } else {
-                ds18b20_GroudPins();
-                return (int16)(temperature * 100);
-            }
+    while (retry_count) {
+        _delay_ms(delay_time);
+        ds18b20_Reset();
+        ds18b20_send_byte(DS18B20_SKIP_ROM);
+        ds18b20_send_byte(DS18B20_READ_SCRATCHPAD);
+        temp1 = ds18b20_read_byte();
+        temp2 = ds18b20_read_byte();
+        ds18b20_Reset();
+
+        if (temp1 == 0xff && temp2 == 0xff) {
+            // No sensor found.
+            ds18b20_GroudPins();
+            return 0;
         }
-    } else {
-        // Fail
+        if (temp1 == 0x50 && temp2 == 0x05) {
+            // Power-up State, not ready yet
+            retry_count--;
+            continue;
+        }
+        temperature = (uint16)temp1 | (uint16)(temp2 & MSK) << 8;
+        // neg. temp
+        if (temp2 & (BV(3))) {
+            temperature = temperature / 16.0 - 128.0;
+        }
+        // pos. temp
+        else {
+            temperature = temperature / 16.0;
+        }
+
         ds18b20_GroudPins();
-        return 1;
+        return (int16)(temperature * 100);
     }
+
     ds18b20_GroudPins();
     return 1;
 }
