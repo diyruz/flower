@@ -7,8 +7,8 @@ print("date and time =", dt_string)
 with open(join(cwd, './Source/version.c'), 'w') as f:
     chars = ["'{0}'".format(char) for char in dt_string]
     f.write("""
-    #ifndef ZCL_FLOWER_APP_VERSION_H
-    #define ZCL_FLOWER_APP_VERSION_H
+    #ifndef ZCL_APP_VERSION_H
+    #define ZCL_APP_VERSION_H
 
     #ifdef __cplusplus
     extern "C" {
@@ -17,14 +17,14 @@ with open(join(cwd, './Source/version.c'), 'w') as f:
     """
     )
     f.write('#include "version.h"\n')
-    code = """const uint8 zclFlowerApp_DateCode[] = {{ {0}, {1} }};\n""".format(len(chars), ', '.join(chars))
+    code = """const uint8 zclApp_DateCode[] = {{ {0}, {1} }};\n""".format(len(chars), ', '.join(chars))
     f.write(code)
-    code = """const char zclFlowerApp_DateCodeNT[] = \"{0}\";\n""".format(dt_string)
+    code = """const char zclApp_DateCodeNT[] = \"{0}\";\n""".format(dt_string)
     f.write(code)
     f.write("""
     #ifdef __cplusplus
     }
     #endif
 
-    #endif /* ZCL_FLOWER_APP_VERSION_H */
+    #endif /* ZCL_APP_VERSION_H */
     """)

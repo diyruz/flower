@@ -1,5 +1,5 @@
-#ifndef ZCL_FLOWER_APP_H
-#define ZCL_FLOWER_APP_H
+#ifndef ZCL_APP_H
+#define ZCL_APP_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,23 +18,23 @@ extern "C" {
 #define HAL_UNKNOWN_BUTTON HAL_KEY_CODE_NOKEY
 // Application Events
 
-#define FLOWER_APP_CONST_ONE_MINUTE_IN_MS ((uint32) 60 * (uint32) 1000)
+#define APP_CONST_ONE_MINUTE_IN_MS ((uint32) 60 * (uint32) 1000)
 
-#define FLOWER_APP_END_DEVICE_REJOIN_EVT 0x0001
-#define FLOWER_APP_REPORT_EVT 0x0002
-#define FLOWER_APP_RESET_EVT 0x0004
-#define FLOWER_APP_READ_SENSORS_EVT 0x0008
-
-
-#define FLOWER_APP_RESET_DELAY 10 * 1000
-
-#define FLOWER_APP_END_DEVICE_REJOIN_MAX_DELAY ((uint32)1800000) // 30 minutes 30 * 60 * 1000
-#define FLOWER_APP_END_DEVICE_REJOIN_START_DELAY 10 * 1000 // 10 seconds
-#define FLOWER_APP_END_DEVICE_REJOIN_BACKOFF ((float) 1.2)
-#define FLOWER_APP_END_DEVICE_REJOIN_TRIES 20
+#define APP_END_DEVICE_REJOIN_EVT 0x0001
+#define APP_REPORT_EVT 0x0002
+#define APP_RESET_EVT 0x0004
+#define APP_READ_SENSORS_EVT 0x0008
 
 
-#define FLOWER_APP_REPORT_DELAY FLOWER_APP_CONST_ONE_MINUTE_IN_MS //(30 * FLOWER_APP_CONST_ONE_MINUTE_IN_MS) // FLOWER_APP_CONST_ONE_MINUTE_IN_MS //(30 * FLOWER_APP_CONST_ONE_MINUTE_IN_MS)
+#define APP_RESET_DELAY 10 * 1000
+
+#define APP_END_DEVICE_REJOIN_MAX_DELAY ((uint32)1800000) // 30 minutes 30 * 60 * 1000
+#define APP_END_DEVICE_REJOIN_START_DELAY 10 * 1000 // 10 seconds
+#define APP_END_DEVICE_REJOIN_BACKOFF ((float) 1.2)
+#define APP_END_DEVICE_REJOIN_TRIES 20
+
+
+#define APP_REPORT_DELAY APP_CONST_ONE_MINUTE_IN_MS //(30 * APP_CONST_ONE_MINUTE_IN_MS) // APP_CONST_ONE_MINUTE_IN_MS //(30 * APP_CONST_ONE_MINUTE_IN_MS)
 
 
 /*********************************************************************
@@ -71,34 +71,34 @@ extern "C" {
  * VARIABLES
  */
 
-extern SimpleDescriptionFormat_t zclFlowerApp_FirstEP;
-extern SimpleDescriptionFormat_t zclFlowerApp_SecondEP;
+extern SimpleDescriptionFormat_t zclApp_FirstEP;
+extern SimpleDescriptionFormat_t zclApp_SecondEP;
 
-extern uint8 zclFlowerApp_BatteryVoltage;
-extern uint8 zclFlowerApp_BatteryPercentageRemainig;
-extern uint16 zclFlowerApp_BatteryVoltageRawAdc;
-extern int16 zclFlowerApp_Temperature_Sensor_MeasuredValue;
-extern int16 zclFlowerApp_PressureSensor_MeasuredValue;
-extern uint32 zclFlowerApp_PressureSensor_MeasuredValueHPA;
-extern uint16 zclFlowerApp_HumiditySensor_MeasuredValue;
-extern int16 zclFlowerApp_DS18B20_MeasuredValue;
-extern uint16 zclFlowerApp_SoilHumiditySensor_MeasuredValue;
-extern uint16 zclFlowerApp_SoilHumiditySensor_MeasuredValueRawAdc;
-extern uint16 zclFlowerApp_IlluminanceSensor_MeasuredValue;
-extern uint16 zclFlowerApp_IlluminanceSensor_MeasuredValueRawAdc;
+extern uint8 zclApp_BatteryVoltage;
+extern uint8 zclApp_BatteryPercentageRemainig;
+extern uint16 zclApp_BatteryVoltageRawAdc;
+extern int16 zclApp_Temperature_Sensor_MeasuredValue;
+extern int16 zclApp_PressureSensor_MeasuredValue;
+extern uint32 zclApp_PressureSensor_MeasuredValueHPA;
+extern uint16 zclApp_HumiditySensor_MeasuredValue;
+extern int16 zclApp_DS18B20_MeasuredValue;
+extern uint16 zclApp_SoilHumiditySensor_MeasuredValue;
+extern uint16 zclApp_SoilHumiditySensor_MeasuredValueRawAdc;
+extern uint16 zclApp_IlluminanceSensor_MeasuredValue;
+extern uint16 zclApp_IlluminanceSensor_MeasuredValueRawAdc;
 
 // attribute list
-extern CONST zclAttrRec_t zclFlowerApp_AttrsFirstEP[];
-extern CONST zclAttrRec_t zclFlowerApp_AttrsSecondEP[];
-extern CONST uint8 zclFlowerApp_AttrsSecondEPCount;
-extern CONST uint8 zclFlowerApp_AttrsFirstEPCount;
+extern CONST zclAttrRec_t zclApp_AttrsFirstEP[];
+extern CONST zclAttrRec_t zclApp_AttrsSecondEP[];
+extern CONST uint8 zclApp_AttrsSecondEPCount;
+extern CONST uint8 zclApp_AttrsFirstEPCount;
 
 
-extern const uint8 zclFlowerApp_ManufacturerName[];
-extern const uint8 zclFlowerApp_ModelId[];
-extern const uint8 zclFlowerApp_PowerSource;
+extern const uint8 zclApp_ManufacturerName[];
+extern const uint8 zclApp_ModelId[];
+extern const uint8 zclApp_PowerSource;
 
-// FLOWER_APP_TODO: Declare application specific attributes here
+// APP_TODO: Declare application specific attributes here
 
 /*********************************************************************
  * FUNCTIONS
@@ -107,13 +107,13 @@ extern const uint8 zclFlowerApp_PowerSource;
 /*
  * Initialization for the task
  */
-extern void zclFlowerApp_Init(byte task_id);
-extern byte zclFlowerApp_KeyCodeToButton(byte key);
+extern void zclApp_Init(byte task_id);
+extern byte zclApp_KeyCodeToButton(byte key);
 
 /*
  *  Event Process for the task
  */
-extern UINT16 zclFlowerApp_event_loop(byte task_id, UINT16 events);
+extern UINT16 zclApp_event_loop(byte task_id, UINT16 events);
 
 void user_delay_ms(uint32_t period);
 
@@ -121,4 +121,4 @@ void user_delay_ms(uint32_t period);
 }
 #endif
 
-#endif /* ZCL_FLOWER_APP_H */
+#endif /* ZCL_APP_H */

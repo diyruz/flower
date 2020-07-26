@@ -1,2 +1,2 @@
-extern const uint8 zclFlowerApp_DateCode[];
-extern const char zclFlowerApp_DateCodeNT[];
+extern const uint8 zclApp_DateCode[];
+extern const char zclApp_DateCodeNT[];
