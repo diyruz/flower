@@ -2307,6 +2307,12 @@
             <name>$PROJ_DIR$\..\Source\Debug.h</name>
         </file>
         <file>
+            <name>$PROJ_DIR$\..\Source\factory_reset.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\Source\factory_reset.h</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\Source\hal\hal_i2c.c</name>
         </file>
         <file>

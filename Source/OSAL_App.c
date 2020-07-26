@@ -9,6 +9,7 @@
 
 #include "bdb_interface.h"
 #include "zcl_app.h"
+#include "factory_reset.h"
 
 const pTaskEventHandlerFn tasksArr[] = {macEventLoop,
                                         nwk_event_loop,
@@ -17,7 +18,8 @@ const pTaskEventHandlerFn tasksArr[] = {macEventLoop,
                                         ZDApp_event_loop,
                                         zcl_event_loop,
                                         bdb_event_loop,
-                                        zclApp_event_loop};
+                                        zclApp_event_loop,
+                                        zclFactoryResetter_loop};
 
 const uint8 tasksCnt = sizeof(tasksArr) / sizeof(tasksArr[0]);
 uint16 *tasksEvents;
@@ -34,7 +36,8 @@ void osalInitTasks(void) {
     ZDApp_Init(taskID++);
     zcl_Init(taskID++);
     bdb_Init(taskID++);
-    zclApp_Init(taskID);
+    zclApp_Init(taskID++);
+    zclFactoryResetter_Init(taskID);
 }
 
 /*********************************************************************

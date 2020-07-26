@@ -15,6 +15,7 @@
 **/settings/*.dni
 **/settings/*.wsdt
 **/settings/*.wspos
+**/settings/*.dnx
 
 # IAR Debug Exe
 **/CoordinatorEB/Exe/

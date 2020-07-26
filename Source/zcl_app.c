@@ -34,8 +34,10 @@
 #include "hal_led.h"
 
 #include "battery.h"
+#include "factory_reset.h"
 #include "utils.h"
 #include "version.h"
+
 /*********************************************************************
  * MACROS
  */
@@ -84,7 +86,6 @@ struct bme280_dev bme_dev = {.dev_id = BME280_I2C_ADDR_PRIM,
 static void zclApp_HandleKeys(byte shift, byte keys);
 static void zclApp_BindNotification(bdbBindNotificationData_t *data);
 static void zclApp_Report(void);
-static void zclApp_Rejoin(void);
 
 static void zclApp_ReadSensors(void);
 static void zclApp_Battery(void);
@@ -313,12 +314,6 @@ uint16 zclApp_event_loop(uint8 task_id, uint16 events) {
         return (events ^ APP_REPORT_EVT);
     }
 
-    if (events & APP_RESET_EVT) {
-        LREPMaster("APP_RESET_EVT\r\n");
-        zclApp_Rejoin();
-        return (events ^ APP_RESET_EVT);
-    }
-
     if (events & APP_READ_SENSORS_EVT) {
         LREPMaster("APP_READ_SENSORS_EVT\r\n");
         zclApp_ReadSensors();
@@ -329,34 +324,23 @@ uint16 zclApp_event_loop(uint8 task_id, uint16 events) {
     return 0;
 }
 
-static void zclApp_Rejoin(void) {
-    HalLedSet(HAL_LED_1, HAL_LED_MODE_FLASH);
-    LREPMaster("Reset to FN\r\n");
-    bdb_resetLocalAction();
-}
-
 static void zclApp_HandleKeys(byte shift, byte keyCode) {
     static byte prevKeyCode = 0;
     if (keyCode == prevKeyCode) {
         return;
     }
-    prevKeyCode = keyCode;
+    zclFactoryResetter_HandleKeys(shift, keyCode);
 
+    prevKeyCode = keyCode;
     if (keyCode == HAL_KEY_CODE_RELEASE_KEY) {
         LREPMaster("Key release\r\n");
-        osal_stop_timerEx(zclApp_TaskID, APP_RESET_EVT);
         osal_start_timerEx(zclApp_TaskID, APP_REPORT_EVT, 200);
     } else {
         LREPMaster("Key press\r\n");
-        uint32 resetHoldTime = APP_RESET_DELAY;
         if (devState == DEV_NWK_ORPHAN) {
             LREP("devState=%d try to restore network\r\n", devState);
             bdb_ZedAttemptRecoverNwk();
         }
-        if (!bdbAttributes.bdbNodeIsOnANetwork) {
-            resetHoldTime = resetHoldTime >> 2;
-        }
-        osal_start_timerEx(zclApp_TaskID, APP_RESET_EVT, resetHoldTime);
     }
 }
 
@@ -379,7 +363,7 @@ static void zclApp_Battery(void) {
 
 static void zclApp_ReadSensors(void) {
     /**
-     * FYI: split reading sensors into phases, so single call wouldn't block processor 
+     * FYI: split reading sensors into phases, so single call wouldn't block processor
      * for extensive ammount of time
      * */
     switch (currentSensorsReadingPhase) {
@@ -428,8 +412,7 @@ static void zclApp_ReadSoilHumidity(void) {
 
     zclApp_SoilHumiditySensor_MeasuredValue =
         (uint16)mapRange(soilHumidityMinRange, soilHumidityMaxRange, 0.0, 10000.0, zclApp_SoilHumiditySensor_MeasuredValueRawAdc);
-    LREP("ReadSoilHumidity raw=%d mapped=%d\r\n", zclApp_SoilHumiditySensor_MeasuredValueRawAdc,
-         zclApp_SoilHumiditySensor_MeasuredValue);
+    LREP("ReadSoilHumidity raw=%d mapped=%d\r\n", zclApp_SoilHumiditySensor_MeasuredValueRawAdc, zclApp_SoilHumiditySensor_MeasuredValue);
 
     bdb_RepChangedAttrValue(zclApp_SecondEP.EndPoint, HUMIDITY, ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE);
     // bdb_RepChangedAttrValue(zclApp_SecondEP.EndPoint, HUMIDITY, ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE_RAW_ADC);
@@ -489,11 +472,11 @@ static void zclApp_ReadBME280(struct bme280_dev *dev) {
         LREP("ReadBME280 init error %d\r\n", rslt);
     }
 }
-static void zclApp_Report(void) { 
+static void zclApp_Report(void) {
 
     currentSensorsReadingPhase = 0;
     osal_start_reload_timer(zclApp_TaskID, APP_READ_SENSORS_EVT, 100);
- }
+}
 
 /****************************************************************************
 ****************************************************************************/
