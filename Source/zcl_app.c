@@ -6,6 +6,7 @@
 #include "ZComDef.h"
 #include "ZDApp.h"
 #include "ZDObject.h"
+#include "ZDNwkMgr.h"
 #include "math.h"
 
 #include "nwk_util.h"
@@ -98,6 +99,7 @@ static void zclApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbComm
 static void zclApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg);
 static void zclApp_ResetBackoffRetry(void);
 static void zclApp_OnConnect(void);
+static void zclApp_ClockDownPollingRate(void);
 
 /*********************************************************************
  * ZCL General Profile Callback table
@@ -116,7 +118,6 @@ static zclGeneral_AppCallbacks_t zclApp_CmdCallbacks = {
 void zclApp_Init(byte task_id) {
 
     HalI2CInit();
-    DebugInit();
     // this is important to allow connects throught routers
     // to make this work, coordinator should be compiled with this flag #define TP2_LEGACY_ZC
     requestNewTrustCenterLinkKey = FALSE;
@@ -188,11 +189,17 @@ static void zclApp_ResetBackoffRetry(void) {
     rejoinsLeft = APP_END_DEVICE_REJOIN_TRIES;
     rejoinDelay = APP_END_DEVICE_REJOIN_START_DELAY;
 }
+static void zclApp_ClockDownPollingRate(void) {
+    NLME_SetPollRate(0);
+    bool RxOnIdle = FALSE;
+    ZMacSetReq( ZMacRxOnIdle, &RxOnIdle );
+}
 
 static void zclApp_OnConnect(void) {
     LREPMaster("OnConnect \r\n");
     zclApp_ResetBackoffRetry();
     osal_start_reload_timer(zclApp_TaskID, APP_REPORT_EVT, APP_REPORT_DELAY);
+    osal_start_timerEx(zclApp_TaskID, APP_CLOCK_DOWN_POLING_RATE_EVT, 10 * 1000);
 }
 
 static void zclApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
@@ -319,6 +326,12 @@ uint16 zclApp_event_loop(uint8 task_id, uint16 events) {
         zclApp_ReadSensors();
         return (events ^ APP_READ_SENSORS_EVT);
     }
+    if (events & APP_CLOCK_DOWN_POLING_RATE_EVT) {
+        LREPMaster("APP_CLOCK_DOWN_POLING_RATE_EVT\r\n");
+        zclApp_ClockDownPollingRate();
+        return (events ^ APP_CLOCK_DOWN_POLING_RATE_EVT);
+    }
+
 
     // Discard unknown events
     return 0;

@@ -10,6 +10,7 @@
 #include "bdb_interface.h"
 #include "zcl_app.h"
 #include "factory_reset.h"
+#include "Debug.h"
 
 const pTaskEventHandlerFn tasksArr[] = {macEventLoop,
                                         nwk_event_loop,
@@ -19,12 +20,14 @@ const pTaskEventHandlerFn tasksArr[] = {macEventLoop,
                                         zcl_event_loop,
                                         bdb_event_loop,
                                         zclApp_event_loop,
-                                        zclFactoryResetter_loop};
+                                        zclFactoryResetter_loop
+                                        };
 
 const uint8 tasksCnt = sizeof(tasksArr) / sizeof(tasksArr[0]);
 uint16 *tasksEvents;
 
 void osalInitTasks(void) {
+    DebugInit();
     uint8 taskID = 0;
 
     tasksEvents = (uint16 *)osal_mem_alloc(sizeof(uint16) * tasksCnt);
