@@ -41,7 +41,6 @@ void zclFactoryResetter_Init(uint8 task_id) {
      * zclFactoryResetter_HandleKeys(shift, keyCode);
      * */
     // RegisterForKeys(task_id);
-    zcl_registerForMsg(zclFactoryResetter_TaskID);
     zclFactoryResetter_ProcessBootCounter();
 }
 
