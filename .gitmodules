@@ -1,3 +1,6 @@
 [submodule "BME280_driver"]
 	path = BME280_driver
 	url = git@github.com:BoschSensortec/BME280_driver.git
+[submodule "zstack-lib"]
+	path = zstack-lib
+	url = git@github.com:diyruz/zstack-lib.git

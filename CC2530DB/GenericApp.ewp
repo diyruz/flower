@@ -470,7 +470,7 @@
                     <state>$PROJ_DIR$</state>
                     <state>$PROJ_DIR$\..\Source</state>
                     <state>$PROJ_DIR$\..\BME280_driver</state>
-                    <state>$PROJ_DIR$\..\Source\hal</state>
+                    <state>$PROJ_DIR$\..\zstack-lib</state>
                     <state>$PROJ_DIR$\..\..\Source</state>
                     <state>$PROJ_DIR$\..\..\..\ZMain\TI2530DB</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\include</state>
@@ -1611,7 +1611,7 @@
                     <state>$PROJ_DIR$</state>
                     <state>$PROJ_DIR$\..\Source</state>
                     <state>$PROJ_DIR$\..\BME280_driver</state>
-                    <state>$PROJ_DIR$\..\Source\hal</state>
+                    <state>$PROJ_DIR$\..\zstack-lib</state>
                     <state>$PROJ_DIR$\..\..\Source</state>
                     <state>$PROJ_DIR$\..\..\..\ZMain\TI2530DB</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\Components\hal\include</state>
@@ -2286,12 +2286,6 @@
     <group>
         <name>App</name>
         <file>
-            <name>$PROJ_DIR$\..\Source\battery.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\Source\bettery.c</name>
-        </file>
-        <file>
             <name>$PROJ_DIR$\..\BME280_driver\bme280.c</name>
         </file>
         <file>
@@ -2301,24 +2295,6 @@
             <name>$PROJ_DIR$\..\BME280_driver\bme280_defs.h</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\Source\Debug.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\Source\Debug.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\Source\factory_reset.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\Source\factory_reset.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\Source\hal\hal_i2c.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\Source\hal\hal_i2c.h</name>
-        </file>
-        <file>
             <name>$PROJ_DIR$\..\Source\OSAL_App.c</name>
         </file>
         <file>
@@ -2326,12 +2302,6 @@
         </file>
         <file>
             <name>$PROJ_DIR$\..\Source\stdint.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\Source\utils.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\Source\utils.h</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\Source\version.c</name>
@@ -2453,9 +2423,6 @@
                 </group>
                 <group>
                     <name>Drivers</name>
-                    <file>
-                        <name>$PROJ_DIR$\..\Source\hal\ds18b20.c</name>
-                    </file>
                     <file>
                         <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_adc.c</name>
                     </file>
@@ -2895,6 +2862,45 @@
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\..\ZMain\TI2530DB\ZMain.c</name>
+        </file>
+    </group>
+    <group>
+        <name>zstack-lib</name>
+        <file>
+            <name>$PROJ_DIR$\..\zstack-lib\battery.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\zstack-lib\bettery.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\zstack-lib\Debug.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\zstack-lib\Debug.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\zstack-lib\ds18b20.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\zstack-lib\ds18b20.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\zstack-lib\factory_reset.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\zstack-lib\factory_reset.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\zstack-lib\hal_i2c.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\zstack-lib\hal_i2c.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\zstack-lib\utils.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\zstack-lib\utils.h</name>
         </file>
     </group>
 </project>
