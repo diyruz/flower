@@ -20,6 +20,14 @@
     #define FACTORY_RESET_BOOTCOUNTER_RESET_TIME 10 * 1000
 #endif
 
+#ifndef FACTORY_RESET_BY_LONG_PRESS
+    #define FACTORY_RESET_BY_LONG_PRESS TRUE
+#endif
+
+#ifndef FACTORY_RESET_BY_BOOT_COUNTER
+    #define FACTORY_RESET_BY_BOOT_COUNTER TRUE
+#endif
+
 extern void zclFactoryResetter_Init(uint8 task_id);
 extern uint16 zclFactoryResetter_loop(uint8 task_id, uint16 events);
 extern void zclFactoryResetter_HandleKeys(uint8 shift, uint8 keyCode);

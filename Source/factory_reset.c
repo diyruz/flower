@@ -41,7 +41,9 @@ void zclFactoryResetter_Init(uint8 task_id) {
      * zclFactoryResetter_HandleKeys(shift, keyCode);
      * */
     // RegisterForKeys(task_id);
+#if FACTORY_RESET_BY_BOOT_COUNTER
     zclFactoryResetter_ProcessBootCounter();
+#endif
 }
 
 void zclFactoryResetter_ResetToFN(void) {
@@ -52,6 +54,7 @@ void zclFactoryResetter_ResetToFN(void) {
 }
 
 void zclFactoryResetter_HandleKeys(uint8 shift, uint8 keyCode) {
+#if FACTORY_RESET_BY_LONG_PRESS
     if (keyCode == HAL_KEY_CODE_NOKEY) {
         LREPMaster("zclFactoryResetter: Key release\r\n");
         osal_stop_timerEx(zclFactoryResetter_TaskID, FACTORY_RESET_EVT);
@@ -60,6 +63,7 @@ void zclFactoryResetter_HandleKeys(uint8 shift, uint8 keyCode) {
         osal_start_timerEx(zclFactoryResetter_TaskID, FACTORY_RESET_EVT,
                            bdbAttributes.bdbNodeIsOnANetwork ? FACTORY_RESET_HOLD_TIME_LONG : FACTORY_RESET_HOLD_TIME_FAST);
     }
+#endif
 }
 
 void zclFactoryResetter_ProcessBootCounter(void) {
