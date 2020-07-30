@@ -143,7 +143,7 @@ void zclApp_Init(byte task_id) {
     // this allows power saving, PM2
     osal_pwrmgr_task_state(zclApp_TaskID, PWRMGR_CONSERVE);
 
-    LREP("Battery voltage=%d prc=%d \r\n", getBatteryVoltageZCL(), getBatteryRemainingPercentageZCL());
+
     ZMacSetTransmitPower(TX_PWR_PLUS_4); // set 4dBm
 
     bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_STEERING | BDB_COMMISSIONING_MODE_FINDING_BINDING);
@@ -366,8 +366,9 @@ static void zclApp_BindNotification(bdbBindNotificationData_t *data) {
 }
 
 static void zclApp_Battery(void) {
-    zclApp_BatteryVoltage = getBatteryVoltageZCL();
-    zclApp_BatteryPercentageRemainig = getBatteryRemainingPercentageZCL();
+    uint16 millivolts = getBatteryVoltage();
+    zclApp_BatteryVoltage = getBatteryVoltageZCL(millivolts);
+    zclApp_BatteryPercentageRemainig = getBatteryRemainingPercentageZCL(millivolts);
     zclApp_BatteryVoltageRawAdc = adcReadSampled(HAL_ADC_CHANNEL_VDD, HAL_ADC_RESOLUTION_14, HAL_ADC_REF_125V, 10);
 
     bdb_RepChangedAttrValue(zclApp_FirstEP.EndPoint, POWER_CFG, ATTRID_POWER_CFG_BATTERY_VOLTAGE);
