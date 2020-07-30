@@ -34,7 +34,7 @@ extern "C" {
 #define APP_END_DEVICE_REJOIN_TRIES 20
 
 
-#define APP_REPORT_DELAY APP_CONST_ONE_MINUTE_IN_MS //(30 * APP_CONST_ONE_MINUTE_IN_MS) // APP_CONST_ONE_MINUTE_IN_MS //(30 * APP_CONST_ONE_MINUTE_IN_MS)
+#define APP_REPORT_DELAY (30 * APP_CONST_ONE_MINUTE_IN_MS)
 
 
 /*********************************************************************
