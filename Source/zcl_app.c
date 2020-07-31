@@ -87,7 +87,7 @@ struct bme280_dev bme_dev = {.dev_id = BME280_I2C_ADDR_PRIM,
 static void zclApp_HandleKeys(byte shift, byte keys);
 static void zclApp_BindNotification(bdbBindNotificationData_t *data);
 static void zclApp_Report(void);
-
+static void zclApp_Sleep(uint8 allow);
 static void zclApp_ReadSensors(void);
 static void zclApp_Battery(void);
 static void zclApp_ReadBME280(struct bme280_dev *dev);
@@ -99,7 +99,6 @@ static void zclApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbComm
 static void zclApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg);
 static void zclApp_ResetBackoffRetry(void);
 static void zclApp_OnConnect(void);
-static void zclApp_ClockDownPollingRate(void);
 
 /*********************************************************************
  * ZCL General Profile Callback table
@@ -188,11 +187,6 @@ void zclApp_Init(byte task_id) {
 static void zclApp_ResetBackoffRetry(void) {
     rejoinsLeft = APP_END_DEVICE_REJOIN_TRIES;
     rejoinDelay = APP_END_DEVICE_REJOIN_START_DELAY;
-}
-static void zclApp_ClockDownPollingRate(void) {
-    NLME_SetPollRate(0);
-    bool RxOnIdle = FALSE;
-    ZMacSetReq( ZMacRxOnIdle, &RxOnIdle );
 }
 
 static void zclApp_OnConnect(void) {
@@ -328,10 +322,9 @@ uint16 zclApp_event_loop(uint8 task_id, uint16 events) {
     }
     if (events & APP_CLOCK_DOWN_POLING_RATE_EVT) {
         LREPMaster("APP_CLOCK_DOWN_POLING_RATE_EVT\r\n");
-        zclApp_ClockDownPollingRate();
+        zclApp_Sleep(true);
         return (events ^ APP_CLOCK_DOWN_POLING_RATE_EVT);
     }
-
 
     // Discard unknown events
     return 0;
@@ -383,7 +376,7 @@ static void zclApp_ReadSensors(void) {
     switch (currentSensorsReadingPhase) {
     case 0:
         HalLedSet(HAL_LED_1, HAL_LED_MODE_ON);
-        osal_pwrmgr_task_state(zclApp_TaskID, PWRMGR_HOLD);
+        zclApp_Sleep(false);
         POWER_ON_SENSORS();
         break;
     case 1:
@@ -405,7 +398,7 @@ static void zclApp_ReadSensors(void) {
 
     case 5:
         POWER_OFF_SENSORS();
-        osal_pwrmgr_task_state(zclApp_TaskID, PWRMGR_CONSERVE);
+        zclApp_Sleep(true);
         HalLedSet(HAL_LED_1, HAL_LED_MODE_OFF);
         break;
     default:
@@ -492,5 +485,22 @@ static void zclApp_Report(void) {
     osal_start_reload_timer(zclApp_TaskID, APP_READ_SENSORS_EVT, 100);
 }
 
+static void zclApp_Sleep( uint8 allow ) {
+    LREP("zclApp_Sleep %d\r\n", allow);
+// #if defined( POWER_SAVING )
+  if ( allow ) {
+    osal_pwrmgr_task_state( NWK_TaskID, PWRMGR_CONSERVE );
+    NLME_SetPollRate( 0 );
+    bool RxOnIdle = FALSE;
+    ZMacSetReq( ZMacRxOnIdle, &RxOnIdle );
+  } else {
+    osal_pwrmgr_task_state( NWK_TaskID, PWRMGR_HOLD );
+    // 1 will do a one time poll.
+    NLME_SetPollRate( 1 );
+    bool RxOnIdle = TRUE;
+    ZMacSetReq( ZMacRxOnIdle, &RxOnIdle );
+  }
+// #endif
+}
 /****************************************************************************
 ****************************************************************************/
