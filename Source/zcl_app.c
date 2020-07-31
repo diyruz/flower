@@ -487,7 +487,7 @@ static void zclApp_Report(void) {
 
 static void zclApp_Sleep( uint8 allow ) {
     LREP("zclApp_Sleep %d\r\n", allow);
-// #if defined( POWER_SAVING )
+#if defined( POWER_SAVING )
   if ( allow ) {
     osal_pwrmgr_task_state( NWK_TaskID, PWRMGR_CONSERVE );
     NLME_SetPollRate( 0 );
@@ -500,7 +500,7 @@ static void zclApp_Sleep( uint8 allow ) {
     bool RxOnIdle = TRUE;
     ZMacSetReq( ZMacRxOnIdle, &RxOnIdle );
   }
-// #endif
+#endif
 }
 /****************************************************************************
 ****************************************************************************/
