@@ -8,10 +8,6 @@
             <name>ALL</name>
             <member>
                 <project>GenericApp</project>
-                <configuration>CHDTECH_DEV</configuration>
-            </member>
-            <member>
-                <project>GenericApp</project>
                 <configuration>flower</configuration>
             </member>
         </batchDefinition>
