@@ -40,18 +40,18 @@ uint8 zclApp_BatteryVoltage = 0xff;
 uint16 zclApp_BatteryVoltageRawAdc = 0xff;
 uint8 zclApp_BatteryPercentageRemainig = 0xff;
 
-int16 zclApp_Temperature_Sensor_MeasuredValue = 0x8000;
-int16 zclApp_PressureSensor_MeasuredValue = 0x8000;
-uint32 zclApp_PressureSensor_MeasuredValueHPA = 0x8000;
-uint16 zclApp_HumiditySensor_MeasuredValue = 0xffff;
+int16 zclApp_Temperature_Sensor_MeasuredValue = 0;
+int16 zclApp_PressureSensor_MeasuredValue = 0;
+uint32 zclApp_PressureSensor_MeasuredValueHPA = 0;
+uint16 zclApp_HumiditySensor_MeasuredValue = 0;
 
-uint16 zclApp_SoilHumiditySensor_MeasuredValue = 0xffff;
-uint16 zclApp_SoilHumiditySensor_MeasuredValueRawAdc = 0xffff;
+uint16 zclApp_SoilHumiditySensor_MeasuredValue = 0;
+uint16 zclApp_SoilHumiditySensor_MeasuredValueRawAdc = 0;
 
-int16 zclApp_DS18B20_MeasuredValue = 0x8000;
+int16 zclApp_DS18B20_MeasuredValue = 0;
 
-uint16 zclApp_IlluminanceSensor_MeasuredValue = 0xffff;
-uint16 zclApp_IlluminanceSensor_MeasuredValueRawAdc = 0xffff;
+uint16 zclApp_IlluminanceSensor_MeasuredValue = 0;
+uint16 zclApp_IlluminanceSensor_MeasuredValueRawAdc = 0;
 
 // Basic Cluster
 const uint8 zclApp_HWRevision = APP_HWVERSION;
