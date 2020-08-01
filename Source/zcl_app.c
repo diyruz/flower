@@ -237,7 +237,7 @@ static void zclApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbComm
             break;
 
         default:
-            HalLedSet(HAL_LED_1, HAL_LED_MODE_FLASH);
+            HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
             // // Parent not found, attempt to rejoin again after a exponential backoff delay
             LREP("rejoinsLeft %d rejoinDelay=%ld\r\n", rejoinsLeft, rejoinDelay);
             if (rejoinsLeft > 0) {
@@ -330,15 +330,10 @@ uint16 zclApp_event_loop(uint8 task_id, uint16 events) {
     return 0;
 }
 
-static void zclApp_HandleKeys(byte shift, byte keyCode) {
-    static byte prevKeyCode = 0;
-    if (keyCode == prevKeyCode) {
-        return;
-    }
-    zclFactoryResetter_HandleKeys(shift, keyCode);
-
-    prevKeyCode = keyCode;
-    if (keyCode == HAL_KEY_CODE_RELEASE_KEY) {
+static void zclApp_HandleKeys(byte portAndAction, byte keyCode) {
+    LREP("zclApp_HandleKeys portAndAction=0x%X keyCode=0x%X\r\n", portAndAction, keyCode);
+    zclFactoryResetter_HandleKeys(portAndAction, keyCode);
+    if (portAndAction & HAL_KEY_RELEASE) {
         LREPMaster("Key release\r\n");
         osal_start_timerEx(zclApp_TaskID, APP_REPORT_EVT, 200);
     } else {
@@ -369,13 +364,14 @@ static void zclApp_Battery(void) {
 }
 
 static void zclApp_ReadSensors(void) {
+    LREP("currentSensorsReadingPhase %d\r\n", currentSensorsReadingPhase);
     /**
      * FYI: split reading sensors into phases, so single call wouldn't block processor
      * for extensive ammount of time
      * */
-    switch (currentSensorsReadingPhase) {
+    HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
+    switch (currentSensorsReadingPhase++) {
     case 0:
-        HalLedSet(HAL_LED_1, HAL_LED_MODE_ON);
         zclApp_Sleep(false);
         POWER_ON_SENSORS();
         break;
@@ -395,17 +391,14 @@ static void zclApp_ReadSensors(void) {
     case 4:
         HAL_CRITICAL_STATEMENT(zclApp_ReadDS18B20());
         break;
-
-    case 5:
+    default:
         POWER_OFF_SENSORS();
         zclApp_Sleep(true);
-        HalLedSet(HAL_LED_1, HAL_LED_MODE_OFF);
-        break;
-    default:
         osal_stop_timerEx(zclApp_TaskID, APP_READ_SENSORS_EVT);
+        osal_clear_event(zclApp_TaskID, APP_READ_SENSORS_EVT);
+        currentSensorsReadingPhase = 0;
         break;
     }
-    currentSensorsReadingPhase++;
 }
 
 static void zclApp_ReadSoilHumidity(void) {
@@ -474,14 +467,12 @@ static void zclApp_ReadBME280(struct bme280_dev *dev) {
         bdb_RepChangedAttrValue(zclApp_FirstEP.EndPoint, TEMP, ATTRID_MS_TEMPERATURE_MEASURED_VALUE);
         bdb_RepChangedAttrValue(zclApp_FirstEP.EndPoint, PRESSURE, ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE);
         bdb_RepChangedAttrValue(zclApp_FirstEP.EndPoint, HUMIDITY, ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE);
-        bdb_RepChangedAttrValue(zclApp_FirstEP.EndPoint, HUMIDITY, ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE_HPA);
+        // bdb_RepChangedAttrValue(zclApp_FirstEP.EndPoint, HUMIDITY, ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE_HPA);
     } else {
         LREP("ReadBME280 init error %d\r\n", rslt);
     }
 }
 static void zclApp_Report(void) {
-
-    currentSensorsReadingPhase = 0;
     osal_start_reload_timer(zclApp_TaskID, APP_READ_SENSORS_EVT, 100);
 }
 
