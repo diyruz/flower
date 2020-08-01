@@ -2295,6 +2295,12 @@
             <name>$PROJ_DIR$\..\BME280_driver\bme280_defs.h</name>
         </file>
         <file>
+            <name>$PROJ_DIR$\..\zstack-lib\hal_key.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\zstack-lib\hal_key.h</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\Source\OSAL_App.c</name>
         </file>
         <file>
@@ -2396,9 +2402,6 @@
                 <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_flash.h</name>
             </file>
             <file>
-                <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_key.h</name>
-            </file>
-            <file>
                 <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\include\hal_lcd.h</name>
             </file>
             <file>
@@ -2431,9 +2434,6 @@
                     </file>
                     <file>
                         <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_flash.c</name>
-                    </file>
-                    <file>
-                        <name>$PROJ_DIR$\..\Source\hal\hal_key.c</name>
                     </file>
                     <file>
                         <name>$PROJ_DIR$\..\..\..\..\..\Components\hal\target\CC2530EB\hal_lcd.c</name>
@@ -2659,6 +2659,102 @@
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\sys\ZGlobals.h</name>
+        </file>
+    </group>
+    <group>
+        <name>MT</name>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\DebugTrace.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\DebugTrace.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_AF.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_AF.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_APP.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_APP.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_APP_CONFIG.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_APP_CONFIG.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_DEBUG.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_DEBUG.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_GP.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_GP.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_NWK.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_NWK.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_RPC.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_SAPI.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_SAPI.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_SYS.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_SYS.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_TASK.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_TASK.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_UART.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_UART.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_UTIL.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_UTIL.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_VERSION.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_VERSION.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_ZDO.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_ZDO.h</name>
         </file>
     </group>
     <group>
