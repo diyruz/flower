@@ -12,9 +12,17 @@
 #include "factory_reset.h"
 #include "Debug.h"
 
+#if defined ( MT_TASK )
+  #include "MT.h"
+  #include "MT_TASK.h"
+#endif
+
 const pTaskEventHandlerFn tasksArr[] = {macEventLoop,
                                         nwk_event_loop,
                                         Hal_ProcessEvent,
+#if defined( MT_TASK )
+                                        MT_ProcessEvent,
+#endif
                                         APS_event_loop,
                                         ZDApp_event_loop,
                                         zcl_event_loop,
@@ -35,6 +43,9 @@ void osalInitTasks(void) {
     macTaskInit(taskID++);
     nwk_init(taskID++);
     Hal_Init(taskID++);
+#if defined( MT_TASK )
+  MT_TaskInit( taskID++ );
+#endif
     APS_Init(taskID++);
     ZDApp_Init(taskID++);
     zcl_Init(taskID++);
