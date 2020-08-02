@@ -2,7 +2,7 @@
 #include "AF.h"
 #include "OSAL.h"
 #include "OSAL_Clock.h"
-#include "OSAL_PwrMgr.h"
+
 #include "ZComDef.h"
 #include "ZDApp.h"
 #include "ZDObject.h"
@@ -36,6 +36,7 @@
 
 #include "battery.h"
 #include "factory_reset.h"
+#include "commissioning.h"
 #include "utils.h"
 #include "version.h"
 
@@ -70,8 +71,7 @@ byte zclApp_TaskID;
 /*********************************************************************
  * LOCAL VARIABLES
  */
-byte rejoinsLeft = APP_END_DEVICE_REJOIN_TRIES;
-uint32 rejoinDelay = APP_END_DEVICE_REJOIN_START_DELAY;
+
 static uint8 currentSensorsReadingPhase = 0;
 
 afAddrType_t inderect_DstAddr = {.addrMode = (afAddrMode_t)AddrNotPresent, .endPoint = 0, .addr.shortAddr = 0};
@@ -85,9 +85,8 @@ struct bme280_dev bme_dev = {.dev_id = BME280_I2C_ADDR_PRIM,
  * LOCAL FUNCTIONS
  */
 static void zclApp_HandleKeys(byte shift, byte keys);
-static void zclApp_BindNotification(bdbBindNotificationData_t *data);
 static void zclApp_Report(void);
-static void zclApp_Sleep(uint8 allow);
+
 static void zclApp_ReadSensors(void);
 static void zclApp_Battery(void);
 static void zclApp_ReadBME280(struct bme280_dev *dev);
@@ -95,10 +94,8 @@ static void zclApp_ReadDS18B20(void);
 static void zclApp_ReadLumosity(void);
 static void zclApp_ReadSoilHumidity(void);
 
-static void zclApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
-static void zclApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg);
-static void zclApp_ResetBackoffRetry(void);
-static void zclApp_OnConnect(void);
+
+
 
 /*********************************************************************
  * ZCL General Profile Callback table
@@ -134,18 +131,11 @@ void zclApp_Init(byte task_id) {
 
     // Register for all key events - This app will handle all key events
     RegisterForKeys(zclApp_TaskID);
-
-    bdb_RegisterBindNotificationCB(zclApp_BindNotification);
-    bdb_RegisterCommissioningStatusCB(zclApp_ProcessCommissioningStatus);
-
     LREP("Started build %s \r\n", zclApp_DateCodeNT);
-    // this allows power saving, PM2
-    osal_pwrmgr_task_state(zclApp_TaskID, PWRMGR_CONSERVE);
 
+    osal_start_reload_timer(zclApp_TaskID, APP_REPORT_EVT, APP_REPORT_DELAY);
 
     ZMacSetTransmitPower(TX_PWR_PLUS_4); // set 4dBm
-
-    bdb_StartCommissioning(BDB_COMMISSIONING_MODE_NWK_STEERING | BDB_COMMISSIONING_MODE_FINDING_BINDING);
 
     // moisture sensor
     IO_DIR_PORT_PIN(SOIL_MOISTURE_PORT, SOIL_MOISTURE_PIN, IO_IN);
@@ -184,129 +174,26 @@ void zclApp_Init(byte task_id) {
     IO_DIR_PORT_PIN(2, 3, IO_IN);
 }
 
-static void zclApp_ResetBackoffRetry(void) {
-    rejoinsLeft = APP_END_DEVICE_REJOIN_TRIES;
-    rejoinDelay = APP_END_DEVICE_REJOIN_START_DELAY;
-}
 
-static void zclApp_OnConnect(void) {
-    LREPMaster("OnConnect \r\n");
-    zclApp_ResetBackoffRetry();
-    osal_start_reload_timer(zclApp_TaskID, APP_REPORT_EVT, APP_REPORT_DELAY);
-    osal_start_timerEx(zclApp_TaskID, APP_CLOCK_DOWN_POLING_RATE_EVT, 10 * 1000);
-}
-
-static void zclApp_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg) {
-    LREP("bdbCommissioningMode=%d bdbCommissioningStatus=%d bdbRemainingCommissioningModes=0x%X\r\n",
-         bdbCommissioningModeMsg->bdbCommissioningMode, bdbCommissioningModeMsg->bdbCommissioningStatus,
-         bdbCommissioningModeMsg->bdbRemainingCommissioningModes);
-    switch (bdbCommissioningModeMsg->bdbCommissioningMode) {
-    case BDB_COMMISSIONING_INITIALIZATION:
-        switch (bdbCommissioningModeMsg->bdbCommissioningStatus) {
-        case BDB_COMMISSIONING_NO_NETWORK:
-            LREP("No network\r\n");
-            HalLedBlink(HAL_LED_1, 3, 50, 500);
-            break;
-        case BDB_COMMISSIONING_NETWORK_RESTORED:
-            zclApp_OnConnect();
-            break;
-        default:
-            break;
-        }
-        break;
-    case BDB_COMMISSIONING_NWK_STEERING:
-        switch (bdbCommissioningModeMsg->bdbCommissioningStatus) {
-        case BDB_COMMISSIONING_SUCCESS:
-            HalLedBlink(HAL_LED_1, 5, 50, 500);
-            LREPMaster("BDB_COMMISSIONING_SUCCESS\r\n");
-            zclApp_OnConnect();
-            break;
-
-        default:
-            HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
-            break;
-        }
-
-        break;
-
-    case BDB_COMMISSIONING_PARENT_LOST:
-        LREPMaster("BDB_COMMISSIONING_PARENT_LOST\r\n");
-        switch (bdbCommissioningModeMsg->bdbCommissioningStatus) {
-        case BDB_COMMISSIONING_NETWORK_RESTORED:
-            zclApp_ResetBackoffRetry();
-            break;
-
-        default:
-            HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
-            // // Parent not found, attempt to rejoin again after a exponential backoff delay
-            LREP("rejoinsLeft %d rejoinDelay=%ld\r\n", rejoinsLeft, rejoinDelay);
-            if (rejoinsLeft > 0) {
-                rejoinDelay *= APP_END_DEVICE_REJOIN_BACKOFF;
-                rejoinsLeft -= 1;
-            } else {
-                rejoinDelay = APP_END_DEVICE_REJOIN_MAX_DELAY;
-            }
-            osal_start_timerEx(zclApp_TaskID, APP_END_DEVICE_REJOIN_EVT, rejoinDelay);
-            break;
-        }
-        break;
-    default:
-        break;
-    }
-}
-
-static void zclApp_ProcessIncomingMsg(zclIncomingMsg_t *pInMsg) {
-    HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
-    if (pInMsg->attrCmd)
-        osal_mem_free(pInMsg->attrCmd);
-}
 uint16 zclApp_event_loop(uint8 task_id, uint16 events) {
     afIncomingMSGPacket_t *MSGpkt;
 
     (void)task_id; // Intentionally unreferenced parameter
-    devStates_t zclApp_NwkState;
     if (events & SYS_EVENT_MSG) {
         while ((MSGpkt = (afIncomingMSGPacket_t *)osal_msg_receive(zclApp_TaskID))) {
-
             switch (MSGpkt->hdr.event) {
-
             case KEY_CHANGE:
                 zclApp_HandleKeys(((keyChange_t *)MSGpkt)->state, ((keyChange_t *)MSGpkt)->keys);
                 break;
-            case ZDO_STATE_CHANGE:
-                HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
-                zclApp_NwkState = (devStates_t)(MSGpkt->hdr.status);
-                LREP("NwkState=%d\r\n", zclApp_NwkState);
-                if (zclApp_NwkState == DEV_END_DEVICE) {
-                    HalLedSet(HAL_LED_1, HAL_LED_MODE_OFF);
-                }
-                break;
-
-            case ZCL_INCOMING_MSG:
-                zclApp_ProcessIncomingMsg((zclIncomingMsg_t *)MSGpkt);
-                break;
-
-            case AF_DATA_CONFIRM_CMD:
-                // This message is received as a confirmation of a data packet sent.
-                break;
 
             default:
-                LREP("SysEvent 0x%X status 0x%X macSrcAddr 0x%X endPoint=0x%X\r\n", MSGpkt->hdr.event, MSGpkt->hdr.status,
-                     MSGpkt->macSrcAddr, MSGpkt->endPoint);
                 break;
             }
-
             // Release the memory
             osal_msg_deallocate((uint8 *)MSGpkt);
         }
-
         // return unprocessed events
         return (events ^ SYS_EVENT_MSG);
-    }
-    if (events & APP_END_DEVICE_REJOIN_EVT) {
-        LREPMaster("APP_END_DEVICE_REJOIN_EVT\r\n");
-        bdb_ZedAttemptRecoverNwk();
-        return (events ^ APP_END_DEVICE_REJOIN_EVT);
     }
 
     if (events & APP_REPORT_EVT) {
@@ -320,11 +207,6 @@ uint16 zclApp_event_loop(uint8 task_id, uint16 events) {
         zclApp_ReadSensors();
         return (events ^ APP_READ_SENSORS_EVT);
     }
-    if (events & APP_CLOCK_DOWN_POLING_RATE_EVT) {
-        LREPMaster("APP_CLOCK_DOWN_POLING_RATE_EVT\r\n");
-        zclApp_Sleep(true);
-        return (events ^ APP_CLOCK_DOWN_POLING_RATE_EVT);
-    }
 
     // Discard unknown events
     return 0;
@@ -333,24 +215,11 @@ uint16 zclApp_event_loop(uint8 task_id, uint16 events) {
 static void zclApp_HandleKeys(byte portAndAction, byte keyCode) {
     LREP("zclApp_HandleKeys portAndAction=0x%X keyCode=0x%X\r\n", portAndAction, keyCode);
     zclFactoryResetter_HandleKeys(portAndAction, keyCode);
+    zclCommissioning_HandleKeys(portAndAction, keyCode);
     if (portAndAction & HAL_KEY_RELEASE) {
         LREPMaster("Key release\r\n");
         osal_start_timerEx(zclApp_TaskID, APP_REPORT_EVT, 200);
-    } else {
-        LREPMaster("Key press\r\n");
-        if (devState == DEV_NWK_ORPHAN) {
-            LREP("devState=%d try to restore network\r\n", devState);
-            bdb_ZedAttemptRecoverNwk();
-        }
     }
-}
-
-static void zclApp_BindNotification(bdbBindNotificationData_t *data) {
-    HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
-    LREP("Recieved bind request clusterId=0x%X dstAddr=0x%X ep=%d\r\n", data->clusterId, data->dstAddr, data->ep);
-    uint16 maxEntries = 0, usedEntries = 0;
-    bindCapacity(&maxEntries, &usedEntries);
-    LREP("bindCapacity %d %usedEntries %d \r\n", maxEntries, usedEntries);
 }
 
 static void zclApp_Battery(void) {
@@ -372,7 +241,7 @@ static void zclApp_ReadSensors(void) {
     HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
     switch (currentSensorsReadingPhase++) {
     case 0:
-        zclApp_Sleep(false);
+        zclCommissioning_Sleep(false);
         POWER_ON_SENSORS();
         break;
     case 1:
@@ -393,7 +262,7 @@ static void zclApp_ReadSensors(void) {
         break;
     default:
         POWER_OFF_SENSORS();
-        zclApp_Sleep(true);
+        zclCommissioning_Sleep(true);
         osal_stop_timerEx(zclApp_TaskID, APP_READ_SENSORS_EVT);
         osal_clear_event(zclApp_TaskID, APP_READ_SENSORS_EVT);
         currentSensorsReadingPhase = 0;
@@ -476,22 +345,6 @@ static void zclApp_Report(void) {
     osal_start_reload_timer(zclApp_TaskID, APP_READ_SENSORS_EVT, 100);
 }
 
-static void zclApp_Sleep( uint8 allow ) {
-    LREP("zclApp_Sleep %d\r\n", allow);
-#if defined( POWER_SAVING )
-  if ( allow ) {
-    osal_pwrmgr_task_state( NWK_TaskID, PWRMGR_CONSERVE );
-    NLME_SetPollRate( 0 );
-    bool RxOnIdle = FALSE;
-    ZMacSetReq( ZMacRxOnIdle, &RxOnIdle );
-  } else {
-    osal_pwrmgr_task_state( NWK_TaskID, PWRMGR_HOLD );
-    // 1 will do a one time poll.
-    NLME_SetPollRate( 1 );
-    bool RxOnIdle = TRUE;
-    ZMacSetReq( ZMacRxOnIdle, &RxOnIdle );
-  }
-#endif
-}
+
 /****************************************************************************
 ****************************************************************************/

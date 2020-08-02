@@ -2590,78 +2590,6 @@
         </group>
     </group>
     <group>
-        <name>NWK</name>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\AddrMgr.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\APS.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\aps_frag.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\aps_groups.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\aps_util.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\APSMEDE.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\AssocList.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\BindingTable.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\BindingTable.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\NLMEDE.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\nwk.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\nwk_bufs.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\nwk_globals.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\nwk_globals.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\nwk_util.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\reflecttrack.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\rtg.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\stub_aps.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\stub_aps.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\sys\ZDiags.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\sys\ZDiags.h</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\sys\ZGlobals.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\sys\ZGlobals.h</name>
-        </file>
-    </group>
-    <group>
         <name>MT</name>
         <file>
             <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\DebugTrace.c</name>
@@ -2755,6 +2683,78 @@
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\..\..\..\Components\mt\MT_ZDO.h</name>
+        </file>
+    </group>
+    <group>
+        <name>NWK</name>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\AddrMgr.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\APS.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\aps_frag.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\aps_groups.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\aps_util.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\APSMEDE.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\AssocList.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\BindingTable.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\BindingTable.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\NLMEDE.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\nwk.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\nwk_bufs.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\nwk_globals.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\nwk_globals.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\nwk_util.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\reflecttrack.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\rtg.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\stub_aps.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\nwk\stub_aps.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\sys\ZDiags.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\sys\ZDiags.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\sys\ZGlobals.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\Components\stack\sys\ZGlobals.h</name>
         </file>
     </group>
     <group>
@@ -2967,6 +2967,12 @@
         </file>
         <file>
             <name>$PROJ_DIR$\..\zstack-lib\bettery.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\zstack-lib\commissioning.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\zstack-lib\commissioning.h</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\zstack-lib\Debug.c</name>

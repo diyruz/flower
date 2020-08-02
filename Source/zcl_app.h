@@ -20,18 +20,15 @@ extern "C" {
 
 #define APP_CONST_ONE_MINUTE_IN_MS ((uint32) 60 * (uint32) 1000)
 
-#define APP_END_DEVICE_REJOIN_EVT       0x0001
-#define APP_REPORT_EVT                  0x0002
-#define APP_READ_SENSORS_EVT            0x0004
-#define APP_CLOCK_DOWN_POLING_RATE_EVT  0x0008
+
+#define APP_REPORT_EVT                  0x0001
+#define APP_READ_SENSORS_EVT            0x0002
 
 
 
 
-#define APP_END_DEVICE_REJOIN_MAX_DELAY ((uint32)1800000) // 30 minutes 30 * 60 * 1000
-#define APP_END_DEVICE_REJOIN_START_DELAY 10 * 1000 // 10 seconds
-#define APP_END_DEVICE_REJOIN_BACKOFF ((float) 1.2)
-#define APP_END_DEVICE_REJOIN_TRIES 20
+
+
 
 
 #define APP_REPORT_DELAY (30 * APP_CONST_ONE_MINUTE_IN_MS)
