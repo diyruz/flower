@@ -36,9 +36,6 @@
 
 // Global attributes
 const uint16 zclApp_clusterRevision_all = 0x0001;
-uint8 zclApp_BatteryVoltage = 0xff;
-uint16 zclApp_BatteryVoltageRawAdc = 0xff;
-uint8 zclApp_BatteryPercentageRemainig = 0xff;
 
 int16 zclApp_Temperature_Sensor_MeasuredValue = 0;
 int16 zclApp_PressureSensor_MeasuredValue = 0;
@@ -90,12 +87,12 @@ CONST zclAttrRec_t zclApp_AttrsFirstEP[] = {
     {BASIC, {ATTRID_CLUSTER_REVISION, ZCL_DATATYPE_UINT16, R, (void *)&zclApp_clusterRevision_all}},
     {BASIC, {ATTRID_BASIC_DATE_CODE, ZCL_DATATYPE_CHAR_STR, R, (void *)zclApp_DateCode}},
     {BASIC, {ATTRID_BASIC_SW_BUILD_ID, ZCL_UINT8, R, (void *)&zclApp_ApplicationVersion}},
-    {POWER_CFG, {ATTRID_POWER_CFG_BATTERY_VOLTAGE, ZCL_UINT8, RR, (void *)&zclApp_BatteryVoltage}},
+    {POWER_CFG, {ATTRID_POWER_CFG_BATTERY_VOLTAGE, ZCL_UINT8, RR, (void *)&zclBattery_Voltage}},
 /**
  * FYI: calculating battery percentage can be tricky, since this device can be powered from 2xAA or 1xCR2032 batteries
  * */
-    {POWER_CFG, {ATTRID_POWER_CFG_BATTERY_PERCENTAGE_REMAINING, ZCL_UINT8, RR, (void *)&zclApp_BatteryPercentageRemainig}},
-    {POWER_CFG, {ATTRID_POWER_CFG_BATTERY_VOLTAGE_RAW_ADC, ZCL_UINT16, RR, (void *)&zclApp_BatteryVoltageRawAdc}},
+    {POWER_CFG, {ATTRID_POWER_CFG_BATTERY_PERCENTAGE_REMAINING, ZCL_UINT8, RR, (void *)&zclBattery_PercentageRemainig}},
+    {POWER_CFG, {ATTRID_POWER_CFG_BATTERY_VOLTAGE_RAW_ADC, ZCL_UINT16, RR, (void *)&zclBattery_RawAdc}},
 
 
     {ILLUMINANCE, {ATTRID_MS_ILLUMINANCE_MEASURED_VALUE, ZCL_UINT16, RR, (void *)&zclApp_IlluminanceSensor_MeasuredValue}},

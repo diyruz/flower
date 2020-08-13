@@ -46,8 +46,8 @@
 #define HAL_KEY_CODE_RELEASE_KEY HAL_KEY_CODE_NOKEY
 
 // use led4 as output pin, osal will shitch it low when go to PM
-#define POWER_ON_SENSORS() HAL_TURN_ON_LED4()
-#define POWER_OFF_SENSORS() HAL_TURN_OFF_LED4()
+#define POWER_ON_SENSORS() {HAL_TURN_ON_LED4(); T3CTL |= BV(4);}
+#define POWER_OFF_SENSORS() {HAL_TURN_OFF_LED4(); T3CTL &= ~BV(4);}
 
 /*********************************************************************
  * CONSTANTS
@@ -88,12 +88,11 @@ static void zclApp_HandleKeys(byte shift, byte keys);
 static void zclApp_Report(void);
 
 static void zclApp_ReadSensors(void);
-static void zclApp_Battery(void);
 static void zclApp_ReadBME280(struct bme280_dev *dev);
 static void zclApp_ReadDS18B20(void);
 static void zclApp_ReadLumosity(void);
 static void zclApp_ReadSoilHumidity(void);
-
+static void zclApp_InitPWM(void);
 
 
 
@@ -114,6 +113,7 @@ static zclGeneral_AppCallbacks_t zclApp_CmdCallbacks = {
 void zclApp_Init(byte task_id) {
 
     HalI2CInit();
+    zclApp_InitPWM();
     // this is important to allow connects throught routers
     // to make this work, coordinator should be compiled with this flag #define TP2_LEGACY_ZC
     requestNewTrustCenterLinkKey = FALSE;
@@ -221,15 +221,28 @@ static void zclApp_HandleKeys(byte portAndAction, byte keyCode) {
         osal_start_timerEx(zclApp_TaskID, APP_REPORT_EVT, 200);
     }
 }
+static void zclApp_InitPWM(void) {
+    PERCFG &= ~(0x20); // Select Timer 3 Alternative 1 location
+    P2SEL |= 0x20;
+    P2DIR |= 0xC0;  // Give priority to Timer 1 channel2-3
+    P1SEL |= BV(4); // Set P1_4 to peripheral, Timer 1,channel 2
+    P1DIR |= BV(4);
 
-static void zclApp_Battery(void) {
-    uint16 millivolts = getBatteryVoltage();
-    zclApp_BatteryVoltage = getBatteryVoltageZCL(millivolts);
-    zclApp_BatteryPercentageRemainig = getBatteryRemainingPercentageZCL(millivolts);
-    zclApp_BatteryVoltageRawAdc = adcReadSampled(HAL_ADC_CHANNEL_VDD, HAL_ADC_RESOLUTION_14, HAL_ADC_REF_125V, 10);
+    T3CTL &= ~BV(4); // Stop timer 3 (if it was running)
+    T3CTL |= BV(2);  // Clear timer 3
+    T3CTL &= ~0x08; // Disable Timer 3 overflow interrupts
+    T3CTL |= 0x03;  // Timer 3 mode = 3 - Up/Down
 
-    bdb_RepChangedAttrValue(zclApp_FirstEP.EndPoint, POWER_CFG, ATTRID_POWER_CFG_BATTERY_VOLTAGE);
-    LREP("Battery raw=%d voltage(mV)=%d\r\n", zclApp_BatteryVoltageRawAdc, getBatteryVoltage());
+    T3CCTL1 &= ~0x40; // Disable channel 0 interrupts
+    T3CCTL1 |= BV(2);  // Ch0 mode = compare
+    T3CCTL1 |= BV(4);  // Ch0 output compare mode = toggle on compare
+
+    T3CTL &= ~(BV(7) | BV(6) | BV(5)); // Clear Prescaler divider value
+    // T3CTL |= (BV(7) | BV(6) | BV(5));  // Set Prescaler divider value = Tick frequency /32
+    T3CC0 = 16;    // Set ticks = 128
+
+// // Start timer
+// T3CTL |= BV(4);
 }
 
 static void zclApp_ReadSensors(void) {
@@ -249,7 +262,7 @@ static void zclApp_ReadSensors(void) {
         break;
 
     case 2:
-        zclApp_Battery();
+        zclBattery_Report();
         zclApp_ReadSoilHumidity();
         break;
 
@@ -274,8 +287,8 @@ static void zclApp_ReadSoilHumidity(void) {
 
     zclApp_SoilHumiditySensor_MeasuredValueRawAdc = adcReadSampled(HAL_ADC_CHN_AIN4, HAL_ADC_RESOLUTION_14, HAL_ADC_REF_AVDD, 5);
     // FYI: https://docs.google.com/spreadsheets/d/1qrFdMTo0ZrqtlGUoafeB3hplhU3GzDnVWuUK4M9OgNo/edit?usp=sharing
-    uint16 soilHumidityMinRange = (uint16)(0.292 * (double)zclApp_BatteryVoltageRawAdc + 936.0);
-    uint16 soilHumidityMaxRange = (uint16)(0.38 * (double)zclApp_BatteryVoltageRawAdc - 447.0);
+    uint16 soilHumidityMinRange = (uint16)(0.292 * (double)zclBattery_RawAdc + 936.0);
+    uint16 soilHumidityMaxRange = (uint16)(0.38 * (double)zclBattery_RawAdc - 447.0);
 
     LREP("soilHumidityMinRange=%d soilHumidityMaxRange=%d\r\n", soilHumidityMinRange, soilHumidityMaxRange);
 
