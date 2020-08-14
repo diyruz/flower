@@ -301,6 +301,7 @@ static void zclApp_ReadSoilHumidity(void) {
 }
 
 static void zclApp_ReadDS18B20(void) {
+    IO_PUD_PORT(DS18B20_PORT, IO_PUP);
     zclApp_DS18B20_MeasuredValue = readTemperature();
     if (zclApp_DS18B20_MeasuredValue != 1) {
         LREP("ReadDS18B20 t=%d\r\n", zclApp_DS18B20_MeasuredValue);
@@ -308,6 +309,7 @@ static void zclApp_ReadDS18B20(void) {
     } else {
         LREPMaster("ReadDS18B20 error\r\n");
     }
+    IO_PUD_PORT(DS18B20_PORT, IO_PDN);
 }
 
 static void zclApp_ReadLumosity(void) {
@@ -320,6 +322,8 @@ static void zclApp_ReadLumosity(void) {
 void user_delay_ms(uint32_t period) { MicroWait(period * 1000); }
 
 static void zclApp_ReadBME280(struct bme280_dev *dev) {
+    IO_PUD_PORT(OCM_CLK_PORT, IO_PUP);
+    IO_PUD_PORT(OCM_DATA_PORT, IO_PUP);
     int8_t rslt = bme280_init(dev);
     if (rslt == BME280_OK) {
         uint8_t settings_sel;
@@ -353,6 +357,9 @@ static void zclApp_ReadBME280(struct bme280_dev *dev) {
     } else {
         LREP("ReadBME280 init error %d\r\n", rslt);
     }
+
+    IO_PUD_PORT(OCM_CLK_PORT, IO_PDN);
+    IO_PUD_PORT(OCM_DATA_PORT, IO_PDN);
 }
 static void zclApp_Report(void) {
     osal_start_reload_timer(zclApp_TaskID, APP_READ_SENSORS_EVT, 100);

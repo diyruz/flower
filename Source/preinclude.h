@@ -41,7 +41,9 @@
 #define BDB_MAX_CLUSTERENDPOINTS_REPORTING 10
 
 #define BME280_32BIT_ENABLE
-
+//TODO: refactor ds18b20 driver
+#define DS18B20_PORT 1
+#define DS18B20_PIN 3
 
 #define TSENS_SBIT P1_3
 #define TSENS_BV BV(3)
@@ -64,6 +66,12 @@
 
 #endif
 
+
+//i2c bme280
+#define OCM_CLK_PORT 0
+#define OCM_DATA_PORT 0
+#define OCM_CLK_PIN 5
+#define OCM_DATA_PIN 6
 
 
 #ifdef DO_DEBUG_UART
