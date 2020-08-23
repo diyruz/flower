@@ -9,7 +9,7 @@
 2. Go to step 1 for FN device
 
 
-![Device](./images/device.jpg)
+![Device](./images/DIYRuZ_Flower_10.png)
 
 
 # How to add device into zigbe2mqtt
