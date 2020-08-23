@@ -15,7 +15,7 @@ extern "C" {
 /*********************************************************************
  * CONSTANTS
  */
-#define HAL_UNKNOWN_BUTTON HAL_KEY_CODE_NOKEY
+
 // Application Events
 
 #define APP_CONST_ONE_MINUTE_IN_MS ((uint32) 60 * (uint32) 1000)
@@ -31,7 +31,7 @@ extern "C" {
 
 
 
-#define APP_REPORT_DELAY (30 * APP_CONST_ONE_MINUTE_IN_MS)
+#define APP_REPORT_DELAY 5000 //(30 * APP_CONST_ONE_MINUTE_IN_MS)
 
 
 /*********************************************************************
@@ -104,7 +104,6 @@ extern const uint8 zclApp_PowerSource;
  * Initialization for the task
  */
 extern void zclApp_Init(byte task_id);
-extern byte zclApp_KeyCodeToButton(byte key);
 
 /*
  *  Event Process for the task

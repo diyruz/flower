@@ -238,11 +238,7 @@ static void zclApp_InitPWM(void) {
     T3CCTL1 |= BV(4);  // Ch0 output compare mode = toggle on compare
 
     T3CTL &= ~(BV(7) | BV(6) | BV(5)); // Clear Prescaler divider value
-    // T3CTL |= (BV(7) | BV(6) | BV(5));  // Set Prescaler divider value = Tick frequency /32
-    T3CC0 = 16;    // Set ticks = 128
-
-// // Start timer
-// T3CTL |= BV(4);
+    T3CC0 = 28;    // Set ticks = 128
 }
 
 static void zclApp_ReadSensors(void) {
@@ -284,20 +280,24 @@ static void zclApp_ReadSensors(void) {
 }
 
 static void zclApp_ReadSoilHumidity(void) {
-
     zclApp_SoilHumiditySensor_MeasuredValueRawAdc = adcReadSampled(HAL_ADC_CHN_AIN4, HAL_ADC_RESOLUTION_14, HAL_ADC_REF_AVDD, 5);
-    // FYI: https://docs.google.com/spreadsheets/d/1qrFdMTo0ZrqtlGUoafeB3hplhU3GzDnVWuUK4M9OgNo/edit?usp=sharing
-    uint16 soilHumidityMinRange = (uint16)(0.292 * (double)zclBattery_RawAdc + 936.0);
-    uint16 soilHumidityMaxRange = (uint16)(0.38 * (double)zclBattery_RawAdc - 447.0);
 
+    uint16 soilHumidityMinRange = 8192;
+    uint16 soilHumidityMaxRange = 0;
+// FYI: https://docs.google.com/spreadsheets/d/1qrFdMTo0ZrqtlGUoafeB3hplhU3GzDnVWuUK4M9OgNo/edit?usp=sharing
+#ifdef FLOWER_USE_555
+    soilHumidityMinRange = (uint16)(0.292 * (double)zclBattery_RawAdc + 936.0);
+    soilHumidityMaxRange = (uint16)(0.38 * (double)zclBattery_RawAdc - 447.0);
+#elif FLOWER_USE_PWM
+    soilHumidityMinRange = (uint16)(0.141 * (double)zclBattery_RawAdc + 4178);
+    soilHumidityMaxRange = (uint16)(0.145 * (double)zclBattery_RawAdc + 1981);
+#endif
     LREP("soilHumidityMinRange=%d soilHumidityMaxRange=%d\r\n", soilHumidityMinRange, soilHumidityMaxRange);
-
     zclApp_SoilHumiditySensor_MeasuredValue =
         (uint16)mapRange(soilHumidityMinRange, soilHumidityMaxRange, 0.0, 10000.0, zclApp_SoilHumiditySensor_MeasuredValueRawAdc);
     LREP("ReadSoilHumidity raw=%d mapped=%d\r\n", zclApp_SoilHumiditySensor_MeasuredValueRawAdc, zclApp_SoilHumiditySensor_MeasuredValue);
 
     bdb_RepChangedAttrValue(zclApp_SecondEP.EndPoint, HUMIDITY, ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE);
-    // bdb_RepChangedAttrValue(zclApp_SecondEP.EndPoint, HUMIDITY, ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE_RAW_ADC);
 }
 
 static void zclApp_ReadDS18B20(void) {
