@@ -17,10 +17,6 @@ extern "C" {
  */
 
 // Application Events
-
-#define APP_CONST_ONE_MINUTE_IN_MS ((uint32) 60 * (uint32) 1000)
-
-
 #define APP_REPORT_EVT                  0x0001
 #define APP_READ_SENSORS_EVT            0x0002
 
@@ -31,7 +27,7 @@ extern "C" {
 
 
 
-#define APP_REPORT_DELAY 5000 //(30 * APP_CONST_ONE_MINUTE_IN_MS)
+#define APP_REPORT_DELAY ((uint32) 1800000) //30 minutes
 
 
 /*********************************************************************
