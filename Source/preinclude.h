@@ -55,9 +55,6 @@
 #define LUMOISITY_PORT 0
 #define LUMOISITY_PIN 7
 
-// #define FLOWER_USE_555
-// #define FLOWER_USE_PWM
-
 
 #if defined(HAL_BOARD_FLOWER)
 #define POWER_SAVING
