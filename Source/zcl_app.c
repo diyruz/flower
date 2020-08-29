@@ -111,6 +111,10 @@ static zclGeneral_AppCallbacks_t zclApp_CmdCallbacks = {
 };
 
 void zclApp_Init(byte task_id) {
+    IO_PUD_PORT(OCM_CLK_PORT, IO_PUP);
+    IO_PUD_PORT(OCM_DATA_PORT, IO_PUP);
+    IO_PUD_PORT(DS18B20_PORT, IO_PUP);
+    P0INP |= BV(4); //tri state p0.4 (soil humidity pin)
 
     HalI2CInit();
     zclApp_InitPWM();
@@ -149,6 +153,11 @@ uint16 zclApp_event_loop(uint8 task_id, uint16 events) {
             switch (MSGpkt->hdr.event) {
             case KEY_CHANGE:
                 zclApp_HandleKeys(((keyChange_t *)MSGpkt)->state, ((keyChange_t *)MSGpkt)->keys);
+                break;
+             case ZCL_INCOMING_MSG:
+                if (((zclIncomingMsg_t *)MSGpkt)->attrCmd) {
+                    osal_mem_free(((zclIncomingMsg_t *)MSGpkt)->attrCmd);
+                }
                 break;
 
             default:
@@ -247,8 +256,8 @@ static void zclApp_ReadSensors(void) {
 static void zclApp_ReadSoilHumidity(void) {
     zclApp_SoilHumiditySensor_MeasuredValueRawAdc = adcReadSampled(HAL_ADC_CHN_AIN4, HAL_ADC_RESOLUTION_14, HAL_ADC_REF_AVDD, 5);
     // FYI: https://docs.google.com/spreadsheets/d/1qrFdMTo0ZrqtlGUoafeB3hplhU3GzDnVWuUK4M9OgNo/edit?usp=sharing
-    uint16 soilHumidityMinRangeAir = (uint16)(0.286 * (double)zclBattery_RawAdc + 987.0);
-    uint16 soilHumidityMaxRangeWater = (uint16)(0.383 * (double)zclBattery_RawAdc - 515.0);
+    uint16 soilHumidityMinRangeAir = (uint16)(0.29 * (double)zclBattery_RawAdc + 4227.0);
+    uint16 soilHumidityMaxRangeWater = (uint16)(0.529 * (double)zclBattery_RawAdc - 144.0);
     LREP("soilHumidityMinRangeAir=%d soilHumidityMaxRangeWater=%d\r\n", soilHumidityMinRangeAir, soilHumidityMaxRangeWater);
     zclApp_SoilHumiditySensor_MeasuredValue =
         (uint16)mapRange(soilHumidityMinRangeAir, soilHumidityMaxRangeWater, 0.0, 10000.0, zclApp_SoilHumiditySensor_MeasuredValueRawAdc);
@@ -258,7 +267,6 @@ static void zclApp_ReadSoilHumidity(void) {
 }
 
 static void zclApp_ReadDS18B20(void) {
-    IO_PUD_PORT(DS18B20_PORT, IO_PUP);
     zclApp_DS18B20_MeasuredValue = readTemperature();
     if (zclApp_DS18B20_MeasuredValue != 1) {
         LREP("ReadDS18B20 t=%d\r\n", zclApp_DS18B20_MeasuredValue);
@@ -266,7 +274,6 @@ static void zclApp_ReadDS18B20(void) {
     } else {
         LREPMaster("ReadDS18B20 error\r\n");
     }
-    IO_PUD_PORT(DS18B20_PORT, IO_PDN);
 }
 
 static void zclApp_ReadLumosity(void) {
@@ -279,8 +286,8 @@ static void zclApp_ReadLumosity(void) {
 void user_delay_ms(uint32_t period) { MicroWait(period * 1000); }
 
 static void zclApp_ReadBME280(struct bme280_dev *dev) {
-    IO_PUD_PORT(OCM_CLK_PORT, IO_PUP);
-    IO_PUD_PORT(OCM_DATA_PORT, IO_PUP);
+    // IO_PUD_PORT(OCM_CLK_PORT, IO_PUP);
+    // IO_PUD_PORT(OCM_DATA_PORT, IO_PUP);
     int8_t rslt = bme280_init(dev);
     if (rslt == BME280_OK) {
         uint8_t settings_sel;
@@ -313,12 +320,9 @@ static void zclApp_ReadBME280(struct bme280_dev *dev) {
     } else {
         LREP("ReadBME280 init error %d\r\n", rslt);
     }
-
-    IO_PUD_PORT(OCM_CLK_PORT, IO_PDN);
-    IO_PUD_PORT(OCM_DATA_PORT, IO_PDN);
 }
 static void zclApp_Report(void) {
-    osal_start_reload_timer(zclApp_TaskID, APP_READ_SENSORS_EVT, 100);
+    osal_start_reload_timer(zclApp_TaskID, APP_READ_SENSORS_EVT, 50);
 }
 
 
