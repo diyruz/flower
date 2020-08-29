@@ -137,41 +137,6 @@ void zclApp_Init(byte task_id) {
 
     ZMacSetTransmitPower(TX_PWR_PLUS_4); // set 4dBm
 
-    // moisture sensor
-    IO_DIR_PORT_PIN(SOIL_MOISTURE_PORT, SOIL_MOISTURE_PIN, IO_IN);
-    IO_FUNC_PORT_PIN(SOIL_MOISTURE_PORT, SOIL_MOISTURE_PIN, IO_GIO);
-    IO_IMODE_PORT_PIN(SOIL_MOISTURE_PORT, SOIL_MOISTURE_PIN, IO_PUD);
-    IO_PUD_PORT(SOIL_MOISTURE_PORT, IO_PDN);
-
-    IO_DIR_PORT_PIN(LUMOISITY_PORT, LUMOISITY_PIN, IO_IN);
-    IO_FUNC_PORT_PIN(LUMOISITY_PORT, LUMOISITY_PIN, IO_GIO);
-    IO_IMODE_PORT_PIN(LUMOISITY_PORT, LUMOISITY_PIN, IO_PUD);
-    IO_PUD_PORT(LUMOISITY_PORT, IO_PDN);
-
-    IO_PUD_PORT(0, IO_PDN);
-    IO_PUD_PORT(1, IO_PDN);
-    // IO_PUD_PORT(2, IO_PDN);
-    // IO_DIR_PORT_PIN(0, 7, IO_IN); //light sens
-    IO_DIR_PORT_PIN(0, 6, IO_IN);
-    IO_DIR_PORT_PIN(0, 5, IO_IN);
-    // IO_DIR_PORT_PIN(0, 4, IO_IN); //soil
-    IO_DIR_PORT_PIN(0, 3, IO_IN);
-    IO_DIR_PORT_PIN(0, 2, IO_IN);
-    // IO_DIR_PORT_PIN(0, 1, IO_IN); //led1
-    IO_DIR_PORT_PIN(0, 0, IO_IN);
-
-    IO_DIR_PORT_PIN(1, 7, IO_IN);
-    IO_DIR_PORT_PIN(1, 6, IO_IN);
-    IO_DIR_PORT_PIN(1, 5, IO_IN);
-    IO_DIR_PORT_PIN(1, 4, IO_IN);
-    // IO_DIR_PORT_PIN(1, 3, IO_IN); //DS18B20
-    IO_DIR_PORT_PIN(1, 2, IO_IN);
-    // IO_DIR_PORT_PIN(1, 1, IO_IN); //power pint
-    IO_DIR_PORT_PIN(1, 0, IO_IN);
-
-    IO_DIR_PORT_PIN(2, 1, IO_IN);
-    IO_DIR_PORT_PIN(2, 2, IO_IN);
-    IO_DIR_PORT_PIN(2, 3, IO_IN);
 }
 
 
@@ -238,7 +203,7 @@ static void zclApp_InitPWM(void) {
     T3CCTL1 |= BV(4);  // Ch0 output compare mode = toggle on compare
 
     T3CTL &= ~(BV(7) | BV(6) | BV(5)); // Clear Prescaler divider value
-    T3CC0 = 4;    // Set ticks = 4
+    T3CC0 = 3;    // Set ticks
 }
 
 static void zclApp_ReadSensors(void) {
@@ -282,11 +247,11 @@ static void zclApp_ReadSensors(void) {
 static void zclApp_ReadSoilHumidity(void) {
     zclApp_SoilHumiditySensor_MeasuredValueRawAdc = adcReadSampled(HAL_ADC_CHN_AIN4, HAL_ADC_RESOLUTION_14, HAL_ADC_REF_AVDD, 5);
     // FYI: https://docs.google.com/spreadsheets/d/1qrFdMTo0ZrqtlGUoafeB3hplhU3GzDnVWuUK4M9OgNo/edit?usp=sharing
-    uint16 soilHumidityMinRange = (uint16)(0.292 * (double)zclBattery_RawAdc + 936.0);
-    uint16 soilHumidityMaxRange = (uint16)(0.38 * (double)zclBattery_RawAdc - 447.0);
-    LREP("soilHumidityMinRange=%d soilHumidityMaxRange=%d\r\n", soilHumidityMinRange, soilHumidityMaxRange);
+    uint16 soilHumidityMinRangeAir = (uint16)(0.286 * (double)zclBattery_RawAdc + 987.0);
+    uint16 soilHumidityMaxRangeWater = (uint16)(0.383 * (double)zclBattery_RawAdc - 515.0);
+    LREP("soilHumidityMinRangeAir=%d soilHumidityMaxRangeWater=%d\r\n", soilHumidityMinRangeAir, soilHumidityMaxRangeWater);
     zclApp_SoilHumiditySensor_MeasuredValue =
-        (uint16)mapRange(soilHumidityMinRange, soilHumidityMaxRange, 0.0, 10000.0, zclApp_SoilHumiditySensor_MeasuredValueRawAdc);
+        (uint16)mapRange(soilHumidityMinRangeAir, soilHumidityMaxRangeWater, 0.0, 10000.0, zclApp_SoilHumiditySensor_MeasuredValueRawAdc);
     LREP("ReadSoilHumidity raw=%d mapped=%d\r\n", zclApp_SoilHumiditySensor_MeasuredValueRawAdc, zclApp_SoilHumiditySensor_MeasuredValue);
 
     bdb_RepChangedAttrValue(zclApp_SecondEP.EndPoint, HUMIDITY, ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE);
@@ -345,7 +310,6 @@ static void zclApp_ReadBME280(struct bme280_dev *dev) {
         bdb_RepChangedAttrValue(zclApp_FirstEP.EndPoint, TEMP, ATTRID_MS_TEMPERATURE_MEASURED_VALUE);
         bdb_RepChangedAttrValue(zclApp_FirstEP.EndPoint, PRESSURE, ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE);
         bdb_RepChangedAttrValue(zclApp_FirstEP.EndPoint, HUMIDITY, ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE);
-        // bdb_RepChangedAttrValue(zclApp_FirstEP.EndPoint, HUMIDITY, ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE_HPA);
     } else {
         LREP("ReadBME280 init error %d\r\n", rslt);
     }

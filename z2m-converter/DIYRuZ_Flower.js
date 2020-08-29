@@ -5,6 +5,10 @@ const {
 
 const ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE_HPA = 0x0200; // non standart attribute, max precision
 const ZCL_DATATYPE_UINT32 = 0x23;
+const ZCL_DATATYPE_UINT16 = 0x21;
+const ATTRID_POWER_CFG_BATTERY_VOLTAGE_RAW_ADC = 0x0200;
+const ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE_RAW_ADC = 0x0200;
+const ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE_BATTERY_RAW_ADC = 0x0201;
 
 const bind = async (endpoint, target, clusters) => {
     for (const cluster of clusters) {
@@ -16,7 +20,7 @@ const withEpPreffix = (converter) => ({
     ...converter,
     convert: (model, msg, publish, options, meta) => {
         const epID = msg.endpoint.ID;
-        const converterResults = converter.convert(model, msg, publish, options, meta);
+        const converterResults = converter.convert(model, msg, publish, options, meta) || {};
         return Object.keys(converterResults)
             .reduce((result, key) => {
                 result[`${key}_${epID}`] = converterResults[key];
@@ -42,6 +46,20 @@ const fz = {
             };
         },
     },
+    extended_humidity: {
+        cluster: 'msRelativeHumidity',
+        type: ['attributeReport', 'readResponse'],
+        convert: (model, msg, publish, options, meta) => {
+            const strAttrID = ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE_RAW_ADC.toString();
+            const strVoltageADC = ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE_BATTERY_RAW_ADC.toString();
+            if (msg.data[strAttrID]) {
+                return {
+                    raw_humidity_adc: msg.data[strAttrID],
+                    raw_battery_adc: msg.data[strVoltageADC]
+                };
+            }
+        },
+    },
 };
 
 const device = {
@@ -56,6 +74,7 @@ const device = {
         withEpPreffix(fromZigbeeConverters.illuminance),
         withEpPreffix(fz.extended_pressure),
         fromZigbeeConverters.battery,
+        withEpPreffix(fz.extended_humidity)
     ],
     toZigbee: [
         toZigbeeConverters.factory_reset,
@@ -121,7 +140,29 @@ const device = {
         await firstEndpoint.configureReporting('msPressureMeasurement', pressureBindPayload);
 
         await secondEndpoint.configureReporting('msTemperatureMeasurement', msBindPayload);
-        await secondEndpoint.configureReporting('msRelativeHumidity', msBindPayload);
+
+        const msRelativeHumidityBindPayload = [
+            ...msBindPayload,
+            {
+                attribute: {
+                    ID: ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE_RAW_ADC,
+                    type: ZCL_DATATYPE_UINT16,
+                },
+                minimumReportInterval: 0,
+                maximumReportInterval: 3600,
+                reportableChange: 0,
+            },
+            {
+                attribute: {
+                    ID: ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE_BATTERY_RAW_ADC,
+                    type: ZCL_DATATYPE_UINT16,
+                },
+                minimumReportInterval: 0,
+                maximumReportInterval: 3600,
+                reportableChange: 0,
+            },
+        ];
+        await secondEndpoint.configureReporting('msRelativeHumidity', msRelativeHumidityBindPayload);
     },
 };
 
