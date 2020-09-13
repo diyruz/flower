@@ -1603,7 +1603,7 @@
                 <option>
                     <name>Compiler Extra Options Edit</name>
                     <state>-f $PROJ_DIR$\..\..\..\Tools\CC2530DB\f8wEndev.cfg</state>
-                    <state>-f $PROJ_DIR$\..\Source\f8wConfig.cfg</state>
+                    <state>-f $PROJ_DIR$\..\zstack-lib\f8wConfig.cfg</state>
                     <state>-f $PROJ_DIR$\..\..\..\Tools\CC2530DB\f8wZCL.cfg</state>
                 </option>
                 <option>

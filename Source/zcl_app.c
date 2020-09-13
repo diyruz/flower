@@ -5,8 +5,8 @@
 
 #include "ZComDef.h"
 #include "ZDApp.h"
-#include "ZDObject.h"
 #include "ZDNwkMgr.h"
+#include "ZDObject.h"
 #include "math.h"
 
 #include "nwk_util.h"
@@ -35,8 +35,8 @@
 #include "hal_led.h"
 
 #include "battery.h"
-#include "factory_reset.h"
 #include "commissioning.h"
+#include "factory_reset.h"
 #include "utils.h"
 #include "version.h"
 
@@ -46,8 +46,17 @@
 #define HAL_KEY_CODE_RELEASE_KEY HAL_KEY_CODE_NOKEY
 
 // use led4 as output pin, osal will shitch it low when go to PM
-#define POWER_ON_SENSORS() {HAL_TURN_ON_LED4(); T3CTL |= BV(4);}
-#define POWER_OFF_SENSORS() {HAL_TURN_OFF_LED4(); T3CTL &= ~BV(4);}
+#define POWER_ON_SENSORS()                                                                                                                 \
+    {                                                                                                                                      \
+        HAL_TURN_ON_LED4();                                                                                                                \
+        T3CTL |= BV(4);                                                                                                                    \
+    }
+#define POWER_OFF_SENSORS()                                                                                                                \
+    {                                                                                                                                      \
+        HAL_TURN_OFF_LED4();                                                                                                               \
+        T3CTL &= ~BV(4);                                                                                                                   \
+        T3CTL |= BV(2);                                                                                                                    \
+    }
 
 /*********************************************************************
  * CONSTANTS
@@ -94,8 +103,6 @@ static void zclApp_ReadLumosity(void);
 static void zclApp_ReadSoilHumidity(void);
 static void zclApp_InitPWM(void);
 
-
-
 /*********************************************************************
  * ZCL General Profile Callback table
  */
@@ -114,7 +121,7 @@ void zclApp_Init(byte task_id) {
     IO_PUD_PORT(OCM_CLK_PORT, IO_PUP);
     IO_PUD_PORT(OCM_DATA_PORT, IO_PUP);
     IO_PUD_PORT(DS18B20_PORT, IO_PUP);
-    P0INP |= BV(4); //tri state p0.4 (soil humidity pin)
+    P0INP |= BV(4); // tri state p0.4 (soil humidity pin)
 
     HalI2CInit();
     zclApp_InitPWM();
@@ -141,8 +148,9 @@ void zclApp_Init(byte task_id) {
 
     ZMacSetTransmitPower(TX_PWR_PLUS_4); // set 4dBm
 
+    IO_PUD_PORT(0, IO_PDN);
+    IO_PUD_PORT(1, IO_PDN);
 }
-
 
 uint16 zclApp_event_loop(uint8 task_id, uint16 events) {
     afIncomingMSGPacket_t *MSGpkt;
@@ -154,7 +162,7 @@ uint16 zclApp_event_loop(uint8 task_id, uint16 events) {
             case KEY_CHANGE:
                 zclApp_HandleKeys(((keyChange_t *)MSGpkt)->state, ((keyChange_t *)MSGpkt)->keys);
                 break;
-             case ZCL_INCOMING_MSG:
+            case ZCL_INCOMING_MSG:
                 if (((zclIncomingMsg_t *)MSGpkt)->attrCmd) {
                     osal_mem_free(((zclIncomingMsg_t *)MSGpkt)->attrCmd);
                 }
@@ -204,15 +212,15 @@ static void zclApp_InitPWM(void) {
 
     T3CTL &= ~BV(4); // Stop timer 3 (if it was running)
     T3CTL |= BV(2);  // Clear timer 3
-    T3CTL &= ~0x08; // Disable Timer 3 overflow interrupts
-    T3CTL |= 0x03;  // Timer 3 mode = 3 - Up/Down
+    T3CTL &= ~0x08;  // Disable Timer 3 overflow interrupts
+    T3CTL |= 0x03;   // Timer 3 mode = 3 - Up/Down
 
     T3CCTL1 &= ~0x40; // Disable channel 0 interrupts
-    T3CCTL1 |= BV(2);  // Ch0 mode = compare
-    T3CCTL1 |= BV(4);  // Ch0 output compare mode = toggle on compare
+    T3CCTL1 |= BV(2); // Ch0 mode = compare
+    T3CCTL1 |= BV(4); // Ch0 output compare mode = toggle on compare
 
     T3CTL &= ~(BV(7) | BV(6) | BV(5)); // Clear Prescaler divider value
-    T3CC0 = 3;    // Set ticks
+    T3CC0 = 3;                         // Set ticks
 }
 
 static void zclApp_ReadSensors(void) {
@@ -321,10 +329,7 @@ static void zclApp_ReadBME280(struct bme280_dev *dev) {
         LREP("ReadBME280 init error %d\r\n", rslt);
     }
 }
-static void zclApp_Report(void) {
-    osal_start_reload_timer(zclApp_TaskID, APP_READ_SENSORS_EVT, 50);
-}
-
+static void zclApp_Report(void) { osal_start_reload_timer(zclApp_TaskID, APP_READ_SENSORS_EVT, 100); }
 
 /****************************************************************************
 ****************************************************************************/
