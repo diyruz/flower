@@ -220,7 +220,7 @@ static void zclApp_InitPWM(void) {
     T3CCTL1 |= BV(4); // Ch0 output compare mode = toggle on compare
 
     T3CTL &= ~(BV(7) | BV(6) | BV(5)); // Clear Prescaler divider value
-    T3CC0 = 3;                         // Set ticks
+    T3CC0 = 4;                         // Set ticks
 }
 
 static void zclApp_ReadSensors(void) {
