@@ -50,12 +50,18 @@
     {                                                                                                                                      \
         HAL_TURN_ON_LED4();                                                                                                                \
         T3CTL |= BV(4);                                                                                                                    \
+        IO_PUD_PORT(OCM_CLK_PORT, IO_PUP);                                                                                                 \
+        IO_PUD_PORT(OCM_DATA_PORT, IO_PUP);                                                                                                \
+        IO_PUD_PORT(DS18B20_PORT, IO_PUP);                                                                                                 \
     }
 #define POWER_OFF_SENSORS()                                                                                                                \
     {                                                                                                                                      \
         HAL_TURN_OFF_LED4();                                                                                                               \
         T3CTL &= ~BV(4);                                                                                                                   \
         T3CTL |= BV(2);                                                                                                                    \
+        IO_PUD_PORT(OCM_CLK_PORT, IO_PDN);                                                                                                 \
+        IO_PUD_PORT(OCM_DATA_PORT, IO_PDN);                                                                                                \
+        IO_PUD_PORT(DS18B20_PORT, IO_PDN);                                                                                                 \
     }
 
 /*********************************************************************
@@ -119,9 +125,6 @@ static zclGeneral_AppCallbacks_t zclApp_CmdCallbacks = {
 };
 
 void zclApp_Init(byte task_id) {
-    IO_PUD_PORT(OCM_CLK_PORT, IO_PUP);
-    IO_PUD_PORT(OCM_DATA_PORT, IO_PUP);
-    IO_PUD_PORT(DS18B20_PORT, IO_PUP);
     P0INP |= BV(4); // tri state p0.4 (soil humidity pin)
 
     HalI2CInit();
@@ -148,9 +151,6 @@ void zclApp_Init(byte task_id) {
     osal_start_reload_timer(zclApp_TaskID, APP_REPORT_EVT, APP_REPORT_DELAY);
 
     ZMacSetTransmitPower(TX_PWR_PLUS_4); // set 4dBm
-
-    IO_PUD_PORT(0, IO_PDN);
-    IO_PUD_PORT(1, IO_PDN);
 }
 
 uint16 zclApp_event_loop(uint8 task_id, uint16 events) {
@@ -268,8 +268,8 @@ static void zclApp_ReadSensors(void) {
 static void zclApp_ReadSoilHumidity(void) {
     zclApp_SoilHumiditySensor_MeasuredValueRawAdc = adcReadSampled(HAL_ADC_CHN_AIN4, HAL_ADC_RESOLUTION_14, HAL_ADC_REF_AVDD, 5);
     // FYI: https://docs.google.com/spreadsheets/d/1qrFdMTo0ZrqtlGUoafeB3hplhU3GzDnVWuUK4M9OgNo/edit?usp=sharing
-    uint16 soilHumidityMinRangeAir = (uint16) AIR_COMPENSATION_FORMULA(zclBattery_RawAdc);
-    uint16 soilHumidityMaxRangeWater = (uint16) WATER_COMPENSATION_FORMULA(zclBattery_RawAdc);
+    uint16 soilHumidityMinRangeAir = (uint16)AIR_COMPENSATION_FORMULA(zclBattery_RawAdc);
+    uint16 soilHumidityMaxRangeWater = (uint16)WATER_COMPENSATION_FORMULA(zclBattery_RawAdc);
     LREP("soilHumidityMinRangeAir=%d soilHumidityMaxRangeWater=%d\r\n", soilHumidityMinRangeAir, soilHumidityMaxRangeWater);
     zclApp_SoilHumiditySensor_MeasuredValue =
         (uint16)mapRange(soilHumidityMinRangeAir, soilHumidityMaxRangeWater, 0.0, 10000.0, zclApp_SoilHumiditySensor_MeasuredValueRawAdc);
