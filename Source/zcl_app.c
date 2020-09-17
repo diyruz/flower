@@ -97,6 +97,7 @@ static void zclApp_HandleKeys(byte shift, byte keys);
 static void zclApp_Report(void);
 
 static void zclApp_ReadSensors(void);
+static void zclApp_InitBME280(struct bme280_dev *dev);
 static void zclApp_ReadBME280(struct bme280_dev *dev);
 static void zclApp_ReadDS18B20(void);
 static void zclApp_ReadLumosity(void);
@@ -243,13 +244,16 @@ static void zclApp_ReadSensors(void) {
         zclBattery_Report();
         zclApp_ReadSoilHumidity();
         break;
-
     case 3:
-        HAL_CRITICAL_STATEMENT(zclApp_ReadBME280(&bme_dev));
+        zclApp_InitBME280(&bme_dev);
         break;
 
     case 4:
-        HAL_CRITICAL_STATEMENT(zclApp_ReadDS18B20());
+        zclApp_ReadBME280(&bme_dev);
+        break;
+
+    case 5:
+        zclApp_ReadDS18B20();
         break;
     default:
         POWER_OFF_SENSORS();
@@ -293,9 +297,7 @@ static void zclApp_ReadLumosity(void) {
 
 void user_delay_ms(uint32_t period) { MicroWait(period * 1000); }
 
-static void zclApp_ReadBME280(struct bme280_dev *dev) {
-    // IO_PUD_PORT(OCM_CLK_PORT, IO_PUP);
-    // IO_PUD_PORT(OCM_DATA_PORT, IO_PUP);
+static void zclApp_InitBME280(struct bme280_dev *dev) {
     int8_t rslt = bme280_init(dev);
     if (rslt == BME280_OK) {
         uint8_t settings_sel;
@@ -312,11 +314,13 @@ static void zclApp_ReadBME280(struct bme280_dev *dev) {
         settings_sel |= BME280_FILTER_SEL;
         rslt = bme280_set_sensor_settings(settings_sel, dev);
         rslt = bme280_set_sensor_mode(BME280_NORMAL_MODE, dev);
-
-        for (uint8 i = 0; i < 35; i++) {
-            dev->delay_ms(2);
-        }
-        rslt = bme280_get_sensor_data(BME280_ALL, &bme_results, dev);
+    } else {
+        LREP("ReadBME280 init error %d\r\n", rslt);
+    }
+}
+static void zclApp_ReadBME280(struct bme280_dev *dev) {
+    int8_t rslt = bme280_get_sensor_data(BME280_ALL, &bme_results, dev);
+    if (rslt == BME280_OK) {
         LREP("ReadBME280 t=%ld, p=%ld, h=%ld\r\n", bme_results.temperature, bme_results.pressure, bme_results.humidity);
         zclApp_Temperature_Sensor_MeasuredValue = (int16)bme_results.temperature;
         zclApp_PressureSensor_MeasuredValueHPA = bme_results.pressure;
@@ -326,7 +330,7 @@ static void zclApp_ReadBME280(struct bme280_dev *dev) {
         bdb_RepChangedAttrValue(zclApp_FirstEP.EndPoint, PRESSURE, ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE);
         bdb_RepChangedAttrValue(zclApp_FirstEP.EndPoint, HUMIDITY, ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE);
     } else {
-        LREP("ReadBME280 init error %d\r\n", rslt);
+        LREP("ReadBME280 read error %d\r\n", rslt);
     }
 }
 static void zclApp_Report(void) { osal_start_reload_timer(zclApp_TaskID, APP_READ_SENSORS_EVT, 100); }
