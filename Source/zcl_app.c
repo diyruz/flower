@@ -268,8 +268,8 @@ static void zclApp_ReadSensors(void) {
 static void zclApp_ReadSoilHumidity(void) {
     zclApp_SoilHumiditySensor_MeasuredValueRawAdc = adcReadSampled(HAL_ADC_CHN_AIN4, HAL_ADC_RESOLUTION_14, HAL_ADC_REF_AVDD, 5);
     // FYI: https://docs.google.com/spreadsheets/d/1qrFdMTo0ZrqtlGUoafeB3hplhU3GzDnVWuUK4M9OgNo/edit?usp=sharing
-    uint16 soilHumidityMinRangeAir = (uint16)(0.29 * (double)zclBattery_RawAdc + 4227.0);
-    uint16 soilHumidityMaxRangeWater = (uint16)(0.529 * (double)zclBattery_RawAdc - 144.0);
+    uint16 soilHumidityMinRangeAir = (uint16) AIR_COMPENSATION_FORMULA(zclBattery_RawAdc);
+    uint16 soilHumidityMaxRangeWater = (uint16) WATER_COMPENSATION_FORMULA(zclBattery_RawAdc);
     LREP("soilHumidityMinRangeAir=%d soilHumidityMaxRangeWater=%d\r\n", soilHumidityMinRangeAir, soilHumidityMaxRangeWater);
     zclApp_SoilHumiditySensor_MeasuredValue =
         (uint16)mapRange(soilHumidityMinRangeAir, soilHumidityMaxRangeWater, 0.0, 10000.0, zclApp_SoilHumiditySensor_MeasuredValueRawAdc);
