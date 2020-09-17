@@ -126,6 +126,7 @@ static zclGeneral_AppCallbacks_t zclApp_CmdCallbacks = {
 
 void zclApp_Init(byte task_id) {
     P0INP |= BV(4); // tri state p0.4 (soil humidity pin)
+    P0INP |= BV(7); // tri state p0.7 (lumosity pin)
 
     HalI2CInit();
     zclApp_InitPWM();
