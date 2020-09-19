@@ -2,5 +2,5 @@ git:
   requireCleanWorkingDir: false
 github:
   release: true
-  assets: ["firmwares/DIYRuZ_*.hex"]
+  assets: ["firmwares/DIYRuZ_*.hex", "converters/DIYRuZ_*.js"]
   draft: false
