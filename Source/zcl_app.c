@@ -200,7 +200,7 @@ static void zclApp_HandleKeys(byte portAndAction, byte keyCode) {
     LREP("zclApp_HandleKeys portAndAction=0x%X keyCode=0x%X\r\n", portAndAction, keyCode);
     zclFactoryResetter_HandleKeys(portAndAction, keyCode);
     zclCommissioning_HandleKeys(portAndAction, keyCode);
-    if (portAndAction & HAL_KEY_RELEASE) {
+    if (portAndAction & HAL_KEY_PRESS) {
         LREPMaster("Key release\r\n");
         osal_start_timerEx(zclApp_TaskID, APP_REPORT_EVT, 200);
     }
