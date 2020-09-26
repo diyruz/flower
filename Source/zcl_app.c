@@ -152,8 +152,6 @@ void zclApp_Init(byte task_id) {
     LREP("Started build %s \r\n", zclApp_DateCodeNT);
 
     osal_start_reload_timer(zclApp_TaskID, APP_REPORT_EVT, APP_REPORT_DELAY);
-
-    ZMacSetTransmitPower(TX_PWR_PLUS_4); // set 4dBm
 }
 
 uint16 zclApp_event_loop(uint8 task_id, uint16 events) {
@@ -203,7 +201,7 @@ static void zclApp_HandleKeys(byte portAndAction, byte keyCode) {
     zclFactoryResetter_HandleKeys(portAndAction, keyCode);
     zclCommissioning_HandleKeys(portAndAction, keyCode);
     if (portAndAction & HAL_KEY_PRESS) {
-        LREPMaster("Key release\r\n");
+        LREPMaster("Key press\r\n");
         osal_start_timerEx(zclApp_TaskID, APP_REPORT_EVT, 200);
     }
 }
