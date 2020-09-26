@@ -124,8 +124,8 @@ static zclGeneral_AppCallbacks_t zclApp_CmdCallbacks = {
 };
 
 void zclApp_Init(byte task_id) {
-    IO_IMODE_PORT_PIN(0, 4, IO_TRI); // tri state p0.4 (soil humidity pin)
-    IO_IMODE_PORT_PIN(0, 7, IO_TRI); // tri state p0.7 (lumosity pin)
+    IO_IMODE_PORT_PIN(SOIL_MOISTURE_PORT, SOIL_MOISTURE_PIN, IO_TRI); // tri state p0.4 (soil humidity pin)
+    IO_IMODE_PORT_PIN(LUMOISITY_PORT, LUMOISITY_PIN, IO_TRI); // tri state p0.7 (lumosity pin)
     IO_PUD_PORT(OCM_CLK_PORT, IO_PUP);
     IO_PUD_PORT(OCM_DATA_PORT, IO_PUP)
     IO_PUD_PORT(DS18B20_PORT, IO_PUP);
@@ -236,7 +236,6 @@ static void zclApp_ReadSensors(void) {
     HalLedSet(HAL_LED_1, HAL_LED_MODE_BLINK);
     switch (currentSensorsReadingPhase++) {
     case 0:
-        zclCommissioning_Sleep(false);
         POWER_ON_SENSORS();
         break;
     case 1:
@@ -260,7 +259,6 @@ static void zclApp_ReadSensors(void) {
         break;
     default:
         POWER_OFF_SENSORS();
-        zclCommissioning_Sleep(true);
         osal_stop_timerEx(zclApp_TaskID, APP_READ_SENSORS_EVT);
         osal_clear_event(zclApp_TaskID, APP_READ_SENSORS_EVT);
         currentSensorsReadingPhase = 0;
@@ -269,7 +267,7 @@ static void zclApp_ReadSensors(void) {
 }
 
 static void zclApp_ReadSoilHumidity(void) {
-    zclApp_SoilHumiditySensor_MeasuredValueRawAdc = adcReadSampled(HAL_ADC_CHN_AIN4, HAL_ADC_RESOLUTION_14, HAL_ADC_REF_AVDD, 5);
+    zclApp_SoilHumiditySensor_MeasuredValueRawAdc = adcReadSampled(SOIL_MOISTURE_PIN, HAL_ADC_RESOLUTION_14, HAL_ADC_REF_AVDD, 5);
     // FYI: https://docs.google.com/spreadsheets/d/1qrFdMTo0ZrqtlGUoafeB3hplhU3GzDnVWuUK4M9OgNo/edit?usp=sharing
     uint16 soilHumidityMinRangeAir = (uint16)AIR_COMPENSATION_FORMULA(zclBattery_RawAdc);
     uint16 soilHumidityMaxRangeWater = (uint16)WATER_COMPENSATION_FORMULA(zclBattery_RawAdc);
@@ -292,7 +290,7 @@ static void zclApp_ReadDS18B20(void) {
 }
 
 static void zclApp_ReadLumosity(void) {
-    zclApp_IlluminanceSensor_MeasuredValueRawAdc = adcReadSampled(HAL_ADC_CHN_AIN7, HAL_ADC_RESOLUTION_14, HAL_ADC_REF_AVDD, 5);
+    zclApp_IlluminanceSensor_MeasuredValueRawAdc = adcReadSampled(LUMOISITY_PIN, HAL_ADC_RESOLUTION_14, HAL_ADC_REF_AVDD, 5);
     zclApp_IlluminanceSensor_MeasuredValue = zclApp_IlluminanceSensor_MeasuredValueRawAdc;
     bdb_RepChangedAttrValue(zclApp_FirstEP.EndPoint, ILLUMINANCE, ATTRID_MS_ILLUMINANCE_MEASURED_VALUE);
     LREP("IlluminanceSensor_MeasuredValue value=%d\r\n", zclApp_IlluminanceSensor_MeasuredValue);
