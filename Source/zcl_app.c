@@ -47,22 +47,21 @@
 
 // use led4 as output pin, osal will shitch it low when go to PM
 #define POWER_ON_SENSORS()                                                                                                                 \
-    {                                                                                                                                      \
+    do {                                                                                                                                   \
         HAL_TURN_ON_LED4();                                                                                                                \
-        T3CTL |= BV(4);                                                                                                                    \
+        st(T3CTL |= BV(4););                                                                                                               \
         IO_PUD_PORT(OCM_CLK_PORT, IO_PUP);                                                                                                 \
         IO_PUD_PORT(OCM_DATA_PORT, IO_PUP);                                                                                                \
         IO_PUD_PORT(DS18B20_PORT, IO_PUP);                                                                                                 \
-    }
+    } while (0)
 #define POWER_OFF_SENSORS()                                                                                                                \
-    {                                                                                                                                      \
+    do {                                                                                                                                   \
         HAL_TURN_OFF_LED4();                                                                                                               \
-        T3CTL &= ~BV(4);                                                                                                                   \
-        T3CTL |= BV(2);                                                                                                                    \
+        st(T3CTL &= ~BV(4); T3CTL |= BV(2););                                                                                              \
         IO_PUD_PORT(OCM_CLK_PORT, IO_PDN);                                                                                                 \
         IO_PUD_PORT(OCM_DATA_PORT, IO_PDN);                                                                                                \
         IO_PUD_PORT(DS18B20_PORT, IO_PDN);                                                                                                 \
-    }
+    } while (0)
 
 /*********************************************************************
  * CONSTANTS
@@ -125,8 +124,11 @@ static zclGeneral_AppCallbacks_t zclApp_CmdCallbacks = {
 };
 
 void zclApp_Init(byte task_id) {
-    P0INP |= BV(4); // tri state p0.4 (soil humidity pin)
-    P0INP |= BV(7); // tri state p0.7 (lumosity pin)
+    IO_IMODE_PORT_PIN(0, 4, IO_TRI); // tri state p0.4 (soil humidity pin)
+    IO_IMODE_PORT_PIN(0, 7, IO_TRI); // tri state p0.7 (lumosity pin)
+    IO_PUD_PORT(OCM_CLK_PORT, IO_PUP);
+    IO_PUD_PORT(OCM_DATA_PORT, IO_PUP)
+    IO_PUD_PORT(DS18B20_PORT, IO_PUP);
 
     HalI2CInit();
     zclApp_InitPWM();
