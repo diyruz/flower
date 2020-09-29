@@ -2,7 +2,7 @@
 #include "AF.h"
 #include "OSAL.h"
 #include "OSAL_Clock.h"
-
+#include "OSAL_PwrMgr.h"
 #include "ZComDef.h"
 #include "ZDApp.h"
 #include "ZDNwkMgr.h"
@@ -235,24 +235,24 @@ static void zclApp_ReadSensors(void) {
     switch (currentSensorsReadingPhase++) {
     case 0:
         POWER_ON_SENSORS();
-        break;
-    case 1:
         zclApp_ReadLumosity();
+        osal_pwrmgr_task_state(zclApp_TaskID, PWRMGR_HOLD);
         break;
 
-    case 2:
+    case 1:
         zclBattery_Report();
         zclApp_ReadSoilHumidity();
         break;
-    case 3:
+    case 2:
         zclApp_InitBME280(&bme_dev);
         break;
 
-    case 4:
+    case 3:
         zclApp_ReadBME280(&bme_dev);
+        osal_pwrmgr_task_state(zclApp_TaskID, PWRMGR_CONSERVE);
         break;
 
-    case 5:
+    case 4:
         zclApp_ReadDS18B20();
         break;
     default:
