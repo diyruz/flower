@@ -129,6 +129,7 @@ void zclApp_Init(byte task_id) {
     IO_PUD_PORT(OCM_CLK_PORT, IO_PUP);
     IO_PUD_PORT(OCM_DATA_PORT, IO_PUP)
     IO_PUD_PORT(DS18B20_PORT, IO_PUP);
+    POWER_OFF_SENSORS();
 
     HalI2CInit();
     zclApp_InitPWM();
