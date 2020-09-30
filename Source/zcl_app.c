@@ -275,12 +275,13 @@ static void zclApp_ReadSoilHumidity(void) {
         (uint16)mapRange(soilHumidityMinRangeAir, soilHumidityMaxRangeWater, 0.0, 10000.0, zclApp_SoilHumiditySensor_MeasuredValueRawAdc);
     LREP("ReadSoilHumidity raw=%d mapped=%d\r\n", zclApp_SoilHumiditySensor_MeasuredValueRawAdc, zclApp_SoilHumiditySensor_MeasuredValue);
 
-    bdb_RepChangedAttrValue(zclApp_SecondEP.EndPoint, HUMIDITY, ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE);
+    bdb_RepChangedAttrValue(zclApp_FirstEP.EndPoint, SOIL_HUMIDITY, ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE);
 }
 
 static void zclApp_ReadDS18B20(void) {
-    zclApp_DS18B20_MeasuredValue = readTemperature();
-    if (zclApp_DS18B20_MeasuredValue != 1) {
+    int16 temp = readTemperature();
+    if (temp != 1) {
+        zclApp_DS18B20_MeasuredValue = temp;
         LREP("ReadDS18B20 t=%d\r\n", zclApp_DS18B20_MeasuredValue);
         bdb_RepChangedAttrValue(zclApp_SecondEP.EndPoint, TEMP, ATTRID_MS_TEMPERATURE_MEASURED_VALUE);
     } else {

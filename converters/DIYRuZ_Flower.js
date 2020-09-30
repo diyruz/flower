@@ -92,11 +92,11 @@ const device = {
             'msRelativeHumidity',
             'msPressureMeasurement',
             'msIlluminanceMeasurement',
+            'msSoilMoisture'
         ]);
 
         await bind(secondEndpoint, coordinatorEndpoint, [
-            'msTemperatureMeasurement',
-            'msRelativeHumidity',
+            'msTemperatureMeasurement'
         ]);
         const genPowerCfgPayload = [{
                 attribute: 'batteryVoltage',
@@ -123,6 +123,7 @@ const device = {
         await firstEndpoint.configureReporting('msTemperatureMeasurement', msBindPayload);
         await firstEndpoint.configureReporting('msRelativeHumidity', msBindPayload);
         await firstEndpoint.configureReporting('msIlluminanceMeasurement', msBindPayload);
+        await firstEndpoint.configureReporting('msSoilMoisture', msBindPayload);
 
 
         const pressureBindPayload = [
@@ -138,10 +139,8 @@ const device = {
             },
         ];
         await firstEndpoint.configureReporting('msPressureMeasurement', pressureBindPayload);
-
         await secondEndpoint.configureReporting('msTemperatureMeasurement', msBindPayload);
-
-        const msRelativeHumidityBindPayload = [
+        const msSoilMoistureBindPayload = [
             ...msBindPayload,
             {
                 attribute: {
@@ -162,7 +161,7 @@ const device = {
                 reportableChange: 0,
             },
         ];
-        await secondEndpoint.configureReporting('msRelativeHumidity', msRelativeHumidityBindPayload);
+        await secondEndpoint.configureReporting('msSoilMoisture', msSoilMoistureBindPayload);
     },
 };
 
