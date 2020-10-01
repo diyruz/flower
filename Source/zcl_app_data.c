@@ -39,7 +39,9 @@ const uint16 zclApp_clusterRevision_all = 0x0001;
 
 int16 zclApp_Temperature_Sensor_MeasuredValue = 0;
 int16 zclApp_PressureSensor_MeasuredValue = 0;
-uint32 zclApp_PressureSensor_MeasuredValueHPA = 0;
+int16 zclApp_PressureSensor_ScaledValue = 0;
+int8 zclApp_PressureSensor_Scale = -1;
+
 uint16 zclApp_HumiditySensor_MeasuredValue = 0;
 
 uint16 zclApp_SoilHumiditySensor_MeasuredValue = 0;
@@ -97,8 +99,11 @@ CONST zclAttrRec_t zclApp_AttrsFirstEP[] = {
 
     {ILLUMINANCE, {ATTRID_MS_ILLUMINANCE_MEASURED_VALUE, ZCL_UINT16, RR, (void *)&zclApp_IlluminanceSensor_MeasuredValue}},
     {TEMP, {ATTRID_MS_TEMPERATURE_MEASURED_VALUE, ZCL_INT16, RR, (void *)&zclApp_Temperature_Sensor_MeasuredValue}},
+
     {PRESSURE, {ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE, ZCL_INT16, RR, (void *)&zclApp_PressureSensor_MeasuredValue}},
-    {PRESSURE, {ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE_HPA, ZCL_UINT32, RR, (void *)&zclApp_PressureSensor_MeasuredValueHPA}},
+    {PRESSURE, {ATTRID_MS_PRESSURE_MEASUREMENT_SCALED_VALUE, ZCL_INT16, RR, (void *)&zclApp_PressureSensor_ScaledValue}},
+    {PRESSURE, {ATTRID_MS_PRESSURE_MEASUREMENT_SCALE, ZCL_INT8, RR, (void *)&zclApp_PressureSensor_Scale}},
+
     {HUMIDITY, {ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE, ZCL_UINT16, RR, (void *)&zclApp_HumiditySensor_MeasuredValue}},
 
 /**

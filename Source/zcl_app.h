@@ -50,9 +50,9 @@ extern "C" {
 #define ZCL_UINT16  ZCL_DATATYPE_UINT16
 #define ZCL_UINT32  ZCL_DATATYPE_UINT32
 #define ZCL_INT16   ZCL_DATATYPE_INT16
+#define ZCL_INT8    ZCL_DATATYPE_INT8
 
 
-#define ATTRID_MS_PRESSURE_MEASUREMENT_MEASURED_VALUE_HPA               0x0200
 #define ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE_RAW_ADC              0x0200
 #define ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE_BATTERY_RAW_ADC      0x0201
 
@@ -74,7 +74,8 @@ extern uint8 zclApp_BatteryPercentageRemainig;
 extern uint16 zclApp_BatteryVoltageRawAdc;
 extern int16 zclApp_Temperature_Sensor_MeasuredValue;
 extern int16 zclApp_PressureSensor_MeasuredValue;
-extern uint32 zclApp_PressureSensor_MeasuredValueHPA;
+extern int16 zclApp_PressureSensor_ScaledValue;
+extern int8 zclApp_PressureSensor_Scale;
 extern uint16 zclApp_HumiditySensor_MeasuredValue;
 extern int16 zclApp_DS18B20_MeasuredValue;
 extern uint16 zclApp_SoilHumiditySensor_MeasuredValue;
