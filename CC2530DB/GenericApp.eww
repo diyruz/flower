@@ -8,11 +8,7 @@
             <name>ALL</name>
             <member>
                 <project>GenericApp</project>
-                <configuration>DIYRuZ_Flower_555</configuration>
-            </member>
-            <member>
-                <project>GenericApp</project>
-                <configuration>DIYRuZ_Flower_PWM</configuration>
+                <configuration>DIYRuZ_Flower</configuration>
             </member>
         </batchDefinition>
     </batchBuild>
