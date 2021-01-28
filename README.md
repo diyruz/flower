@@ -32,7 +32,7 @@ Please, ensure the following:
 4. You permit joining on your coordinator.
 5. Your device did not join to other opened Zigbee network. When you press and hold the button, it should flash every 3-4 seconds. It means that the device in the joining state.
 
-![Device](./images/DIYRuZ_Flower_10.png)
+![Device](/images/DIYRuZ_Flower_10.png)
 
 
 # How to add device into zigbe2mqtt
