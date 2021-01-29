@@ -19,13 +19,13 @@ or the universal module from Jager
 
 As you can see, the boards in the photos are slightly different from the design image. The fact is that this is the first version of the boards, the second was supplemented with the ability to use a ready-made BME280 module, since not everyone can cope with sealing the "bare" chip. In addition, a more convenient connector for CC2530  
 ![](/images/DIYRuZ_Flower_5.png)  
-firmware has been brought out. For reference, the BME280 size next to the 0805 resistors
+firmware has been brought out. For reference, the BME280 size next to the 0805 resistors   
 ![](/images/DIYRuZ_Flower_19.png)
 
-To measure the temperature of the soil (important in greenhouses) or water, you can solder the DS18B20 in a metal sleeve
+To measure the temperature of the soil (important in greenhouses) or water, you can solder the DS18B20 in a metal sleeve  
 ![](/images/DIYRuZ_Flower_13.png)
 
-Since the board has several sensors, it can be used as, for example, an outdoor temperature / humidity sensor by cutting off the soil sensor.
+Since the board has several sensors, it can be used as, for example, an outdoor temperature / humidity sensor by cutting off the soil sensor.  
 ![](/images/DIYRuZ_Flower_17.png)  
 
 Replacing alkaline batteries with Ni-MH batteries, for example, has a chance to survive the most severe frosts.
@@ -35,9 +35,9 @@ The device consumes 1.1μA in sleep mode and 26mA at the time of data transfer. 
 For this sensor @anonymass wrote an open source firmware and converter for zigbee2mqtt. The firmware contains compensation for the values ​​of the level of humidity and illumination associated with a drop in the supply voltage. This sensor is also supported in the SLS Gateway It looks like this
 ![](/images/DIYRuZ_Flower_14.png)
 
-![](/images/DIYRuZ_Flower_15.png)
-In general, the sensor turned out to be very sensitive, when the window is open, if it is raining outside, the sensor feels like dry ground absorbs moisture. The graph shows that you need to select a resistor in the light sensor circuit.
-![](/images/DIYRuZ_Flower_16.png)
+![](/images/DIYRuZ_Flower_15.png)  
+In general, the sensor turned out to be very sensitive, when the window is open, if it is raining outside, the sensor feels like dry ground absorbs moisture. The graph shows that you need to select a resistor in the light sensor circuit.  
+![](/images/DIYRuZ_Flower_16.png)  
 This data is quite enough to signal the need for watering, as well as, for example, turn on the drip irrigation system in the greenhouse. In Jager's opinion, there is no need to solder on each BME280 sensor, as it is redundant.
 
 ## Version 2
@@ -110,6 +110,6 @@ Please, ensure the following:
 * [OLD v1 Gerbers and BOM](https://github.com/diyruz/flower/hardware/v1) by [Jager](https://t.me/Jager_f)  
 
 
-[Original post v1 by Jager](https://modkam.ru/?p=1671)
+[Original v1 post by Jager](https://modkam.ru/?p=1671)
 
-[Original post v2 by Jager](https://modkam.ru/?p=1700)
+[Original v2 post by Jager](https://modkam.ru/?p=1700)
