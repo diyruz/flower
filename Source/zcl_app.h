@@ -18,9 +18,6 @@ extern "C" {
 
 // Application Events
 #define APP_REPORT_EVT                  0x0001
-#define APP_READ_SENSORS_EVT            0x0002
-
-
 
 
 #define AIR_COMPENSATION_FORMULA(ADC)   ((0.179 * (double)ADC + 3926.0))
