@@ -3,4 +3,4 @@ git:
 github:
   release: true
   assets: ["firmwares/DIYRuZ_*.hex", "converters/DIYRuZ_*.js"]
-  draft: false
+  draft: true
