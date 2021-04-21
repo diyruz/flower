@@ -60,8 +60,8 @@
 #define POWER_SAVING
 // #define DO_DEBUG_UART
 #elif defined(HAL_BOARD_CHDTECH_DEV)
-// #define DO_DEBUG_UART
-#define DO_DEBUG_MT
+#define DO_DEBUG_UART
+// #define DO_DEBUG_MT
 
 #endif
 
