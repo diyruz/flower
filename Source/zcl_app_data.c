@@ -122,30 +122,23 @@ CONST zclAttrRec_t zclApp_AttrsSecondEP[] = {
 uint8 CONST zclApp_AttrsSecondEPCount = (sizeof(zclApp_AttrsSecondEP) / sizeof(zclApp_AttrsSecondEP[0]));
 uint8 CONST zclApp_AttrsFirstEPCount = (sizeof(zclApp_AttrsFirstEP) / sizeof(zclApp_AttrsFirstEP[0]));
 
-const cId_t zclApp_InClusterList[] = {ZCL_CLUSTER_ID_GEN_BASIC};
 
-#define APP_MAX_INCLUSTERS (sizeof(zclApp_InClusterList) / sizeof(zclApp_InClusterList[0]))
+const cId_t zclApp_InClusterListFirstEP[] = {ZCL_CLUSTER_ID_GEN_BASIC, POWER_CFG, ILLUMINANCE, TEMP, PRESSURE, HUMIDITY, SOIL_HUMIDITY};
+const cId_t zclApp_InClusterListSecondEP[] = {TEMP};
 
-const cId_t zclApp_OutClusterListFirstEP[] = {POWER_CFG, ILLUMINANCE, TEMP, PRESSURE, HUMIDITY, SOIL_HUMIDITY};
-const cId_t zclApp_OutClusterListSecondEP[] = {TEMP};
-
-#define APP_MAX_OUTCLUSTERS_FIRST_EP (sizeof(zclApp_OutClusterListFirstEP) / sizeof(zclApp_OutClusterListFirstEP[0]))
-#define APP_MAX_OUTCLUSTERS_SECOND_EP (sizeof(zclApp_OutClusterListSecondEP) / sizeof(zclApp_OutClusterListSecondEP[0]))
-
-
-
-
+#define APP_MAX_INCLUSTERS_FIRST_EP (sizeof(zclApp_InClusterListFirstEP) / sizeof(zclApp_InClusterListFirstEP[0]))
+#define APP_MAX_INCLUSTERS_SECOND_EP (sizeof(zclApp_InClusterListSecondEP) / sizeof(zclApp_InClusterListSecondEP[0]))
 
 SimpleDescriptionFormat_t zclApp_FirstEP = {
     1,                                                  //  int Endpoint;
     ZCL_HA_PROFILE_ID,                                  //  uint16 AppProfId[2];
     ZCL_HA_DEVICEID_SIMPLE_SENSOR,                      //  uint16 AppDeviceId[2];
-    APP_DEVICE_VERSION,                          //  int   AppDevVer:4;
-    APP_FLAGS,                                   //  int   AppFlags:4;
-    APP_MAX_INCLUSTERS,                          //  byte  AppNumInClusters;
-    (cId_t *)zclApp_InClusterList,                //  byte *pAppInClusterList;
-    APP_MAX_OUTCLUSTERS_FIRST_EP,                //  byte  AppNumInClusters;
-    (cId_t *)zclApp_OutClusterListFirstEP         //  byte *pAppInClusterList;
+    APP_DEVICE_VERSION,                                 //  int   AppDevVer:4;
+    APP_FLAGS,                                          //  int   AppFlags:4;
+    APP_MAX_INCLUSTERS_FIRST_EP,                        //  byte  AppNumInClusters;
+    (cId_t *)zclApp_InClusterListFirstEP,               //  byte *pAppInClusterList;
+    0,                                                  //  byte  AppNumOutClusters;
+    (cId_t *)NULL                                       //  byte *pAppOutClusterList;  
 };
 
 
@@ -153,10 +146,10 @@ SimpleDescriptionFormat_t zclApp_SecondEP = {
     2,                                                  //  int Endpoint;
     ZCL_HA_PROFILE_ID,                                  //  uint16 AppProfId[2];
     ZCL_HA_DEVICEID_SIMPLE_SENSOR,                      //  uint16 AppDeviceId[2];
-    APP_DEVICE_VERSION,                          //  int   AppDevVer:4;
-    APP_FLAGS,                                   //  int   AppFlags:4;
-    0,                                                  //  byte  AppNumInClusters;
-    (cId_t *)NULL,                                      //  byte *pAppInClusterList;
-    APP_MAX_OUTCLUSTERS_SECOND_EP,               //  byte  AppNumInClusters;
-    (cId_t *)zclApp_OutClusterListSecondEP        //  byte *pAppInClusterList;
+    APP_DEVICE_VERSION,                                 //  int   AppDevVer:4;
+    APP_FLAGS,                                          //  int   AppFlags:4;
+    APP_MAX_INCLUSTERS_SECOND_EP,                       //  byte  AppNumInClusters;
+    (cId_t *)zclApp_InClusterListSecondEP,              //  byte *pAppInClusterList;
+    0,                                                  //  byte  AppNumOutClusters;
+    (cId_t *)NULL                                       //  byte *pAppOutClusterList;
 };
