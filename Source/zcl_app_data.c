@@ -149,7 +149,7 @@ SimpleDescriptionFormat_t zclApp_SecondEP = {
     APP_DEVICE_VERSION,                                 //  int   AppDevVer:4;
     APP_FLAGS,                                          //  int   AppFlags:4;
     APP_MAX_INCLUSTERS_SECOND_EP,                       //  byte  AppNumInClusters;
-    (cId_t *)zclApp_InClusterListSecondEP               //  byte *pAppInClusterList;
+    (cId_t *)zclApp_InClusterListSecondEP,              //  byte *pAppInClusterList;
     0,                                                  //  byte  AppNumOutClusters;
     (cId_t *)NULL                                       //  byte *pAppOutClusterList;
 };
