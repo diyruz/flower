@@ -1,3 +1,6 @@
+### How to compile
+Follow this article https://zigdevwiki.github.io/Begin/IAR_install/
+
 ## Version 1
 ![](/images/DIYRuZ_Flower_10.png)
 A lot of time has passed since the appearance of Mi Flora, but Jager never dared to purchase it. First of all, the fact that it was bluetooth stopped, and this automatically created problems on a scale at home and the second reason was the cost, taking into account the fact that Jager needed 20-30 pieces. Decision, do it himself. Taking into account the development of his home Zigbee network, the proven E18-MS1-PCB module was taken as a basis. The measurement of soil moisture is carried out using a capacitive method, the sensor electrodes are isolated from the soil and therefore do not corrode. The circuit for measuring soil moisture is typical for this kind of device and, in principle, repeats the Chinese sensor, with the only difference that Jager increased the frequency of the generator to 2 MHz.
